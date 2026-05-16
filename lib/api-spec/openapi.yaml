@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TradeAura API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: trades
+    description: Trade journal operations
+  - name: stats
+    description: Trading statistics and analytics
 paths:
   /healthz:
     get:
@@ -24,6 +28,184 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /trades:
+    get:
+      operationId: listTrades
+      tags: [trades]
+      summary: List all trades
+      description: Returns all trades for the current user, ordered by entry date descending
+      parameters:
+        - name: symbol
+          in: query
+          schema:
+            type: string
+          description: Filter by ticker symbol
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [long, short]
+          description: Filter by trade direction
+        - name: outcome
+          in: query
+          schema:
+            type: string
+            enum: [win, loss, breakeven]
+          description: Filter by outcome
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trade"
+    post:
+      operationId: createTrade
+      tags: [trades]
+      summary: Log a new trade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeInput"
+      responses:
+        "201":
+          description: Trade created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+
+  /trades/{id}:
+    get:
+      operationId: getTrade
+      tags: [trades]
+      summary: Get a single trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trade details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTrade
+      tags: [trades]
+      summary: Update a trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeUpdate"
+      responses:
+        "200":
+          description: Updated trade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trade"
+    delete:
+      operationId: deleteTrade
+      tags: [trades]
+      summary: Delete a trade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /stats/summary:
+    get:
+      operationId: getStatsSummary
+      tags: [stats]
+      summary: Get trading performance summary
+      description: Returns aggregate stats - total P&L, win rate, trade count, average RR
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsSummary"
+
+  /stats/by-symbol:
+    get:
+      operationId: getStatsBySymbol
+      tags: [stats]
+      summary: Performance breakdown by ticker symbol
+      responses:
+        "200":
+          description: Stats per symbol
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SymbolStats"
+
+  /stats/equity-curve:
+    get:
+      operationId: getEquityCurve
+      tags: [stats]
+      summary: Cumulative P&L over time
+      responses:
+        "200":
+          description: Equity curve data points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquityPoint"
+
+  /stats/by-day:
+    get:
+      operationId: getStatsByDay
+      tags: [stats]
+      summary: P&L and win rate by day of week
+      responses:
+        "200":
+          description: Day-of-week breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DayStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +216,216 @@ components:
       required:
         - status
 
+    Trade:
+      type: object
+      required:
+        - id
+        - symbol
+        - direction
+        - entryPrice
+        - exitPrice
+        - quantity
+        - entryDate
+        - exitDate
+        - pnl
+        - outcome
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+          description: Ticker symbol (e.g. AAPL, TSLA)
+        direction:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        quantity:
+          type: number
+        entryDate:
+          type: string
+          format: date-time
+        exitDate:
+          type: string
+          format: date-time
+        pnl:
+          type: number
+          description: Profit or loss in dollars
+        pnlPercent:
+          type: ["number", "null"]
+        riskRewardRatio:
+          type: ["number", "null"]
+        stopLoss:
+          type: ["number", "null"]
+        takeProfit:
+          type: ["number", "null"]
+        outcome:
+          type: string
+          enum: [win, loss, breakeven]
+        strategy:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    TradeInput:
+      type: object
+      required:
+        - symbol
+        - direction
+        - entryPrice
+        - exitPrice
+        - quantity
+        - entryDate
+        - exitDate
+      properties:
+        symbol:
+          type: string
+        direction:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        quantity:
+          type: number
+        entryDate:
+          type: string
+          format: date-time
+        exitDate:
+          type: string
+          format: date-time
+        stopLoss:
+          type: ["number", "null"]
+        takeProfit:
+          type: ["number", "null"]
+        strategy:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+
+    TradeUpdate:
+      type: object
+      properties:
+        symbol:
+          type: string
+        direction:
+          type: string
+          enum: [long, short]
+        entryPrice:
+          type: number
+        exitPrice:
+          type: number
+        quantity:
+          type: number
+        entryDate:
+          type: string
+          format: date-time
+        exitDate:
+          type: string
+          format: date-time
+        stopLoss:
+          type: ["number", "null"]
+        takeProfit:
+          type: ["number", "null"]
+        strategy:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+
+    StatsSummary:
+      type: object
+      required:
+        - totalTrades
+        - totalPnl
+        - winRate
+        - avgWin
+        - avgLoss
+        - profitFactor
+        - avgRiskReward
+        - winCount
+        - lossCount
+        - breakevenCount
+      properties:
+        totalTrades:
+          type: integer
+        totalPnl:
+          type: number
+        winRate:
+          type: number
+          description: Win rate as a percentage (0-100)
+        avgWin:
+          type: number
+        avgLoss:
+          type: number
+        profitFactor:
+          type: number
+        avgRiskReward:
+          type: number
+        winCount:
+          type: integer
+        lossCount:
+          type: integer
+        breakevenCount:
+          type: integer
+
+    SymbolStats:
+      type: object
+      required:
+        - symbol
+        - totalTrades
+        - totalPnl
+        - winRate
+      properties:
+        symbol:
+          type: string
+        totalTrades:
+          type: integer
+        totalPnl:
+          type: number
+        winRate:
+          type: number
+
+    EquityPoint:
+      type: object
+      required:
+        - date
+        - cumulativePnl
+        - pnl
+      properties:
+        date:
+          type: string
+          format: date
+        cumulativePnl:
+          type: number
+        pnl:
+          type: number
+
+    DayStats:
+      type: object
+      required:
+        - day
+        - totalTrades
+        - totalPnl
+        - winRate
+      properties:
+        day:
+          type: string
+          description: Day of the week (Monday, Tuesday, etc.)
+        totalTrades:
+          type: integer
+        totalPnl:
+          type: number
+        winRate:
+          type: number
