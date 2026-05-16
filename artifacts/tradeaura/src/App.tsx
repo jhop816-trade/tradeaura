@@ -1,26 +1,52 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
+import DashboardPage from "@/pages/dashboard";
+import TradesPage from "@/pages/trades";
+import NewTradePage from "@/pages/new-trade";
+import TradeDetailPage from "@/pages/trade-detail";
+import AnalyticsPage from "@/pages/analytics";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
 
-function Home() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Replit Agent is building...</h1>
-        <p className="mt-2 text-sm text-gray-600">Your app will appear here once it's ready.</p>
-      </div>
-    </div>
-  );
+function AuthRedirect() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  if (session) return <Redirect to="/" />;
+  return <LoginPage />;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/login" component={AuthRedirect} />
+      <Route path="/">
+        <ProtectedRoute><DashboardPage /></ProtectedRoute>
+      </Route>
+      <Route path="/trades/new">
+        <ProtectedRoute><NewTradePage /></ProtectedRoute>
+      </Route>
+      <Route path="/trades/:id">
+        <ProtectedRoute><TradeDetailPage /></ProtectedRoute>
+      </Route>
+      <Route path="/trades">
+        <ProtectedRoute><TradesPage /></ProtectedRoute>
+      </Route>
+      <Route path="/analytics">
+        <ProtectedRoute><AnalyticsPage /></ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -29,12 +55,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
