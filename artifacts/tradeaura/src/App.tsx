@@ -7,10 +7,12 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
-import TradesPage from "@/pages/trades";
+import JournalPage from "@/pages/trades";
 import NewTradePage from "@/pages/new-trade";
 import TradeDetailPage from "@/pages/trade-detail";
-import AnalyticsPage from "@/pages/analytics";
+import CalendarPage from "@/pages/calendar";
+import StatsPage from "@/pages/analytics";
+import ReviewPage from "@/pages/review";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +37,9 @@ function Router() {
       <Route path="/">
         <ProtectedRoute><DashboardPage /></ProtectedRoute>
       </Route>
+      <Route path="/journal">
+        <ProtectedRoute><JournalPage /></ProtectedRoute>
+      </Route>
       <Route path="/trades/new">
         <ProtectedRoute><NewTradePage /></ProtectedRoute>
       </Route>
@@ -42,10 +47,19 @@ function Router() {
         <ProtectedRoute><TradeDetailPage /></ProtectedRoute>
       </Route>
       <Route path="/trades">
-        <ProtectedRoute><TradesPage /></ProtectedRoute>
+        <ProtectedRoute><JournalPage /></ProtectedRoute>
+      </Route>
+      <Route path="/calendar">
+        <ProtectedRoute><CalendarPage /></ProtectedRoute>
+      </Route>
+      <Route path="/stats">
+        <ProtectedRoute><StatsPage /></ProtectedRoute>
       </Route>
       <Route path="/analytics">
-        <ProtectedRoute><AnalyticsPage /></ProtectedRoute>
+        <ProtectedRoute><StatsPage /></ProtectedRoute>
+      </Route>
+      <Route path="/review">
+        <ProtectedRoute><ReviewPage /></ProtectedRoute>
       </Route>
       <Route component={NotFound} />
     </Switch>
