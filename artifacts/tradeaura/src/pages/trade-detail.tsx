@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useRoute, useLocation, Link } from "wouter";
 import {
   useGetTrade, useUpdateTrade, useDeleteTrade,
   getGetTradeQueryKey, getListTradesQueryKey,
@@ -17,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Edit2, Trash2, Save, X } from "lucide-react";
-import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
 function fmt(n: number) {
@@ -58,7 +57,7 @@ export default function TradeDetailPage() {
         qc.invalidateQueries({ queryKey: getGetStatsBySymbolQueryKey() });
         qc.invalidateQueries({ queryKey: getGetStatsByDayQueryKey() });
         toast({ title: "Trade deleted" });
-        setLocation("/trades");
+        setLocation("/journal");
       },
     },
   });
@@ -102,8 +101,8 @@ export default function TradeDetailPage() {
     { label: "Entry Price", value: `$${trade.entryPrice.toFixed(2)}` },
     { label: "Exit Price", value: `$${trade.exitPrice.toFixed(2)}` },
     { label: "Quantity", value: trade.quantity.toString() },
-    { label: "P&L", value: <span className={cn("font-mono font-semibold", trade.pnl >= 0 ? "text-green-500" : "text-red-500")}>{trade.pnl >= 0 ? "+" : ""}{fmt(trade.pnl)}</span> },
-    { label: "P&L %", value: trade.pnlPercent != null ? <span className={cn(trade.pnlPercent >= 0 ? "text-green-500" : "text-red-500")}>{trade.pnlPercent >= 0 ? "+" : ""}{trade.pnlPercent.toFixed(2)}%</span> : "—" },
+    { label: "P&L", value: <span className={cn("font-mono font-semibold", trade.pnl >= 0 ? "text-green-400" : "text-red-400")}>{trade.pnl >= 0 ? "+" : ""}{fmt(trade.pnl)}</span> },
+    { label: "P&L %", value: trade.pnlPercent != null ? <span className={cn(trade.pnlPercent >= 0 ? "text-green-400" : "text-red-400")}>{trade.pnlPercent >= 0 ? "+" : ""}{trade.pnlPercent.toFixed(2)}%</span> : "—" },
     { label: "Risk/Reward", value: trade.riskRewardRatio != null ? `${trade.riskRewardRatio.toFixed(2)}R` : "—" },
     { label: "Stop Loss", value: trade.stopLoss != null ? `$${trade.stopLoss.toFixed(2)}` : "—" },
     { label: "Take Profit", value: trade.takeProfit != null ? `$${trade.takeProfit.toFixed(2)}` : "—" },
@@ -116,10 +115,8 @@ export default function TradeDetailPage() {
     <Layout>
       <div className="p-6 max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/trades">
-            <a className="text-muted-foreground hover:text-foreground" data-testid="link-back">
-              <ArrowLeft className="w-5 h-5" />
-            </a>
+          <Link href="/journal" className="text-muted-foreground hover:text-foreground" data-testid="link-back">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -127,8 +124,8 @@ export default function TradeDetailPage() {
               <Badge
                 variant="outline"
                 className={cn("capitalize",
-                  trade.outcome === "win" ? "text-green-500 border-green-500/30 bg-green-500/10" :
-                  trade.outcome === "loss" ? "text-red-500 border-red-500/30 bg-red-500/10" :
+                  trade.outcome === "win" ? "text-green-400 border-green-400/30 bg-green-400/10" :
+                  trade.outcome === "loss" ? "text-red-400 border-red-400/30 bg-red-400/10" :
                   "text-muted-foreground"
                 )}
               >

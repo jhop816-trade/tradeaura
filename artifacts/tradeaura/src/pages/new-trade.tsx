@@ -1,6 +1,6 @@
 import { useCreateTrade, getListTradesQueryKey, getGetStatsSummaryQueryKey, getGetEquityCurveQueryKey, getGetStatsBySymbolQueryKey, getGetStatsByDayQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
 
 const schema = z.object({
   symbol: z.string().min(1, "Symbol required").max(10).toUpperCase(),
@@ -49,7 +48,7 @@ export default function NewTradePage() {
         qc.invalidateQueries({ queryKey: getGetStatsBySymbolQueryKey() });
         qc.invalidateQueries({ queryKey: getGetStatsByDayQueryKey() });
         toast({ title: "Trade logged successfully" });
-        setLocation("/trades");
+        setLocation("/journal");
       },
       onError: () => {
         toast({ title: "Failed to log trade", variant: "destructive" });
@@ -98,10 +97,8 @@ export default function NewTradePage() {
     <Layout>
       <div className="p-6 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/trades">
-            <a className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-to-trades">
-              <ArrowLeft className="w-5 h-5" />
-            </a>
+          <Link href="/journal" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-to-trades">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Log Trade</h1>
@@ -256,10 +253,8 @@ export default function NewTradePage() {
                       </span>
                     ) : "Log Trade"}
                   </Button>
-                  <Link href="/trades">
-                    <a>
-                      <Button type="button" variant="outline" data-testid="button-cancel">Cancel</Button>
-                    </a>
+                  <Link href="/journal" className="contents">
+                    <Button type="button" variant="outline" data-testid="button-cancel">Cancel</Button>
                   </Link>
                 </div>
               </form>

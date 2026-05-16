@@ -13,6 +13,7 @@ import TradeDetailPage from "@/pages/trade-detail";
 import CalendarPage from "@/pages/calendar";
 import StatsPage from "@/pages/analytics";
 import ReviewPage from "@/pages/review";
+import InstrumentsPage from "@/pages/instruments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,9 @@ function Router() {
       </Route>
       <Route path="/review">
         <ProtectedRoute><ReviewPage /></ProtectedRoute>
+      </Route>
+      <Route path="/instruments">
+        <ProtectedRoute><InstrumentsPage /></ProtectedRoute>
       </Route>
       <Route component={NotFound} />
     </Switch>
