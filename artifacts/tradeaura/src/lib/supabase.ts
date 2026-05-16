@@ -1,24 +1,37 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Support both the correct assignment and the common mix-up where URL/key are swapped
-const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Clean and normalize the URL (trim whitespace, remove trailing slash/path)
+function normalizeSupabaseUrl(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("http")) return undefined;
+  try {
+    const url = new URL(trimmed);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return undefined;
+  }
+}
 
-// Detect if the values are swapped (URL secret holds a key, key secret holds a URL)
-const isUrlActuallyKey = envUrl && !envUrl.startsWith("http");
-const isKeyActuallyUrl = envKey && envKey.startsWith("http");
+const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-const supabaseUrl = isKeyActuallyUrl ? envKey : envUrl;
-const supabaseAnonKey = isUrlActuallyKey ? envUrl : envKey;
+const supabaseUrl = normalizeSupabaseUrl(rawUrl);
+// If rawKey looks like a URL (user entered URL in both fields), fall back to rawUrl normalized
+const supabaseAnonKey =
+  rawKey && !rawKey.trim().startsWith("http") ? rawKey.trim() : undefined;
 
-if (!supabaseUrl || !supabaseUrl.startsWith("http")) {
+if (!supabaseUrl) {
   throw new Error(
-    `Invalid or missing Supabase project URL. VITE_SUPABASE_URL should be set to your project URL (e.g. https://xxxx.supabase.co). Got: ${supabaseUrl}`
+    `Invalid VITE_SUPABASE_URL: "${rawUrl}". Must be a URL like https://xxxx.supabase.co`
   );
 }
 
 if (!supabaseAnonKey) {
-  throw new Error("Missing VITE_SUPABASE_ANON_KEY");
+  throw new Error(
+    `Missing or invalid VITE_SUPABASE_ANON_KEY: it appears to be a URL instead of the anon/public JWT key. ` +
+    `Go to Supabase → Settings → API → "anon public" and copy that long JWT token.`
+  );
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
