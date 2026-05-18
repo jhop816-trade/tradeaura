@@ -559,7 +559,141 @@ function ReviewResult({review:r}: {review:any}){
 }
 
 // ── EDUCATION CENTER ──────────────────────────────────────────────────────────
-function EducationView() {
+// ── AI TUTOR CHAT ─────────────────────────────────────────────────────────────
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
+function TutorChat({ plan }: { plan: string }) {
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
+    { role: "assistant", content: "Hey! I'm your AI Trading Tutor 👋 Ask me anything about trading — strategies, risk management, chart patterns, market structure, futures, options, psychology — I've got you." }
+  ]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, thinking]);
+
+  const isElite = plan === "elite";
+
+  async function send() {
+    const text = input.trim();
+    if (!text || thinking) return;
+    const next: ChatMsg[] = [...msgs, { role: "user", content: text }];
+    setMsgs(next);
+    setInput("");
+    setThinking(true);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next.map(m => ({ role: m.role, content: m.content })) }),
+      });
+      const data = await res.json();
+      setMsgs(prev => [...prev, { role: "assistant", content: data.reply || "Sorry, I couldn't get a response. Try again." }]);
+    } catch {
+      setMsgs(prev => [...prev, { role: "assistant", content: "Connection error — please try again." }]);
+    }
+    setThinking(false);
+  }
+
+  const suggestions = ["What is a Break of Structure?", "How do I size my positions?", "Explain order blocks", "What's a good risk/reward ratio?"];
+
+  return (
+    <div style={Object.assign({}, CS, { marginBottom: 20, padding: 0, overflow: "hidden", position: "relative" })}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${C.bord}`, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}, ${C.purp})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🤖</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>AI Trading Tutor</div>
+          <div style={{ fontSize: 10, color: C.green, display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block" }} />
+            {isElite ? "Elite — Online" : "Elite Plan Required"}
+          </div>
+        </div>
+        <div style={{ marginLeft: "auto" }}>
+          <span style={{ fontSize: 9, padding: "3px 9px", borderRadius: 20, background: C.purp + "22", color: C.purp, fontWeight: 700, border: `1px solid ${C.purp}44` }}>ELITE</span>
+        </div>
+      </div>
+
+      {/* Lock overlay */}
+      {!isElite && (
+        <div style={{ padding: "32px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Elite Plan Required</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 20 }}>
+            The AI Trading Tutor is available exclusively for Elite members. Upgrade to get unlimited access to your personal AI coach, available 24/7.
+          </div>
+          <div style={{ background: C.purp + "18", border: `1px solid ${C.purp}44`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: C.purp, fontWeight: 700, marginBottom: 6 }}>✨ Elite Plan Includes</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.8, textAlign: "left" }}>
+              • Unlimited AI Trading Tutor access<br/>
+              • Advanced AI trade grading<br/>
+              • Priority support & early features
+            </div>
+          </div>
+          <button style={{ width: "100%", padding: "13px 0", background: `linear-gradient(135deg, ${C.purp}, ${C.blue})`, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+            Upgrade to Elite — Coming Soon
+          </button>
+        </div>
+      )}
+
+      {/* Chat messages */}
+      {isElite && (
+        <>
+          <div style={{ height: 320, overflowY: "auto", padding: "14px 14px 0" }}>
+            {msgs.map((m, i) => (
+              <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: m.role === "user" ? "row-reverse" : "row", alignItems: "flex-end", gap: 8 }}>
+                {m.role === "assistant" && (
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}, ${C.purp})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
+                )}
+                <div style={{
+                  maxWidth: "78%", padding: "10px 13px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                  background: m.role === "user" ? `linear-gradient(135deg, ${C.blue}, ${C.purp})` : C.surf2,
+                  border: m.role === "assistant" ? `1px solid ${C.bord}` : "none",
+                  fontSize: 12, color: "#fff", lineHeight: 1.6, whiteSpace: "pre-wrap",
+                }}>{m.content}</div>
+              </div>
+            ))}
+            {thinking && (
+              <div style={{ marginBottom: 12, display: "flex", alignItems: "flex-end", gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}, ${C.purp})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🤖</div>
+                <div style={{ padding: "10px 14px", borderRadius: "16px 16px 16px 4px", background: C.surf2, border: `1px solid ${C.bord}` }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[0, 1, 2].map(i => <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: C.muted, display: "inline-block", animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />)}
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Suggestions */}
+          {msgs.length <= 1 && (
+            <div style={{ padding: "10px 14px 0", display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {suggestions.map(s => (
+                <button key={s} onClick={() => { setInput(s); }} style={{ fontSize: 10, padding: "5px 10px", borderRadius: 20, background: C.blue + "18", color: C.blue, border: `1px solid ${C.blue}44`, cursor: "pointer", fontFamily: "inherit" }}>{s}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Input bar */}
+          <div style={{ padding: "12px 14px 14px", display: "flex", gap: 8, alignItems: "flex-end" }}>
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Ask anything about trading…"
+              rows={1}
+              style={{ flex: 1, background: "#0a0d14", border: `1px solid ${C.bord}`, color: C.txt, padding: "10px 13px", borderRadius: 10, fontSize: 12, fontFamily: "inherit", resize: "none", outline: "none", lineHeight: 1.5 }}
+            />
+            <button onClick={send} disabled={!input.trim() || thinking} style={{ width: 40, height: 40, borderRadius: 10, background: input.trim() && !thinking ? `linear-gradient(135deg, ${C.blue}, ${C.purp})` : C.bord, border: "none", cursor: input.trim() && !thinking ? "pointer" : "default", color: "#fff", fontSize: 16, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>➤</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EducationView({ plan }: { plan: string }) {
   const [activeModule, setActiveModule] = useState<number|null>(null);
 
   const modules = [
@@ -575,16 +709,18 @@ function EducationView() {
 
   return (
     <div style={{padding:"16px 16px 20px"}}>
-      <div style={{marginBottom:20}}>
+      <div style={{marginBottom:16}}>
         <div style={{fontSize:9,color:C.blue,letterSpacing:"0.2em",marginBottom:6}}>TRADEAURA</div>
         <div style={{fontSize:20,fontWeight:800,color:"#fff",marginBottom:6}}>Education Center</div>
-        <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>Master trading from the ground up. Courses coming soon.</div>
+        <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>Master trading from the ground up.</div>
       </div>
+
+      <TutorChat plan={plan} />
 
       <div style={{background:C.gold+"18",border:`1px solid ${C.gold}40`,borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"center",gap:10}}>
         <div style={{fontSize:18}}>🚧</div>
         <div>
-          <div style={{fontSize:12,color:C.gold,fontWeight:700}}>Content Coming Soon</div>
+          <div style={{fontSize:12,color:C.gold,fontWeight:700}}>Courses Coming Soon</div>
           <div style={{fontSize:11,color:C.dim,marginTop:2}}>We're building out each module. Check back soon!</div>
         </div>
       </div>
@@ -726,6 +862,8 @@ export default function App() {
   const [editingTrade,setEditingTrade]=useState<any>(null);
   const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
   function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
+  const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"free");
+  function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
 
   // ── AUTH CHECK ──
   useEffect(()=>{
@@ -859,7 +997,7 @@ export default function App() {
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
-        {view==="learn"&&<EducationView/>}
+        {view==="learn"&&<EducationView plan={plan}/>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
 
