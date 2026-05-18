@@ -205,16 +205,14 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 }
 
 // ── TRADE FORM ────────────────────────────────────────────────────────────────
-function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number}) {
+function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChange}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:""});
   const [loading,setLoading]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
   const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
-  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
   const acctBal=balance||25000;
-  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
@@ -270,7 +268,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span>PROFIT / LOSS $ <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
           <div style={{display:"flex",gap:4}}>
-            {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+            {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
           </div>
         </div>
         <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder="Enter exact dollar amount..." style={inp()}/>
@@ -313,7 +311,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
             <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TRADE P&L</div>
             <div style={{display:"flex",gap:4}}>
-              {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?"#ffffff22":"transparent",color:pnlMode===m?"#fff":C.muted,border:`1px solid ${pnlMode===m?"#ffffff44":C.bord}`}}>{m}</button>)}
+              {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?"#ffffff22":"transparent",color:pnlMode===m?"#fff":C.muted,border:`1px solid ${pnlMode===m?"#ffffff44":C.bord}`}}>{m}</button>)}
             </div>
           </div>
           <div style={{fontSize:24,fontWeight:800,color:pnlPreview>=0?C.green:C.red}}>{fmtPnl(pnlPreview)}</div>
@@ -329,12 +327,10 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
 }
 
 // ── JOURNAL ───────────────────────────────────────────────────────────────────
-function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,balance?:number}) {
+function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [expandedId,setExpandedId]=useState<any>(null);
   const [editingTrade,setEditingTrade]=useState<any>(null);
-  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
   const acctBal=balance||25000;
-  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const today=new Date().toISOString().slice(0,10);
   const todayPnl=trades.filter(t=>t.date===today).reduce((s,t)=>s+(t.pnl||0),0);
@@ -358,7 +354,7 @@ function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:a
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
             <div style={{display:"flex",gap:4}}>
-              {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+              {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
             </div>
             <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TODAY TRADES</div><div style={{fontSize:16,fontWeight:800,color:C.txt,marginTop:2}}>{todayCount}</div></div>
           </div>
@@ -366,7 +362,7 @@ function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:a
       )}
       {trades.map(trade=>{
         const pnl=trade.pnl||0,exp=expandedId===trade.id;
-        if(editingTrade?.id===trade.id)return(<TradeForm key={trade.id} initial={editingTrade} isEdit balance={balance} onSave={t=>{onSave(t);setEditingTrade(null);}} onCancel={()=>setEditingTrade(null)}/>);
+        if(editingTrade?.id===trade.id)return(<TradeForm key={trade.id} initial={editingTrade} isEdit balance={balance} pnlMode={pnlMode} onPnlModeChange={onPnlModeChange} onSave={t=>{onSave(t);setEditingTrade(null);}} onCancel={()=>setEditingTrade(null)}/>);
         return(
           <div key={trade.id} style={{background:C.surf,border:`1px solid ${C.bord}`,borderLeft:`3px solid ${pnl>=0?C.green:C.red}`,borderRadius:12,padding:16,marginBottom:10}}>
             <div onClick={()=>setExpandedId(exp?null:trade.id)} style={{cursor:"pointer"}}>
@@ -728,6 +724,8 @@ export default function App() {
   const [showModal,setShowModal]=useState(false);
   const [showNewTrade,setShowNewTrade]=useState(false);
   const [editingTrade,setEditingTrade]=useState<any>(null);
+  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
+  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
 
   // ── AUTH CHECK ──
   useEffect(()=>{
@@ -857,7 +855,7 @@ export default function App() {
       {/* CONTENT */}
       <div style={{paddingBottom:100}}>
         {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance}/>}
-        {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} balance={activeAccount?.starting_balance}/></div>)}
+        {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
