@@ -862,7 +862,7 @@ export default function App() {
   const [editingTrade,setEditingTrade]=useState<any>(null);
   const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
   function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
-  const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"free");
+  const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
   function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
 
   // ── AUTH CHECK ──
