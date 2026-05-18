@@ -726,28 +726,57 @@ export default function App() {
   },[activeAccountId]);
 
   // ── TRADE ACTIONS ──
+  function cleanPayload(trade: any) {
+    const n = (v: any) => (v === "" || v === undefined || v === null ? null : Number(v));
+    return {
+      account_id: activeAccountId,
+      user_id: user.id,
+      date: trade.date,
+      instrument: trade.instrument,
+      direction: trade.direction,
+      session: trade.session || null,
+      setup: trade.setup || null,
+      mood: trade.mood || null,
+      notes: trade.notes || null,
+      screenshot: trade.screenshot || null,
+      account_type: trade.account_type || "Live",
+      rules_followed: trade.rules_followed || [],
+      entry: n(trade.entry),
+      exit: n(trade.exit),
+      contracts: n(trade.contracts) ?? 1,
+      stop_loss: n(trade.stop_loss),
+      manual_pnl: n(trade.manual_pnl),
+      pnl: trade.pnl ?? 0,
+      ai_grade: trade.ai_grade || null,
+      ai_feedback: trade.ai_feedback || null,
+    };
+  }
+
   async function saveTrade(trade: any){
     const pnl=trade.pnl||0;
-    const payload={...trade,account_id:activeAccountId,user_id:user.id,pnl};
+    const payload = cleanPayload({...trade, pnl});
     if(trade.id&&!trade.id.startsWith("id_")){
-      await supabase.from("trades").update(payload).eq("id",trade.id);
-      setTrades(prev=>prev.map(t=>t.id===trade.id?payload:t));
+      const {error}=await supabase.from("trades").update(payload).eq("id",trade.id);
+      if(error){alert("Save failed: "+error.message);return;}
+      setTrades(prev=>prev.map(t=>t.id===trade.id?{...payload,id:trade.id}:t));
     } else {
-      const newPayload={...payload,id:undefined};
-      const {data}=await supabase.from("trades").insert(newPayload).select().single();
+      const {data,error}=await supabase.from("trades").insert(payload).select().single();
+      if(error){alert("Save failed: "+error.message);return;}
       if(data)setTrades(prev=>[data,...prev]);
     }
     setShowNewTrade(false); setEditingTrade(null);
   }
 
   async function deleteTrade(id: any){
-    await supabase.from("trades").delete().eq("id",id);
+    const {error}=await supabase.from("trades").delete().eq("id",id);
+    if(error){alert("Delete failed: "+error.message);return;}
     setTrades(prev=>prev.filter(t=>t.id!==id));
   }
 
   // ── ACCOUNT ACTIONS ──
   async function addAccount(name: string,type: string){
-    const {data}=await supabase.from("accounts").insert({user_id:user.id,name,type,starting_balance:25000,max_daily_trades:5}).select().single();
+    const {data,error}=await supabase.from("accounts").insert({user_id:user.id,name,type,starting_balance:25000,max_daily_trades:5}).select().single();
+    if(error){alert("Could not create account: "+error.message);return;}
     if(data){setAccounts(prev=>[...prev,data]);setActiveAccountId(data.id);}
   }
 
