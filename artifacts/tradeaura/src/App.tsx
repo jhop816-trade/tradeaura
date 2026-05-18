@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const INSTRUMENTS = ["ES1!","NQ1!","MES","MNQ","CL","GC","RTY","YM","XAU/USD"];
+// Favorites stored in localStorage — no fixed instrument list
 const SETUPS = ["BOS + Retest","Bullish Engulfing","Bearish Engulfing","Hammer","Shooting Star","Three White Soldiers","Doji Reversal","Order Block","Break & Retest","Other"];
 const SESSIONS = ["New York","London","Asia","NY/London Overlap"];
 const MOODS = ["Focused","Anxious","Confident","Tired","Frustrated","Neutral"];
@@ -206,10 +206,12 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 
 // ── TRADE FORM ────────────────────────────────────────────────────────────────
 function TradeForm({initial,isEdit,onSave,onCancel}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void}) {
-  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"ES1!",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:""});
+  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:""});
   const [loading,setLoading]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
+  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
+  function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
   const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
   async function submit() {
@@ -236,7 +238,14 @@ function TradeForm({initial,isEdit,onSave,onCancel}: {initial?:any,isEdit?:boole
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>DATE</div><input type="date" value={form.date} onChange={e=>set("date",e.target.value)} style={inp()}/></div>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>INSTRUMENT</div><select value={form.instrument} onChange={e=>set("instrument",e.target.value)} style={inp()}>{INSTRUMENTS.map(o=><option key={o}>{o}</option>)}</select></div>
+        <div>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SYMBOL</div>
+          <div style={{position:"relative"}}>
+            <input type="text" value={form.instrument} onChange={e=>set("instrument",e.target.value.toUpperCase())} placeholder="ES1!, NQ1!, AAPL…" style={inp({paddingRight:38})}/>
+            <button onClick={()=>toggleFav(form.instrument)} title={favSymbols.includes(form.instrument)?"Remove from favorites":"Save as favorite"} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",cursor:"pointer",fontSize:18,color:favSymbols.includes(form.instrument)?C.gold:C.muted,lineHeight:1,padding:0}}>★</button>
+          </div>
+          {favSymbols.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>{favSymbols.map(s=><button key={s} onClick={()=>set("instrument",s)} style={{fontSize:10,padding:"3px 10px",borderRadius:20,background:form.instrument===s?C.gold+"22":"#ffffff0d",color:form.instrument===s?C.gold:C.dim,border:`1px solid ${form.instrument===s?C.gold+"55":C.bord}`,cursor:"pointer",fontFamily:"inherit"}}>★ {s}</button>)}</div>}
+        </div>
       </div>
 
       <div style={{marginBottom:10}}>
