@@ -212,8 +212,9 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
   const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
-  const [pnlMode,setPnlMode]=useState<"$"|"%">("$");
+  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
   const acctBal=balance||25000;
+  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
@@ -269,7 +270,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span>PROFIT / LOSS $ <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
           <div style={{display:"flex",gap:4}}>
-            {(["$","%"] as const).map(m=><button key={m} onClick={()=>setPnlMode(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+            {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
           </div>
         </div>
         <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder="Enter exact dollar amount..." style={inp()}/>
@@ -312,7 +313,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
             <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TRADE P&L</div>
             <div style={{display:"flex",gap:4}}>
-              {(["$","%"] as const).map(m=><button key={m} onClick={()=>setPnlMode(m)} style={{padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?"#ffffff22":"transparent",color:pnlMode===m?"#fff":C.muted,border:`1px solid ${pnlMode===m?"#ffffff44":C.bord}`}}>{m}</button>)}
+              {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?"#ffffff22":"transparent",color:pnlMode===m?"#fff":C.muted,border:`1px solid ${pnlMode===m?"#ffffff44":C.bord}`}}>{m}</button>)}
             </div>
           </div>
           <div style={{fontSize:24,fontWeight:800,color:pnlPreview>=0?C.green:C.red}}>{fmtPnl(pnlPreview)}</div>
@@ -331,6 +332,10 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance}: {initial?:any,isEdi
 function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,balance?:number}) {
   const [expandedId,setExpandedId]=useState<any>(null);
   const [editingTrade,setEditingTrade]=useState<any>(null);
+  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
+  const acctBal=balance||25000;
+  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
+  function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const today=new Date().toISOString().slice(0,10);
   const todayPnl=trades.filter(t=>t.date===today).reduce((s,t)=>s+(t.pnl||0),0);
   const todayCount=trades.filter(t=>t.date===today).length;
@@ -347,8 +352,16 @@ function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:a
     <div style={{padding:"16px 16px 20px"}}>
       {trades.length>0&&(
         <div style={Object.assign({},CS,{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"})}>
-          <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TODAY'S P&L</div><div style={{fontSize:22,fontWeight:800,color:todayPnl>=0?C.green:C.red,marginTop:2}}>{todayPnl>=0?"+":""}${todayPnl.toFixed(2)}</div></div>
-          <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TODAY TRADES</div><div style={{fontSize:22,fontWeight:800,color:C.txt,marginTop:2}}>{todayCount}</div></div>
+          <div>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:2}}>TODAY'S P&L</div>
+            <div style={{fontSize:22,fontWeight:800,color:todayPnl>=0?C.green:C.red}}>{fmtPnl(todayPnl)}</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+            <div style={{display:"flex",gap:4}}>
+              {(["$","%"] as const).map(m=><button key={m} onClick={()=>changePnlMode(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+            </div>
+            <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TODAY TRADES</div><div style={{fontSize:16,fontWeight:800,color:C.txt,marginTop:2}}>{todayCount}</div></div>
+          </div>
         </div>
       )}
       {trades.map(trade=>{
@@ -364,7 +377,7 @@ function JournalView({trades,onSave,onDelete,balance}: {trades:any[],onSave:(t:a
                   {trade.account_type&&<Tag color={typeColor(trade.account_type)}>{trade.account_type}</Tag>}
                   {trade.ai_grade&&<Tag color={gradeColor(trade.ai_grade)}>{trade.ai_grade}</Tag>}
                 </div>
-                <div style={{fontSize:18,fontWeight:700,color:pnl>=0?C.green:C.red,flexShrink:0,marginLeft:8}}>{pnl>=0?"+":""}${pnl.toFixed(2)}</div>
+                <div style={{fontSize:18,fontWeight:700,color:pnl>=0?C.green:C.red,flexShrink:0,marginLeft:8}}>{fmtPnl(pnl)}</div>
               </div>
               <div style={{fontSize:11,color:C.muted,marginTop:6}}>{trade.date} · {trade.session} · {trade.setup}</div>
             </div>
