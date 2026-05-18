@@ -42,15 +42,13 @@ function Tag({color,children}: {color:string,children:React.ReactNode}){ return 
 function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
 
 async function callAI(prompt: string, maxTokens=600) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:maxTokens, messages:[{role:"user",content:prompt}] })
+  const res = await fetch("/api/ai/grade", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ prompt, maxTokens })
   });
-  const data = await res.json();
-  const text = data.content.map((b: any)=>b.text||"").join("");
-  const match = text.match(/{[\s\S]*}/);
-  if (!match) throw new Error("No JSON");
-  return JSON.parse(match[0]);
+  if (!res.ok) throw new Error("AI request failed");
+  return res.json();
 }
 
 // ── AUTH SCREEN ───────────────────────────────────────────────────────────────
