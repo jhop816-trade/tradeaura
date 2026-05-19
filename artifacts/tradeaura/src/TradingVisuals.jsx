@@ -556,4 +556,11 @@ export const LESSON_VISUALS = {
   "s8l3": <RiskRewardVisual/>,
   "s8l4": <RiskRewardVisual/>,
   "s9l1": <PsychologyVisual/>,
+  "s11l2": <BOSVisual/>,
+  "s11l3": <SupportResistanceVisual/>,
+  "s12l2": <><HammerVisual/><ShootingStarVisual/></>,
+  "s13l2": <RiskRewardVisual/>,
+  "s15l1": <BOSVisual/>,
+  "s15l3": <SupportResistanceVisual/>,
+  "s15l4": <OrderBlockVisual/>,
 };

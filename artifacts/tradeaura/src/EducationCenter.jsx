@@ -383,6 +383,211 @@ const COURSES = [
       { q: "Thinking Fast and Slow by Daniel Kahneman is about:", options: ["Day trading strategies", "How humans make decisions and cognitive biases", "Futures markets", "Chart patterns"], answer: 1 },
       { q: "What is the recommended FIRST book to read?", options: ["Technical Analysis of the Financial Markets", "Atomic Habits", "Trading in the Zone", "Market Wizards"], answer: 2 }
     ]
+  },
+
+  {
+    id: 11,
+    title: "Market Structure",
+    icon: "🏗️",
+    color: "#4f8ef7",
+    desc: "Understand how markets are built, how they move in phases, and how to read what price is telling you.",
+    plan: "pro",
+    lessons: [
+      {
+        id: "s11l1",
+        title: "What Is Market Structure?",
+        content: `Market structure is the blueprint of how price moves. Every single market — futures, stocks, forex — moves in the same predictable way if you know what to look for.\n\n**The Three Phases of Every Market:**\n\n📈 **Accumulation**\nSmart money quietly buys at low prices.\nPrice moves sideways — looks boring.\nRetail traders ignore it.\nThis is where the next big move is loading.\n\n🚀 **Markup**\nSmart money stops buying and price starts moving up.\nRetail traders finally notice and start buying.\nThis is the trend phase — where most profits are made.\n\n📉 **Distribution**\nSmart money quietly sells to late retail buyers.\nPrice moves sideways again at the top.\nLooks like consolidation but it's actually a top.\n\n💥 **Markdown**\nSmart money has sold everything.\nPrice falls hard — retail traders are left holding bags.\nWeak hands sell at the bottom into the next accumulation.\n\n**Why This Matters:**\nMost retail traders buy during markup (late) and sell during markdown (at the bottom).\nUnderstanding market structure lets you buy accumulation and sell distribution.\n\n**Reading Structure on a Chart:**\nUptrend: Higher Highs + Higher Lows\nDowntrend: Lower Highs + Lower Lows\nRanging: Equal Highs + Equal Lows (accumulation or distribution)`,
+        keyTerms: ["Accumulation", "Markup", "Distribution", "Markdown", "Market Cycle", "Phases"]
+      },
+      {
+        id: "s11l2",
+        title: "Swing Highs and Swing Lows",
+        content: `Swing highs and swing lows are the building blocks of market structure. Master these and you can read any chart.\n\n**Swing High:**\nA candle with a higher high than the candles on both sides.\nThis is where price turned and moved lower.\nThink of it as a peak.\n\n**Swing Low:**\nA candle with a lower low than the candles on both sides.\nThis is where price turned and moved higher.\nThink of it as a valley.\n\n**Why they matter:**\nSwing highs and lows tell you:\n• The direction of the trend\n• Where to place stop losses\n• Where targets should be\n• Where the market is likely to reverse\n\n**Uptrend Structure:**\nEach swing high is HIGHER than the last (Higher High)\nEach swing low is HIGHER than the last (Higher Low)\nAs long as this pattern holds — trend is intact.\n\n**Downtrend Structure:**\nEach swing high is LOWER than the last (Lower High)\nEach swing low is LOWER than the last (Lower Low)\nAs long as this pattern holds — trend is intact.\n\n**The Key Rule:**\nWhen a swing low breaks in an uptrend — the trend may be over.\nWhen a swing high breaks in a downtrend — the trend may be over.\nThis is called a Break of Structure (BOS).`,
+        keyTerms: ["Swing High", "Swing Low", "Peak", "Valley", "Timeframe", "Trend Direction"]
+      },
+      {
+        id: "s11l3",
+        title: "Ranges and Consolidation",
+        content: `The market spends about 70% of its time in consolidation — not trending. Learning to identify and trade ranges is a massive edge.\n\n**What is a Range?**\nPrice bouncing between two levels — a ceiling (resistance) and a floor (support).\nNeither buyers nor sellers are winning decisively.\nThis is a balance zone.\n\n**Types of Consolidation:**\n\n📦 **Tight Range (Coiling)**\nSmall price movement, compressing.\nBig move coming — direction unknown yet.\nWait for the breakout.\n\n📊 **Wide Range (Choppy)**\nPrice swinging between clear levels.\nCan trade the bounces — buy support, sell resistance.\nStop just outside the range.\n\n📐 **Ascending Channel**\nRange slanting upward — bullish bias.\nBuy the lower channel line, target upper.\n\n📐 **Descending Channel**\nRange slanting downward — bearish bias.\nSell the upper channel line, target lower.\n\n**Range Trading Rules:**\n1. Only trade ranges with at least 2 clear touches on each side\n2. Enter near the edge — not in the middle\n3. Stop just outside the range\n4. Exit before the other side — don't be greedy\n5. If range breaks — switch to breakout mode\n\n**The Breakout:**\nWhen price finally leaves the range — it often moves the full height of the range.\nThis is called measuring the move.`,
+        keyTerms: ["Range", "Consolidation", "Breakout", "Channel", "Coiling", "Balance Zone"]
+      },
+      {
+        id: "s11l4",
+        title: "Premium and Discount Zones",
+        content: `This is a Smart Money concept that changes how you think about entries. Instead of buying whenever price looks good, you buy at a discount and sell at a premium.\n\n**The Simple Concept:**\nEvery price move has a range — a high point and a low point.\nThe top 50% of that range = Premium (expensive)\nThe bottom 50% of that range = Discount (cheap)\n\n**The Rule:**\n• Buy in the DISCOUNT zone (lower 50% of a range)\n• Sell/short in the PREMIUM zone (upper 50% of a range)\n• Never buy at the top or sell at the bottom of a move\n\n**How to Find the Zone:**\n1. Identify the most recent swing high and swing low\n2. Find the 50% midpoint (equilibrium)\n3. Below the midpoint = Discount (look for longs)\n4. Above the midpoint = Premium (look for shorts)\n\n**Combining With Other Concepts:**\nDiscount zone + Order Block = High probability long\nPremium zone + Order Block = High probability short\nDiscount zone + Support level = Strong buy zone\nPremium zone + Resistance level = Strong sell zone\n\n**Why Institutions Use This:**\nInstitutions need to buy HUGE amounts of contracts.\nThey cannot buy at random prices — they need value.\nDiscount zones are where they accumulate long positions.\nPremium zones are where they accumulate short positions.\nYou are simply trading with them.`,
+        keyTerms: ["Premium", "Discount", "Equilibrium", "50% Level", "Buy Zone", "Sell Zone"]
+      }
+    ],
+    quiz: [
+      { q: "Which phase do smart money institutions quietly buy at low prices?", options: ["Markup", "Distribution", "Accumulation", "Markdown"], answer: 2 },
+      { q: "An uptrend consists of:", options: ["Lower highs and lower lows", "Higher highs and higher lows", "Equal highs and equal lows", "Random price movement"], answer: 1 },
+      { q: "The market spends approximately what percentage of time in consolidation?", options: ["30%", "50%", "70%", "90%"], answer: 2 },
+      { q: "In Smart Money concepts, you should buy in the:", options: ["Premium zone", "Equilibrium zone", "Discount zone", "Distribution zone"], answer: 2 }
+    ]
+  },
+
+  {
+    id: 12,
+    title: "Price Action",
+    icon: "📊",
+    color: "#a78bfa",
+    desc: "Learn to read raw price movement without indicators — the purest form of market analysis.",
+    plan: "pro",
+    lessons: [
+      {
+        id: "s12l1",
+        title: "What Is Price Action?",
+        content: `Price action trading means reading the market using only price — no indicators, no moving averages, no RSI. Just you and the candles.\n\n**Why Price Action Works:**\nEvery indicator is derived FROM price.\nSo price itself is the most direct information you can have.\nIndicators lag. Price doesn't.\n\n**The Core Belief:**\nAll information — earnings, news, sentiment, fear, greed — is reflected in price.\nIf you can read price, you can read the market.\n\n**What to Look For:**\n\n🕯️ **Candle Size**\nLarge candles = strong momentum, conviction\nSmall candles = indecision, low interest\n\n🕯️ **Candle Position**\nClose near the high = buyers in control\nClose near the low = sellers in control\nClose in the middle = neither side winning\n\n🕯️ **Wick Length**\nLong wicks = rejection of that price\nPrice tried to go there but got pushed back\nWick direction shows you who is losing\n\n**Strong vs Weak Moves:**\nStrong move: Large candles, little overlap, closing at extremes\nWeak move: Small candles, lots of overlap, mixed closes\n\n**The Price Action Process:**\n1. Identify the trend direction\n2. Find key support and resistance\n3. Wait for price to reach a key level\n4. Look for a rejection candle signal\n5. Enter with defined risk`,
+        keyTerms: ["Price Action", "Raw Price", "No Indicators", "Strong Move", "Weak Move", "Candle Strength"]
+      },
+      {
+        id: "s12l2",
+        title: "Pin Bars and Rejection",
+        content: `Pin bars are one of the most powerful price action signals. They show you exactly where the market rejected a price level.\n\n**What Is a Pin Bar?**\nA candle with a very long wick on one side and a small body on the other.\nThe long wick shows where price was REJECTED.\nAlso called a hammer, shooting star, or spike.\n\n**Bullish Pin Bar:**\nLong lower wick — price went down but buyers rejected it strongly.\nClose is near the top of the candle.\nSignal: look for longs if at support.\n\n**Bearish Pin Bar:**\nLong upper wick — price went up but sellers rejected it strongly.\nClose is near the bottom of the candle.\nSignal: look for shorts if at resistance.\n\n**Quality Criteria:**\nWick should be at least 2/3 of the total candle length.\nShould form at a key level (not in the middle of nowhere).\nThe longer and cleaner the wick — the stronger the signal.\n\n**Entry Methods:**\nAggressive: Enter at the close of the pin bar.\nConservative: Wait for price to retrace 50% into the pin bar then enter.\n\n**Stop Placement:**\nBullish pin: Stop below the low of the wick.\nBearish pin: Stop above the high of the wick.\nKeep stop tight — the wick is your invalidation point.`,
+        keyTerms: ["Pin Bar", "Wick", "Rejection", "Bullish Pin", "Bearish Pin", "Wick to Body Ratio"]
+      },
+      {
+        id: "s12l3",
+        title: "Inside Bars and Consolidation",
+        content: `Inside bars are a powerful price action pattern that shows consolidation and often precedes a big breakout move.\n\n**What Is an Inside Bar?**\nA candle that is completely contained within the range of the previous candle.\nThe high is lower than the previous high.\nThe low is higher than the previous low.\nIt fits entirely inside the prior candle.\n\n**What It Means:**\nThe market is pausing — neither buyers nor sellers pushing hard.\nLike a coiled spring — energy building for the next move.\nThe bigger the prior candle — the more powerful the inside bar signal.\n\n**Trading the Inside Bar:**\n\n**With the Trend:**\nIn an uptrend — inside bar breakout above the high = long entry.\nIn a downtrend — inside bar breakout below the low = short entry.\nThis is the highest probability inside bar trade.\n\n**As a Reversal:**\nInside bar at a major support or resistance = potential reversal.\nWait for the break of the inside bar in the reversal direction.\n\n**Stop Placement:**\nLong: Stop below the low of the inside bar.\nShort: Stop above the high of the inside bar.\nTight stops make these high R:R trades.\n\n**Multiple Inside Bars:**\nTwo or three inside bars in a row = even more compressed energy.\nThe eventual breakout is typically very strong.`,
+        keyTerms: ["Inside Bar", "Consolidation", "Coiled Spring", "Breakout", "Mother Candle", "Volume"]
+      },
+      {
+        id: "s12l4",
+        title: "Reading Momentum and Exhaustion",
+        content: `Learning to read momentum tells you when a move is strong and when it is running out of steam. This prevents you from entering too late.\n\n**Signs of STRONG Momentum:**\n• Large candle bodies\n• Candles closing near their highs or lows\n• Each successive candle extends further\n• Little to no overlap between candles\n• Volume increasing with the move\n\n**Signs of WEAKENING Momentum (Exhaustion):**\n• Candles getting smaller as move continues\n• Upper/lower wicks appearing on trend candles\n• Candles closing away from their extremes\n• Overlap between successive candles increasing\n• Volume declining as price extends\n\n**Momentum Divergence:**\nPrice makes a new high but the move is weaker than the last one.\nSmaller candles, more overlap, shorter range.\nThis tells you the buyers are running out of steam.\nLook for a reversal or pullback soon.\n\n**Practical Application:**\nStrong momentum after a breakout = trust the move, hold longer.\nWeak momentum at a key level = take profit, tighten stop.\nExhaustion at resistance = look for short setup.\nExhaustion at support = look for long setup.\n\n**The Golden Rule:**\nNever enter in the direction of an exhausted move.\nWait for it to reset (pullback or consolidation) before entering.`,
+        keyTerms: ["Momentum", "Exhaustion", "Velocity", "Candle Size", "Volume", "Distribution", "Accumulation"]
+      }
+    ],
+    quiz: [
+      { q: "Price action trading uses:", options: ["RSI and MACD", "Moving averages only", "Raw price and candles only", "News and fundamentals"], answer: 2 },
+      { q: "A bullish pin bar has:", options: ["Long upper wick", "Long lower wick", "No wicks", "Equal wicks both sides"], answer: 1 },
+      { q: "An inside bar forms when:", options: ["Price makes a new high", "A candle is contained within the previous candle's range", "Volume spikes suddenly", "Two candles have the same close"], answer: 1 },
+      { q: "Candles getting smaller as a move continues signals:", options: ["Stronger momentum", "Exhaustion and potential reversal", "A breakout coming", "Higher volume"], answer: 1 }
+    ]
+  },
+
+  {
+    id: 13,
+    title: "Trade Management",
+    icon: "⚙️",
+    color: "#34d399",
+    desc: "Learn what to do AFTER you enter a trade — how to manage risk, lock in profits, and maximize winners.",
+    plan: "pro",
+    lessons: [
+      {
+        id: "s13l1",
+        title: "Managing a Trade After Entry",
+        content: `Most traders focus on entries. The pros focus on management. What you do AFTER you enter often matters more than where you entered.\n\n**The Three Things That Happen After Entry:**\n\n✅ **Trade goes in your favor immediately**\nThis is the best case.\nPrice moves toward your target quickly.\nSign of a high quality entry.\n\n⚠️ **Trade consolidates before moving**\nPrice moves sideways after entry.\nThis is normal — be patient.\nOnly concern is if it breaks your stop.\n\n❌ **Trade goes against you**\nPrice moves toward your stop.\nDo NOT move your stop further away.\nLet the stop do its job.\n\n**The Golden Rules of Trade Management:**\n\n🚫 **Never move your stop loss further away**\nYour original stop is based on your analysis.\nMoving it away is letting emotion override logic.\nThis turns small losses into account-destroying losses.\n\n✅ **Move your stop to breakeven when possible**\nOnce trade reaches 1:1 reward — move stop to entry.\nNow you cannot lose on this trade.\nThis is risk management at its finest.\n\n✅ **Take partial profits at targets**\nClose half at first target, let rest run.\nLocks in real money while giving room for bigger gains.\n\n**The One Rule:**\nOnly exit a trade when your thesis is invalidated — not when you are scared.`,
+        keyTerms: ["Trade Management", "Stop Loss", "Target", "Holding", "Early Exit", "Invalidation"]
+      },
+      {
+        id: "s13l2",
+        title: "Trailing Stops",
+        content: `A trailing stop locks in profit as price moves in your favor. It's one of the most powerful tools for letting winners run while protecting gains.\n\n**How a Trailing Stop Works:**\nYou enter long at 5,250.\nInitial stop at 5,240 (10 points risk).\nPrice moves to 5,270.\nYou trail your stop up to 5,260.\nNow you're guaranteed at least +10 points profit.\nIf price keeps going — stop keeps moving up.\nIf price reverses — you exit with profit.\n\n**Types of Trailing Stops:**\n\n📏 **Fixed Point Trail**\nMove stop up by the same amount price moves up.\nSimple and systematic.\nExample: Trail 10 points behind price at all times.\n\n📊 **Structure Trail**\nMove stop behind each new swing low (for longs).\nMore sophisticated — gives trade more room to breathe.\nBest method for trending markets.\n\n📈 **Moving Average Trail**\nMove stop to below the 9 EMA or 20 EMA.\nGreat for strong trending moves.\nStop moves automatically as MA rises.\n\n**When to Start Trailing:**\nNot too early — give the trade room to develop.\nTypically start trailing after 1:1 reward is hit.\nOr when price clearly breaks above resistance.\n\n**The Psychology of Trailing:**\nTrailing stops remove the impossible question: "When do I exit?"\nThe market tells you when to exit — when it reverses enough to hit your trail.`,
+        keyTerms: ["Trailing Stop", "Lock In Profit", "Structure Trail", "Moving Average Trail", "Breakeven", "Let Winners Run"]
+      },
+      {
+        id: "s13l3",
+        title: "Scaling In and Out",
+        content: `Scaling means adding to or removing from your position in pieces rather than all at once. Done correctly it maximizes profits and reduces risk.\n\n**Scaling OUT (Taking Partial Profits):**\nInstead of closing your entire position at one target — you close pieces at different levels.\n\nExample with 3 contracts long:\n• At +10 points — close 1 contract (lock in some profit)\n• At +20 points — close 1 contract (more profit secured)\n• Let last contract run with trailing stop\n\n**Why Scaling Out Works:**\nYou guarantee some profit even if the full target isn't hit.\nYou still participate in big moves with the remaining contracts.\nPsychologically easier — reduces pressure on the remaining position.\n\n**Scaling IN (Adding to Winners):**\nAdding more contracts as the trade proves itself correct.\n\nExample:\n• Enter 1 contract at the order block\n• Price moves, breaks structure — add 1 more contract\n• Price continues, breaks next level — add 1 more\n\n**Rules for Scaling In:**\nOnly scale into WINNING trades — never add to losers.\nMove original stop to breakeven before adding.\nEach add has its own stop defined.\n\n**NEVER Average Down:**\nAdding to a losing position to get a better average price.\nThis is how traders blow accounts.\nIf your thesis was wrong — exit, don't double down.`,
+        keyTerms: ["Scaling Out", "Scaling In", "Partial Profits", "Breakeven Stop", "Averaging Down", "Position Management"]
+      },
+      {
+        id: "s13l4",
+        title: "Funded Account Rules",
+        content: `If you trade a funded account through a prop firm like FTMO, TopStep, or Apex — the rules of trade management become even more critical. Breaking the rules means losing your funding.\n\n**What Is a Funded Account?**\nA prop firm gives you their money to trade.\nYou keep 80-90% of profits.\nYou must follow strict risk rules or you lose the account.\n\n**Common Funded Account Rules:**\n\n📏 **Max Daily Loss**\nTypically 4-5% of account.\nHit this limit and trading is locked for the day.\nThis is the most important rule — respect it always.\n\n📏 **Max Total Drawdown**\nTypically 8-10% of account.\nHit this and you lose the funded account entirely.\nMust be restarted from scratch.\n\n📏 **Profit Target (Evaluation Phase)**\nMust hit a profit target (usually 8-10%) to get funded.\nMust do this within the drawdown rules.\n\n**Strategies for Protecting a Funded Account:**\n• Set a personal daily loss limit at 50-60% of the firm's limit\n• Stop trading for the day after 2 losing trades\n• Reduce size after any losing streak\n• Never trade during high impact news events\n• Keep a trading journal — review every trade\n\n**The Mental Shift:**\nWith a funded account — capital preservation comes FIRST.\nProfits come from staying in the game consistently.\nOne bad day can erase weeks of work.`,
+        keyTerms: ["Funded Account", "Prop Firm", "Max Daily Loss", "Drawdown Limit", "FTMO", "TopStep", "Evaluation"]
+      }
+    ],
+    quiz: [
+      { q: "What should you NEVER do with your stop loss after entering a trade?", options: ["Move it to breakeven", "Move it in your favor", "Move it further away from entry", "Remove it entirely"], answer: 2 },
+      { q: "A trailing stop is used to:", options: ["Enter trades at better prices", "Lock in profits as price moves in your favor", "Set a fixed exit point", "Reduce your position size"], answer: 1 },
+      { q: "Scaling out means:", options: ["Adding more contracts as price moves against you", "Closing your entire position at once", "Closing portions of your position at different profit levels", "Moving your stop further away"], answer: 2 },
+      { q: "When should you move your stop to breakeven?", options: ["Immediately after entry", "When the trade reaches 1:1 risk/reward", "Only when price hits your target", "Never — keep the original stop"], answer: 1 }
+    ]
+  },
+
+  {
+    id: 14,
+    title: "Trading Tools",
+    icon: "🛠️",
+    color: "#fbbf24",
+    desc: "Master TradingView, the DOM, order flow, and the tools professional traders use every day.",
+    plan: "pro",
+    lessons: [
+      {
+        id: "s14l1",
+        title: "TradingView — Your Command Center",
+        content: `TradingView is the most popular charting platform in the world. Every serious trader uses it. Here is how to get the most out of it.\n\n**Getting Started:**\nGo to tradingview.com — free account works fine to start.\nPro plan ($15/month) gives more indicators and alerts.\nConnect your broker for live trading (optional).\n\n**Essential TradingView Features:**\n\n📊 **Chart Types**\nCandlestick — standard, use this always.\nHeikin Ashi — smoothed candles, good for trend following.\n\n⏱️ **Timeframes**\nDaily/4H — bias and key levels\n1H/15M — entry setups\n5M/1M — precise entry timing\n\n✏️ **Drawing Tools**\nHorizontal lines — support and resistance\nTrend lines — channels and diagonals\nFib retracement — pullback levels\nRectangles — zones and order blocks\n\n🔔 **Alerts**\nSet price alerts at key levels.\nGet notified on your phone when price reaches your level.\nThis lets you step away from the screen without missing setups.\n\n**The Top-Down Analysis Workflow:**\n1. Start on the Daily chart — what is the big picture trend?\n2. Drop to 4H — where are the key levels?\n3. Drop to 1H — what setup is forming?\n4. Drop to 15M/5M — fine tune the entry\n\n**Pro Tips:**\nSave your chart layouts — one for each market you trade.\nUse the replay function to practice reading price action on historical data.\nPin your most used indicators to the toolbar.`,
+        keyTerms: ["TradingView", "Timeframes", "Drawing Tools", "Alerts", "Multi-Chart", "Top-Down Analysis"]
+      },
+      {
+        id: "s14l2",
+        title: "The DOM — Depth of Market",
+        content: `The DOM (Depth of Market) shows you all the pending buy and sell orders at every price level. It is like an x-ray of the order book.\n\n**What the DOM Shows:**\n• All limit buy orders below current price (bids)\n• All limit sell orders above current price (asks)\n• The current bid/ask spread\n• How many contracts are at each level\n\n**Reading the DOM:**\nBig number of contracts at a price level = strong support or resistance there.\nSmart money uses large orders to protect their positions.\n\n**Key DOM Concepts:**\n\n🟢 **Bid Stack**\nAll the buy orders waiting below price.\nLarge bid at a level = price likely to bounce there.\n\n🔴 **Ask Stack**\nAll the sell orders waiting above price.\nLarge ask at a level = price likely to reject there.\n\n⚡ **Absorption**\nWhen a large order gets completely filled and price still does not move much.\nSign that even bigger orders are on the other side.\nVery important signal.\n\n**Market Orders vs Limit Orders:**\nMarket order — fills immediately at current price. Moves price.\nLimit order — sits in the book waiting. Does not move price until filled.\n\n**Using the DOM for Entries:**\nWatch for large orders appearing near your key levels.\nIf a big bid appears at your support — confidence increases to go long.\nIf price slams through large bids — bearish sign, do not buy.`,
+        keyTerms: ["DOM", "Depth of Market", "Bid", "Ask", "Order Book", "Absorption", "Limit Orders"]
+      },
+      {
+        id: "s14l3",
+        title: "Order Flow Basics",
+        content: `Order flow is the most advanced tool in trading. It shows you exactly who is buying and selling and at what price in real time.\n\n**What Is Order Flow?**\nTraditional charts show you where price went.\nOrder flow shows you HOW price got there — the actual buying and selling.\n\n**Footprint Charts:**\nEvery candle is broken down to show:\n• How many contracts bought vs sold at each price\n• Where the most volume occurred\n• Delta — difference between buys and sells\n\n**Key Order Flow Concepts:**\n\n📊 **Delta**\nBuy volume minus sell volume.\nPositive delta = more buying than selling.\nNegative delta = more selling than buying.\nDivergence: price goes up but delta is negative = weakness.\n\n📊 **Volume Profile**\nShows how much volume traded at each price level.\nHigh Volume Node (HVN) = price spent a lot of time here = strong support/resistance.\nLow Volume Node (LVN) = price moved quickly through here = thin area, can move fast.\nPoint of Control (POC) = price level with the most volume traded.\n\n📊 **VWAP — Volume Weighted Average Price**\nThe average price weighted by volume.\nInstitutions use VWAP as their benchmark.\nPrice above VWAP = bullish.\nPrice below VWAP = bearish.\nVWAP often acts as support or resistance intraday.\n\n**Best Tools for Order Flow:**\n• Bookmap — visual DOM and order flow\n• Sierra Chart — professional grade\n• Tradovate — decent built in tools\n• NinjaTrader — popular with futures traders`,
+        keyTerms: ["Order Flow", "Footprint Chart", "Delta", "Volume Profile", "VWAP", "Point of Control", "HVN", "LVN"]
+      },
+      {
+        id: "s14l4",
+        title: "Building Your Trading Setup",
+        content: `Your trading environment matters more than most traders realize. A clean professional setup reduces mistakes and improves focus.\n\n**Essential Software:**\n\n📱 **TradingView** — charting and analysis\nFree plan works. Pro plan for more features.\nUse on computer AND phone for alerts on the go.\n\n💹 **Your Broker Platform** — execution\nFor futures: NinjaTrader, Tradovate, Sierra Chart, Rithmic.\nFor stocks: Thinkorswim (TDA/Schwab), Interactive Brokers.\nFor crypto: Binance, Coinbase Pro.\n\n📰 **Economic Calendar** — ForexFactory.com\nCheck this every single morning.\nMark the high impact events.\nPlan your trading day around them.\n\n📓 **Trading Journal** — TradeAura (you are already here!)\nLog every trade.\nReview every week.\nThis is your most important tool for growth.\n\n**Your Morning Routine Setup:**\n1. Check economic calendar — any news today?\n2. Review higher timeframe charts (daily/4H) — what is the bias?\n3. Identify key levels for the day\n4. Set price alerts on TradingView\n5. Write your game plan in TradeAura\n6. Only then — open your execution platform\n\n**Hardware Tips:**\nTwo monitors help but are not required.\nFast reliable internet is essential — cable over WiFi if possible.\nBackup internet (phone hotspot) for important trading days.\nQuiet distraction-free environment — treat it like a job.`,
+        keyTerms: ["TradingView", "Broker Platform", "Economic Calendar", "Trading Journal", "Morning Routine", "Setup"]
+      }
+    ],
+    quiz: [
+      { q: "What is TradingView primarily used for?", options: ["Executing trades", "Charting and technical analysis", "News and fundamentals", "Tax reporting"], answer: 1 },
+      { q: "The DOM (Depth of Market) shows you:", options: ["Historical price data", "Pending buy and sell orders at each price level", "Economic calendar events", "Your account P&L"], answer: 1 },
+      { q: "VWAP stands for:", options: ["Very Wide Average Price", "Volume Weighted Average Price", "Volatile Wave Action Pattern", "Volume With Average Peaks"], answer: 1 },
+      { q: "What should you check FIRST in your morning routine?", options: ["Your P&L from yesterday", "Social media for trading tips", "The economic calendar for high impact news", "Your email"], answer: 2 }
+    ]
+  },
+
+  {
+    id: 15,
+    title: "Setups & Strategies",
+    icon: "🎯",
+    color: "#f87171",
+    desc: "Learn specific high-probability trade setups that professional traders use every single day.",
+    plan: "elite",
+    lessons: [
+      {
+        id: "s15l1",
+        title: "The BOS + Retest Setup",
+        content: `This is one of the highest probability setups in trading. It combines market structure with a precise entry technique.\n\n**The Setup Step by Step:**\n\n**Step 1 — Identify the trend**\nLook at the higher timeframe (1H or 4H).\nIs price making higher highs and higher lows? Bullish.\nIs price making lower highs and lower lows? Bearish.\n\n**Step 2 — Wait for BOS**\nPrice breaks a significant swing high (bullish BOS).\nThis confirms the direction you want to trade.\n\n**Step 3 — Wait for the Retest**\nAfter the BOS, price pulls back.\nIt returns to test the level it just broke through.\nThe old resistance becomes new support.\n\n**Step 4 — Look for Confirmation**\nAt the retest level, look for a bullish candle pattern.\nHammer, bullish engulfing, pin bar — any rejection signal.\nThis confirms buyers are holding the level.\n\n**Step 5 — Enter**\nEnter long as the confirmation candle closes.\nStop loss just below the retest level.\nTarget the next significant swing high.\n\n**Why This Works:**\nThe BOS tells you direction.\nThe retest gives you a low risk entry.\nConfirmation reduces false signals.\nRisk is clearly defined and small.\n\n**Best Timeframes:** 15m entries with 1H/4H for bias.\n**Best Markets:** ES1!, NQ1!, any trending market.`,
+        keyTerms: ["BOS Retest", "Old Resistance New Support", "Confirmation", "Entry Signal", "Trend Following"]
+      },
+      {
+        id: "s15l2",
+        title: "The Order Block Entry",
+        content: `The order block entry is a Smart Money strategy that puts you in trades where institutions are entering. When done correctly it offers exceptional risk to reward.\n\n**The Full Setup:**\n\n**Step 1 — Find a valid order block**\nLook for the last bearish candle before a strong bullish move.\nOr the last bullish candle before a strong bearish move.\nThe move away from it must be impulsive and strong.\n\n**Step 2 — Confirm with BOS**\nThe move away from the order block should cause a BOS.\nThis validates that institutions caused the move.\n\n**Step 3 — Wait for price to return**\nPrice will often come back to test the order block.\nThis is institutions refilling their orders.\nBe patient — this can take minutes, hours, or days.\n\n**Step 4 — Enter at the order block**\nPlace a limit order at the top of the bullish order block (for longs).\nOr at the bottom of the bearish order block (for shorts).\n\n**Step 5 — Stop and Target**\nStop: below the order block (a few ticks below the low).\nTarget: the next significant swing high or liquidity pool.\nAim for minimum 1:3 risk to reward on OB entries.\n\n**Signs of a High Quality Order Block:**\n✅ In a discount zone (for bullish OB)\n✅ Aligns with higher timeframe support\n✅ Has not been tested too many times\n✅ Strong impulsive move away from it\n✅ BOS was created after it`,
+        keyTerms: ["Order Block Entry", "Limit Order", "Institutional Entry", "Discount Zone", "Stop Placement", "Target"]
+      },
+      {
+        id: "s15l3",
+        title: "The Opening Range Breakout",
+        content: `The Opening Range Breakout (ORB) is one of the most reliable intraday setups. It works because the first 30 minutes of the New York session sets the tone for the entire day.\n\n**What Is the Opening Range?**\nThe high and low of the first 30 minutes after the NY open (9:30 - 10:00 AM ET).\nThis range is marked on the chart.\nBreakout above or below this range signals direction for the day.\n\n**The Setup:**\n\n**Step 1 — Mark the opening range**\nAt exactly 10:00 AM ET — mark the high and low of the first 30 min.\nDraw horizontal lines at both levels.\n\n**Step 2 — Wait for the breakout**\nPrice must close ABOVE the range high for a long.\nPrice must close BELOW the range low for a short.\nDo not act on a wick through — wait for a close.\n\n**Step 3 — Enter on confirmation**\nThe candle that closes above/below the range is your signal.\nEnter at the open of the next candle.\nOr wait for a retest of the broken level.\n\n**Step 4 — Stop and Target**\nStop: inside the opening range (below the high for longs).\nTarget: 1.5x to 2x the opening range height.\n\n**Why ORB Works:**\nThe open is when institutional traders start their day.\nThe first 30 minutes is price discovery.\nOnce direction is established — institutions follow through.\nThe ORB captures this institutional follow-through.\n\n**Best Days for ORB:**\nDays with economic news before or at the open.\nHigh volume days.\nAvoid low volume days like holidays.`,
+        keyTerms: ["Opening Range Breakout", "ORB", "NY Open", "Price Discovery", "Follow Through", "Range High", "Range Low"]
+      },
+      {
+        id: "s15l4",
+        title: "Liquidity Sweep Setup",
+        content: `The liquidity sweep setup is a Smart Money strategy that profits from stop hunts — one of the most reliable and profitable patterns in the market.\n\n**The Concept:**\nRetail traders place their stop losses in obvious locations.\nSmart money knows exactly where these stops are.\nThey push price to those stops to trigger them.\nThen price reverses sharply in the opposite direction.\n\n**Common Liquidity Locations:**\n• Above obvious swing highs (buy stops)\n• Below obvious swing lows (sell stops)\n• Above round numbers (5,000, 5,100, 5,200)\n• Equal highs or equal lows (double tops/bottoms)\n• Previous day high and low\n\n**The Setup Step by Step:**\n\n**Step 1 — Identify the liquidity**\nFind equal highs or obvious swing highs.\nThis is where retail buy stops are sitting.\n\n**Step 2 — Wait for the sweep**\nPrice spikes above those highs — triggering all the stops.\nThis often happens quickly and violently.\nDo NOT enter during the spike.\n\n**Step 3 — Watch for rejection**\nAfter sweeping liquidity, price should reject and reverse.\nA bearish candle forming after sweeping highs = short signal.\nA bullish candle forming after sweeping lows = long signal.\n\n**Step 4 — Enter on the reversal**\nEnter as the reversal candle closes.\nStop above the high of the sweep.\nTarget the next key level below.\n\n**Why This Is Powerful:**\nYou are entering exactly where smart money entered.\nRisk is very small — stop is just above the sweep.\nTarget is the new direction — often a large move.\nR:R of 1:3 to 1:5 is common on sweep setups.`,
+        keyTerms: ["Liquidity Sweep", "Stop Hunt", "Equal Highs", "Equal Lows", "Reversal Entry", "Smart Money Trap"]
+      }
+    ],
+    quiz: [
+      { q: "In the BOS + Retest setup, what does the retest confirm?", options: ["The trend has reversed", "Old resistance has become new support", "Volume is increasing", "The setup has failed"], answer: 1 },
+      { q: "For an order block entry, where do you place your stop loss?", options: ["Above the order block", "Inside the order block", "Below the order block", "At your target price"], answer: 2 },
+      { q: "The Opening Range Breakout uses the price action from:", options: ["The entire previous day", "The first 30 minutes after the NY open", "The London session open", "The Asian session"], answer: 1 },
+      { q: "In a liquidity sweep setup, when do you enter the trade?", options: ["During the spike through liquidity", "Before price reaches the liquidity", "After price sweeps liquidity and shows reversal", "At the end of the trading day"], answer: 2 }
+    ]
   }
 ];
 
