@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { LESSON_VISUALS } from "./TradingVisuals";
 
 const C = {
   bg:"#0f1117", surf:"#161b27", surf2:"#1c2333", bord:"#232d40",
@@ -594,6 +595,8 @@ export default function EducationCenter({ userPlan = "free" }) {
             <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{activeLesson.title}</div>
           </div>
         </div>
+
+        {LESSON_VISUALS[activeLesson.id]}
 
         <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
           {activeLesson.content.split("\n\n").map((block, i) => {
