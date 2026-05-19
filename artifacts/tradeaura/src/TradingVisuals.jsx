@@ -123,8 +123,8 @@ export function UptrendVisual() {
 export function MovingAverageVisual() {
   return (
     <Wrap title="MOVING AVERAGES — 9 EMA / 50 SMA / 200 SMA">
-      <svg viewBox="0 0 320 190" style={{ width:"100%", height:"auto" }}>
-        <rect width="320" height="190" fill={C.bg} rx="8"/>
+      <svg viewBox="0 0 320 215" style={{ width:"100%", height:"auto" }}>
+        <rect width="320" height="215" fill={C.bg} rx="8"/>
         {[50,95,140].map(y => <line key={y} x1="15" y1={y} x2="305" y2={y} stroke={C.bord} strokeWidth="0.5"/>)}
         <polyline points="15,135 35,120 55,128 75,108 95,118 115,96 135,108 155,84 175,96 195,75 215,88 235,65 255,78 275,56 300,62"
           fill="none" stroke={C.dim} strokeWidth="1" strokeDasharray="2,2" opacity="0.5"/>
@@ -134,12 +134,12 @@ export function MovingAverageVisual() {
           fill="none" stroke={C.gold} strokeWidth="2.5"/>
         <polyline points="15,160 70,148 130,133 190,116 250,98 300,85"
           fill="none" stroke={C.purp} strokeWidth="3"/>
-        <line x1="15" y1="170" x2="32" y2="170" stroke={C.blue} strokeWidth="2"/>
-        <text x="37" y="173" fill={C.blue} fontSize="8">9 EMA — fast, short term</text>
-        <line x1="140" y1="170" x2="157" y2="170" stroke={C.gold} strokeWidth="2.5"/>
-        <text x="162" y="173" fill={C.gold} fontSize="8">50 SMA — medium trend</text>
-        <line x1="15" y1="183" x2="32" y2="183" stroke={C.purp} strokeWidth="3"/>
-        <text x="37" y="186" fill={C.purp} fontSize="8">200 SMA — long term, THE big one</text>
+        <line x1="15" y1="172" x2="35" y2="172" stroke={C.blue} strokeWidth="2"/>
+        <text x="40" y="175" fill={C.blue} fontSize="9">9 EMA — fast, short term momentum</text>
+        <line x1="15" y1="186" x2="35" y2="186" stroke={C.gold} strokeWidth="2.5"/>
+        <text x="40" y="189" fill={C.gold} fontSize="9">50 SMA — medium term trend</text>
+        <line x1="15" y1="200" x2="35" y2="200" stroke={C.purp} strokeWidth="3"/>
+        <text x="40" y="203" fill={C.purp} fontSize="9">200 SMA — long term, THE big one</text>
       </svg>
     </Wrap>
   );
