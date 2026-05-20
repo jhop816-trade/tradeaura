@@ -1,13 +1,4 @@
 {
-  "buildCommand": "pnpm --filter @workspace/tradeaura run build",
-  "outputDirectory": "artifacts/tradeaura/dist",
-  "installCommand": "pnpm install",
-  "framework": null,
-  "build": {
-    "env": {
-      "PORT": "3000"
-    }
-  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
