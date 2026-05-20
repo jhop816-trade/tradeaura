@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import EducationCenter from "./EducationCenter";
-import TradeReplay from "./TradeReplay";
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -782,7 +781,7 @@ export default function App() {
   if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"monospace",fontSize:13}}>Loading…</div>;
   if(!user)return<AuthScreen onAuth={setUser}/>;
 
-  const nav=[{id:"home",icon:"⌂",label:"HOME"},{id:"journal",icon:"≡",label:"JOURNAL"},{id:"calendar",icon:"◻",label:"CALENDAR"},{id:"stats",icon:"◈",label:"STATS"},{id:"review",icon:"◉",label:"REVIEW"},{id:"replay",icon:"↺",label:"REPLAY"},{id:"learn",icon:"🎓",label:"LEARN"},{id:"feedback",icon:"💬",label:"FEEDBACK"}];
+  const nav=[{id:"home",icon:"⌂",label:"HOME"},{id:"journal",icon:"≡",label:"JOURNAL"},{id:"calendar",icon:"◻",label:"CALENDAR"},{id:"stats",icon:"◈",label:"STATS"},{id:"review",icon:"◉",label:"REVIEW"},{id:"learn",icon:"🎓",label:"LEARN"},{id:"feedback",icon:"💬",label:"FEEDBACK"}];
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'DM Mono','Fira Code','Courier New',monospace",maxWidth:480,margin:"0 auto"}}>
@@ -811,7 +810,6 @@ export default function App() {
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
-        {view==="replay"&&<TradeReplay userPlan="elite"/>}
         {view==="learn"&&<EducationCenter userPlan={plan}/>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
