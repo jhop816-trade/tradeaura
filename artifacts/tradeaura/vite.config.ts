@@ -11,11 +11,9 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH ?? "/";
 const isProductionBuild = process.env.NODE_ENV === "production";
 
 export default defineConfig({
-  base: basePath,
   plugins: [
     react(),
     tailwindcss(),
