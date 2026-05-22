@@ -43,6 +43,10 @@ function Tag({color,children}: {color:string,children:React.ReactNode}){ return 
 function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
 
 // ── API CLIENT ────────────────────────────────────────────────────────────────
+// Set VITE_API_URL in Vercel env vars to the api-server deployment URL.
+// Leave unset (or empty) for local dev where /api is served from the same origin.
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
 async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? "";
@@ -50,7 +54,7 @@ async function getAuthToken(): Promise<string> {
 
 async function apiCall(method: string, path: string, body?: unknown): Promise<any> {
   const token = await getAuthToken();
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     method,
     headers: {
       "Content-Type": "application/json",
