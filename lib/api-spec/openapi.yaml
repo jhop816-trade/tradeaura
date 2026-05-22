@@ -234,7 +234,7 @@ components:
           type: integer
         symbol:
           type: string
-          description: Ticker symbol (e.g. AAPL, TSLA)
+          description: Ticker symbol (e.g. ES1!, NQ1!, AAPL)
         direction:
           type: string
           enum: [long, short]
@@ -261,15 +261,42 @@ components:
           type: ["number", "null"]
         takeProfit:
           type: ["number", "null"]
+        manualPnl:
+          type: ["number", "null"]
+          description: Override the computed P&L with a manually entered value
         outcome:
           type: string
           enum: [win, loss, breakeven]
-        strategy:
+        setup:
           type: ["string", "null"]
+          description: Trade setup or pattern (e.g. BOS + Retest, ICT)
+        session:
+          type: ["string", "null"]
+          description: Trading session (e.g. New York, London)
+        mood:
+          type: ["string", "null"]
+          description: Trader mood at entry (e.g. Focused, Emotional)
+        rulesFollowed:
+          type: ["array", "null"]
+          items:
+            type: string
+          description: List of trading rules that were followed
         notes:
           type: ["string", "null"]
         tags:
           type: ["string", "null"]
+        screenshot:
+          type: ["string", "null"]
+          description: Base64-encoded chart screenshot
+        accountType:
+          type: ["string", "null"]
+          enum: [live, paper, null]
+        aiGrade:
+          type: ["string", "null"]
+          description: AI-assigned grade (A/B/C/D/F)
+        aiFeedback:
+          type: ["object", "null"]
+          description: Full AI feedback JSON
         createdAt:
           type: string
           format: date-time
@@ -306,12 +333,30 @@ components:
           type: ["number", "null"]
         takeProfit:
           type: ["number", "null"]
-        strategy:
+        manualPnl:
+          type: ["number", "null"]
+        setup:
           type: ["string", "null"]
+        session:
+          type: ["string", "null"]
+        mood:
+          type: ["string", "null"]
+        rulesFollowed:
+          type: ["array", "null"]
+          items:
+            type: string
         notes:
           type: ["string", "null"]
         tags:
           type: ["string", "null"]
+        screenshot:
+          type: ["string", "null"]
+        accountType:
+          type: ["string", "null"]
+        aiGrade:
+          type: ["string", "null"]
+        aiFeedback:
+          type: ["object", "null"]
 
     TradeUpdate:
       type: object
@@ -337,12 +382,30 @@ components:
           type: ["number", "null"]
         takeProfit:
           type: ["number", "null"]
-        strategy:
+        manualPnl:
+          type: ["number", "null"]
+        setup:
           type: ["string", "null"]
+        session:
+          type: ["string", "null"]
+        mood:
+          type: ["string", "null"]
+        rulesFollowed:
+          type: ["array", "null"]
+          items:
+            type: string
         notes:
           type: ["string", "null"]
         tags:
           type: ["string", "null"]
+        screenshot:
+          type: ["string", "null"]
+        accountType:
+          type: ["string", "null"]
+        aiGrade:
+          type: ["string", "null"]
+        aiFeedback:
+          type: ["object", "null"]
 
     StatsSummary:
       type: object

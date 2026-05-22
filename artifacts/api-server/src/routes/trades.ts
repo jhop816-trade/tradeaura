@@ -41,6 +41,36 @@ function toNum(val: unknown): number {
   return Number(val ?? 0);
 }
 
+function serializeJson(val: unknown): string | null {
+  if (val == null) return null;
+  return JSON.stringify(val);
+}
+
+function parseJson(val: string | null): unknown {
+  if (val == null) return null;
+  try { return JSON.parse(val); } catch { return null; }
+}
+
+function mapRow(r: typeof tradesTable.$inferSelect) {
+  return {
+    ...r,
+    entryPrice: toNum(r.entryPrice),
+    exitPrice: toNum(r.exitPrice),
+    quantity: toNum(r.quantity),
+    pnl: toNum(r.pnl),
+    pnlPercent: r.pnlPercent != null ? toNum(r.pnlPercent) : null,
+    riskRewardRatio: r.riskRewardRatio != null ? toNum(r.riskRewardRatio) : null,
+    stopLoss: r.stopLoss != null ? toNum(r.stopLoss) : null,
+    takeProfit: r.takeProfit != null ? toNum(r.takeProfit) : null,
+    manualPnl: r.manualPnl != null ? toNum(r.manualPnl) : null,
+    entryDate: r.entryDate.toISOString(),
+    exitDate: r.exitDate.toISOString(),
+    createdAt: r.createdAt.toISOString(),
+    rulesFollowed: parseJson(r.rulesFollowed) as string[] | null,
+    aiFeedback: parseJson(r.aiFeedback) as Record<string, unknown> | null,
+  };
+}
+
 // List trades with optional filters
 router.get("/trades", async (req, res): Promise<void> => {
   const query = ListTradesQueryParams.safeParse(req.query);
@@ -64,22 +94,7 @@ router.get("/trades", async (req, res): Promise<void> => {
     .limit(limit)
     .offset(offset);
 
-  const mapped = rows.map((r) => ({
-    ...r,
-    entryPrice: toNum(r.entryPrice),
-    exitPrice: toNum(r.exitPrice),
-    quantity: toNum(r.quantity),
-    pnl: toNum(r.pnl),
-    pnlPercent: r.pnlPercent != null ? toNum(r.pnlPercent) : null,
-    riskRewardRatio: r.riskRewardRatio != null ? toNum(r.riskRewardRatio) : null,
-    stopLoss: r.stopLoss != null ? toNum(r.stopLoss) : null,
-    takeProfit: r.takeProfit != null ? toNum(r.takeProfit) : null,
-    entryDate: r.entryDate.toISOString(),
-    exitDate: r.exitDate.toISOString(),
-    createdAt: r.createdAt.toISOString(),
-  }));
-
-  res.json(ListTradesResponse.parse(mapped));
+  res.json(ListTradesResponse.parse(rows.map(mapRow)));
 });
 
 // Create trade
@@ -94,7 +109,8 @@ router.post("/trades", async (req, res): Promise<void> => {
   const entryPrice = Number(d.entryPrice);
   const exitPrice = Number(d.exitPrice);
   const quantity = Number(d.quantity);
-  const pnl = computePnl(d.direction, entryPrice, exitPrice, quantity);
+  const computedPnl = computePnl(d.direction, entryPrice, exitPrice, quantity);
+  const pnl = d.manualPnl != null ? d.manualPnl : computedPnl;
   const pnlPercent = entryPrice !== 0 ? ((exitPrice - entryPrice) / entryPrice) * 100 : 0;
   const outcome = computeOutcome(pnl);
 
@@ -121,29 +137,22 @@ router.post("/trades", async (req, res): Promise<void> => {
       riskRewardRatio: riskRewardRatio != null ? String(riskRewardRatio) : null,
       stopLoss: d.stopLoss != null ? String(d.stopLoss) : null,
       takeProfit: d.takeProfit != null ? String(d.takeProfit) : null,
+      manualPnl: d.manualPnl != null ? String(d.manualPnl) : null,
       outcome,
-      strategy: d.strategy ?? null,
+      setup: d.setup ?? null,
+      session: d.session ?? null,
+      mood: d.mood ?? null,
+      rulesFollowed: serializeJson(d.rulesFollowed),
       notes: d.notes ?? null,
       tags: d.tags ?? null,
+      screenshot: d.screenshot ?? null,
+      accountType: d.accountType ?? null,
+      aiGrade: d.aiGrade ?? null,
+      aiFeedback: serializeJson(d.aiFeedback),
     })
     .returning();
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.status(201).json(GetTradeResponse.parse(trade));
+  res.status(201).json(GetTradeResponse.parse(mapRow(row)));
 });
 
 // Get single trade
@@ -164,22 +173,7 @@ router.get("/trades/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.json(GetTradeResponse.parse(trade));
+  res.json(GetTradeResponse.parse(mapRow(row)));
 });
 
 // Update trade
@@ -211,7 +205,9 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
   const exitPrice = d.exitPrice != null ? Number(d.exitPrice) : toNum(existing.exitPrice);
   const quantity = d.quantity != null ? Number(d.quantity) : toNum(existing.quantity);
   const direction = d.direction ?? existing.direction;
-  const pnl = computePnl(direction, entryPrice, exitPrice, quantity);
+  const computedPnl = computePnl(direction, entryPrice, exitPrice, quantity);
+  const manualPnlRaw = d.manualPnl !== undefined ? d.manualPnl : (existing.manualPnl != null ? toNum(existing.manualPnl) : null);
+  const pnl = manualPnlRaw != null ? manualPnlRaw : computedPnl;
   const pnlPercent = entryPrice !== 0 ? ((exitPrice - entryPrice) / entryPrice) * 100 : 0;
   const outcome = computeOutcome(pnl);
 
@@ -235,14 +231,22 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     direction,
     stopLoss: stopLossRaw != null ? String(stopLossRaw) : null,
     takeProfit: takeProfitRaw != null ? String(takeProfitRaw) : null,
+    manualPnl: manualPnlRaw != null ? String(manualPnlRaw) : null,
   };
 
   if (d.symbol != null) updateValues.symbol = d.symbol.toUpperCase();
   if (d.entryDate != null) updateValues.entryDate = new Date(d.entryDate);
   if (d.exitDate != null) updateValues.exitDate = new Date(d.exitDate);
-  if (d.strategy !== undefined) updateValues.strategy = d.strategy;
+  if (d.setup !== undefined) updateValues.setup = d.setup;
+  if (d.session !== undefined) updateValues.session = d.session;
+  if (d.mood !== undefined) updateValues.mood = d.mood;
+  if (d.rulesFollowed !== undefined) updateValues.rulesFollowed = serializeJson(d.rulesFollowed);
   if (d.notes !== undefined) updateValues.notes = d.notes;
   if (d.tags !== undefined) updateValues.tags = d.tags;
+  if (d.screenshot !== undefined) updateValues.screenshot = d.screenshot;
+  if (d.accountType !== undefined) updateValues.accountType = d.accountType;
+  if (d.aiGrade !== undefined) updateValues.aiGrade = d.aiGrade;
+  if (d.aiFeedback !== undefined) updateValues.aiFeedback = serializeJson(d.aiFeedback);
 
   const [row] = await db
     .update(tradesTable)
@@ -250,22 +254,7 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)))
     .returning();
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.json(UpdateTradeResponse.parse(trade));
+  res.json(UpdateTradeResponse.parse(mapRow(row)));
 });
 
 // Delete trade
@@ -315,7 +304,7 @@ router.get("/stats/summary", async (req, res): Promise<void> => {
       ? rrRows.reduce((s, r) => s + toNum(r.riskRewardRatio), 0) / rrRows.length
       : 0;
 
-  const summary = {
+  res.json(GetStatsSummaryResponse.parse({
     totalTrades,
     totalPnl,
     winRate,
@@ -326,9 +315,7 @@ router.get("/stats/summary", async (req, res): Promise<void> => {
     winCount: wins.length,
     lossCount: losses.length,
     breakevenCount: breakevenRows.length,
-  };
-
-  res.json(GetStatsSummaryResponse.parse(summary));
+  }));
 });
 
 // Stats: by symbol
