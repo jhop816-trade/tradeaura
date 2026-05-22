@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db, tradesTable } from "@workspace/db";
 import {
   ListTradesQueryParams,
@@ -51,7 +51,7 @@ router.get("/trades", async (req, res): Promise<void> => {
 
   const { symbol, direction, outcome, limit = 50, offset = 0 } = query.data;
 
-  const conditions = [];
+  const conditions = [eq(tradesTable.userId, req.userId)];
   if (symbol) conditions.push(eq(tradesTable.symbol, symbol.toUpperCase()));
   if (direction) conditions.push(eq(tradesTable.direction, direction));
   if (outcome) conditions.push(eq(tradesTable.outcome, outcome));
@@ -59,7 +59,7 @@ router.get("/trades", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(tradesTable)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(tradesTable.entryDate))
     .limit(limit)
     .offset(offset);
@@ -108,6 +108,7 @@ router.post("/trades", async (req, res): Promise<void> => {
   const [row] = await db
     .insert(tradesTable)
     .values({
+      userId: req.userId,
       symbol: d.symbol.toUpperCase(),
       direction: d.direction,
       entryPrice: String(entryPrice),
@@ -156,7 +157,7 @@ router.get("/trades/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(tradesTable)
-    .where(eq(tradesTable.id, params.data.id));
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)));
 
   if (!row) {
     res.status(404).json({ error: "Trade not found" });
@@ -195,11 +196,10 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  // Fetch existing row to recalculate derived fields
   const [existing] = await db
     .select()
     .from(tradesTable)
-    .where(eq(tradesTable.id, params.data.id));
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)));
 
   if (!existing) {
     res.status(404).json({ error: "Trade not found" });
@@ -247,7 +247,7 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(tradesTable)
     .set(updateValues)
-    .where(eq(tradesTable.id, params.data.id))
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)))
     .returning();
 
   const trade = {
@@ -278,7 +278,7 @@ router.delete("/trades/:id", async (req, res): Promise<void> => {
 
   const [deleted] = await db
     .delete(tradesTable)
-    .where(eq(tradesTable.id, params.data.id))
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)))
     .returning();
 
   if (!deleted) {
@@ -290,8 +290,11 @@ router.delete("/trades/:id", async (req, res): Promise<void> => {
 });
 
 // Stats: summary
-router.get("/stats/summary", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/summary", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const totalTrades = rows.length;
   const totalPnl = rows.reduce((s, r) => s + toNum(r.pnl), 0);
@@ -304,7 +307,8 @@ router.get("/stats/summary", async (_req, res): Promise<void> => {
     losses.length > 0 ? losses.reduce((s, r) => s + toNum(r.pnl), 0) / losses.length : 0;
   const totalWinAmount = wins.reduce((s, r) => s + toNum(r.pnl), 0);
   const totalLossAmount = Math.abs(losses.reduce((s, r) => s + toNum(r.pnl), 0));
-  const profitFactor = totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount > 0 ? 999 : 0;
+  const profitFactor =
+    totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount > 0 ? 999 : 0;
   const rrRows = rows.filter((r) => r.riskRewardRatio != null);
   const avgRiskReward =
     rrRows.length > 0
@@ -328,8 +332,11 @@ router.get("/stats/summary", async (_req, res): Promise<void> => {
 });
 
 // Stats: by symbol
-router.get("/stats/by-symbol", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/by-symbol", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const map: Record<string, { pnl: number; total: number; wins: number }> = {};
   for (const r of rows) {
@@ -352,10 +359,11 @@ router.get("/stats/by-symbol", async (_req, res): Promise<void> => {
 });
 
 // Stats: equity curve
-router.get("/stats/equity-curve", async (_req, res): Promise<void> => {
+router.get("/stats/equity-curve", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId))
     .orderBy(tradesTable.exitDate);
 
   const dateMap: Record<string, number> = {};
@@ -374,8 +382,11 @@ router.get("/stats/equity-curve", async (_req, res): Promise<void> => {
 });
 
 // Stats: by day of week
-router.get("/stats/by-day", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/by-day", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const map: Record<string, { pnl: number; total: number; wins: number }> = {};
