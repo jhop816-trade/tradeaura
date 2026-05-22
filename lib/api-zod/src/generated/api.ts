@@ -28,13 +28,15 @@ export const ListTradesQueryParams = zod.object({
   "symbol": zod.coerce.string().optional().describe('Filter by ticker symbol'),
   "direction": zod.enum(['long', 'short']).optional().describe('Filter by trade direction'),
   "outcome": zod.enum(['win', 'loss', 'breakeven']).optional().describe('Filter by outcome'),
+  "accountId": zod.string().optional().describe('Filter by account ID'),
   "limit": zod.coerce.number().default(listTradesQueryLimitDefault),
   "offset": zod.coerce.number().default(listTradesQueryOffsetDefault)
 })
 
 export const ListTradesResponseItem = zod.object({
   "id": zod.number(),
-  "symbol": zod.string().describe('Ticker symbol (e.g. AAPL, TSLA)'),
+  "accountId": zod.string().nullish(),
+  "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
   "exitPrice": zod.number(),
@@ -46,10 +48,18 @@ export const ListTradesResponseItem = zod.object({
   "riskRewardRatio": zod.number().nullish(),
   "stopLoss": zod.number().nullish(),
   "takeProfit": zod.number().nullish(),
+  "manualPnl": zod.number().nullish(),
   "outcome": zod.enum(['win', 'loss', 'breakeven']),
-  "strategy": zod.string().nullish(),
+  "setup": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "mood": zod.string().nullish(),
+  "rulesFollowed": zod.array(zod.string()).nullish(),
   "notes": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "screenshot": zod.string().nullish(),
+  "accountType": zod.string().nullish(),
+  "aiGrade": zod.string().nullish(),
+  "aiFeedback": zod.record(zod.unknown()).nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 export const ListTradesResponse = zod.array(ListTradesResponseItem)
@@ -59,6 +69,7 @@ export const ListTradesResponse = zod.array(ListTradesResponseItem)
  * @summary Log a new trade
  */
 export const CreateTradeBody = zod.object({
+  "accountId": zod.string().nullish(),
   "symbol": zod.string(),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
@@ -68,9 +79,17 @@ export const CreateTradeBody = zod.object({
   "exitDate": zod.coerce.date(),
   "stopLoss": zod.number().nullish(),
   "takeProfit": zod.number().nullish(),
-  "strategy": zod.string().nullish(),
+  "manualPnl": zod.number().nullish(),
+  "setup": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "mood": zod.string().nullish(),
+  "rulesFollowed": zod.array(zod.string()).nullish(),
   "notes": zod.string().nullish(),
-  "tags": zod.string().nullish()
+  "tags": zod.string().nullish(),
+  "screenshot": zod.string().nullish(),
+  "accountType": zod.string().nullish(),
+  "aiGrade": zod.string().nullish(),
+  "aiFeedback": zod.record(zod.unknown()).nullish()
 })
 
 
@@ -83,7 +102,8 @@ export const GetTradeParams = zod.object({
 
 export const GetTradeResponse = zod.object({
   "id": zod.number(),
-  "symbol": zod.string().describe('Ticker symbol (e.g. AAPL, TSLA)'),
+  "accountId": zod.string().nullish(),
+  "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
   "exitPrice": zod.number(),
@@ -95,10 +115,18 @@ export const GetTradeResponse = zod.object({
   "riskRewardRatio": zod.number().nullish(),
   "stopLoss": zod.number().nullish(),
   "takeProfit": zod.number().nullish(),
+  "manualPnl": zod.number().nullish(),
   "outcome": zod.enum(['win', 'loss', 'breakeven']),
-  "strategy": zod.string().nullish(),
+  "setup": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "mood": zod.string().nullish(),
+  "rulesFollowed": zod.array(zod.string()).nullish(),
   "notes": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "screenshot": zod.string().nullish(),
+  "accountType": zod.string().nullish(),
+  "aiGrade": zod.string().nullish(),
+  "aiFeedback": zod.record(zod.unknown()).nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -111,6 +139,7 @@ export const UpdateTradeParams = zod.object({
 })
 
 export const UpdateTradeBody = zod.object({
+  "accountId": zod.string().nullish(),
   "symbol": zod.string().optional(),
   "direction": zod.enum(['long', 'short']).optional(),
   "entryPrice": zod.number().optional(),
@@ -120,14 +149,23 @@ export const UpdateTradeBody = zod.object({
   "exitDate": zod.coerce.date().optional(),
   "stopLoss": zod.number().nullish(),
   "takeProfit": zod.number().nullish(),
-  "strategy": zod.string().nullish(),
+  "manualPnl": zod.number().nullish(),
+  "setup": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "mood": zod.string().nullish(),
+  "rulesFollowed": zod.array(zod.string()).nullish(),
   "notes": zod.string().nullish(),
-  "tags": zod.string().nullish()
+  "tags": zod.string().nullish(),
+  "screenshot": zod.string().nullish(),
+  "accountType": zod.string().nullish(),
+  "aiGrade": zod.string().nullish(),
+  "aiFeedback": zod.record(zod.unknown()).nullish()
 })
 
 export const UpdateTradeResponse = zod.object({
   "id": zod.number(),
-  "symbol": zod.string().describe('Ticker symbol (e.g. AAPL, TSLA)'),
+  "accountId": zod.string().nullish(),
+  "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
   "exitPrice": zod.number(),
@@ -139,10 +177,18 @@ export const UpdateTradeResponse = zod.object({
   "riskRewardRatio": zod.number().nullish(),
   "stopLoss": zod.number().nullish(),
   "takeProfit": zod.number().nullish(),
+  "manualPnl": zod.number().nullish(),
   "outcome": zod.enum(['win', 'loss', 'breakeven']),
-  "strategy": zod.string().nullish(),
+  "setup": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "mood": zod.string().nullish(),
+  "rulesFollowed": zod.array(zod.string()).nullish(),
   "notes": zod.string().nullish(),
   "tags": zod.string().nullish(),
+  "screenshot": zod.string().nullish(),
+  "accountType": zod.string().nullish(),
+  "aiGrade": zod.string().nullish(),
+  "aiFeedback": zod.record(zod.unknown()).nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -206,5 +252,3 @@ export const GetStatsByDayResponseItem = zod.object({
   "winRate": zod.number()
 })
 export const GetStatsByDayResponse = zod.array(GetStatsByDayResponseItem)
-
-

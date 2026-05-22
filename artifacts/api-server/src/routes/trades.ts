@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db, tradesTable } from "@workspace/db";
 import {
   ListTradesQueryParams,
@@ -41,30 +41,18 @@ function toNum(val: unknown): number {
   return Number(val ?? 0);
 }
 
-// List trades with optional filters
-router.get("/trades", async (req, res): Promise<void> => {
-  const query = ListTradesQueryParams.safeParse(req.query);
-  if (!query.success) {
-    res.status(400).json({ error: query.error.message });
-    return;
-  }
+function serializeJson(val: unknown): string | null {
+  if (val == null) return null;
+  return JSON.stringify(val);
+}
 
-  const { symbol, direction, outcome, limit = 50, offset = 0 } = query.data;
+function parseJson(val: string | null): unknown {
+  if (val == null) return null;
+  try { return JSON.parse(val); } catch { return null; }
+}
 
-  const conditions = [];
-  if (symbol) conditions.push(eq(tradesTable.symbol, symbol.toUpperCase()));
-  if (direction) conditions.push(eq(tradesTable.direction, direction));
-  if (outcome) conditions.push(eq(tradesTable.outcome, outcome));
-
-  const rows = await db
-    .select()
-    .from(tradesTable)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(tradesTable.entryDate))
-    .limit(limit)
-    .offset(offset);
-
-  const mapped = rows.map((r) => ({
+function mapRow(r: typeof tradesTable.$inferSelect) {
+  return {
     ...r,
     entryPrice: toNum(r.entryPrice),
     exitPrice: toNum(r.exitPrice),
@@ -74,12 +62,40 @@ router.get("/trades", async (req, res): Promise<void> => {
     riskRewardRatio: r.riskRewardRatio != null ? toNum(r.riskRewardRatio) : null,
     stopLoss: r.stopLoss != null ? toNum(r.stopLoss) : null,
     takeProfit: r.takeProfit != null ? toNum(r.takeProfit) : null,
+    manualPnl: r.manualPnl != null ? toNum(r.manualPnl) : null,
     entryDate: r.entryDate.toISOString(),
     exitDate: r.exitDate.toISOString(),
     createdAt: r.createdAt.toISOString(),
-  }));
+    rulesFollowed: parseJson(r.rulesFollowed) as string[] | null,
+    aiFeedback: parseJson(r.aiFeedback) as Record<string, unknown> | null,
+  };
+}
 
-  res.json(ListTradesResponse.parse(mapped));
+// List trades with optional filters
+router.get("/trades", async (req, res): Promise<void> => {
+  const query = ListTradesQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: query.error.message });
+    return;
+  }
+
+  const { symbol, direction, outcome, accountId, limit = 50, offset = 0 } = query.data;
+
+  const conditions = [eq(tradesTable.userId, req.userId)];
+  if (symbol) conditions.push(eq(tradesTable.symbol, symbol.toUpperCase()));
+  if (direction) conditions.push(eq(tradesTable.direction, direction));
+  if (outcome) conditions.push(eq(tradesTable.outcome, outcome));
+  if (accountId) conditions.push(eq(tradesTable.accountId, accountId));
+
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(and(...conditions))
+    .orderBy(desc(tradesTable.entryDate))
+    .limit(limit)
+    .offset(offset);
+
+  res.json(ListTradesResponse.parse(rows.map(mapRow)));
 });
 
 // Create trade
@@ -94,7 +110,8 @@ router.post("/trades", async (req, res): Promise<void> => {
   const entryPrice = Number(d.entryPrice);
   const exitPrice = Number(d.exitPrice);
   const quantity = Number(d.quantity);
-  const pnl = computePnl(d.direction, entryPrice, exitPrice, quantity);
+  const computedPnl = computePnl(d.direction, entryPrice, exitPrice, quantity);
+  const pnl = d.manualPnl != null ? d.manualPnl : computedPnl;
   const pnlPercent = entryPrice !== 0 ? ((exitPrice - entryPrice) / entryPrice) * 100 : 0;
   const outcome = computeOutcome(pnl);
 
@@ -108,6 +125,8 @@ router.post("/trades", async (req, res): Promise<void> => {
   const [row] = await db
     .insert(tradesTable)
     .values({
+      userId: req.userId,
+      accountId: d.accountId ?? null,
       symbol: d.symbol.toUpperCase(),
       direction: d.direction,
       entryPrice: String(entryPrice),
@@ -120,29 +139,22 @@ router.post("/trades", async (req, res): Promise<void> => {
       riskRewardRatio: riskRewardRatio != null ? String(riskRewardRatio) : null,
       stopLoss: d.stopLoss != null ? String(d.stopLoss) : null,
       takeProfit: d.takeProfit != null ? String(d.takeProfit) : null,
+      manualPnl: d.manualPnl != null ? String(d.manualPnl) : null,
       outcome,
-      strategy: d.strategy ?? null,
+      setup: d.setup ?? null,
+      session: d.session ?? null,
+      mood: d.mood ?? null,
+      rulesFollowed: serializeJson(d.rulesFollowed),
       notes: d.notes ?? null,
       tags: d.tags ?? null,
+      screenshot: d.screenshot ?? null,
+      accountType: d.accountType ?? null,
+      aiGrade: d.aiGrade ?? null,
+      aiFeedback: serializeJson(d.aiFeedback),
     })
     .returning();
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.status(201).json(GetTradeResponse.parse(trade));
+  res.status(201).json(GetTradeResponse.parse(mapRow(row)));
 });
 
 // Get single trade
@@ -156,29 +168,14 @@ router.get("/trades/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(tradesTable)
-    .where(eq(tradesTable.id, params.data.id));
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)));
 
   if (!row) {
     res.status(404).json({ error: "Trade not found" });
     return;
   }
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.json(GetTradeResponse.parse(trade));
+  res.json(GetTradeResponse.parse(mapRow(row)));
 });
 
 // Update trade
@@ -195,11 +192,10 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  // Fetch existing row to recalculate derived fields
   const [existing] = await db
     .select()
     .from(tradesTable)
-    .where(eq(tradesTable.id, params.data.id));
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)));
 
   if (!existing) {
     res.status(404).json({ error: "Trade not found" });
@@ -211,7 +207,9 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
   const exitPrice = d.exitPrice != null ? Number(d.exitPrice) : toNum(existing.exitPrice);
   const quantity = d.quantity != null ? Number(d.quantity) : toNum(existing.quantity);
   const direction = d.direction ?? existing.direction;
-  const pnl = computePnl(direction, entryPrice, exitPrice, quantity);
+  const computedPnl = computePnl(direction, entryPrice, exitPrice, quantity);
+  const manualPnlRaw = d.manualPnl !== undefined ? d.manualPnl : (existing.manualPnl != null ? toNum(existing.manualPnl) : null);
+  const pnl = manualPnlRaw != null ? manualPnlRaw : computedPnl;
   const pnlPercent = entryPrice !== 0 ? ((exitPrice - entryPrice) / entryPrice) * 100 : 0;
   const outcome = computeOutcome(pnl);
 
@@ -235,37 +233,31 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     direction,
     stopLoss: stopLossRaw != null ? String(stopLossRaw) : null,
     takeProfit: takeProfitRaw != null ? String(takeProfitRaw) : null,
+    manualPnl: manualPnlRaw != null ? String(manualPnlRaw) : null,
   };
 
+  if (d.accountId !== undefined) updateValues.accountId = d.accountId;
   if (d.symbol != null) updateValues.symbol = d.symbol.toUpperCase();
   if (d.entryDate != null) updateValues.entryDate = new Date(d.entryDate);
   if (d.exitDate != null) updateValues.exitDate = new Date(d.exitDate);
-  if (d.strategy !== undefined) updateValues.strategy = d.strategy;
+  if (d.setup !== undefined) updateValues.setup = d.setup;
+  if (d.session !== undefined) updateValues.session = d.session;
+  if (d.mood !== undefined) updateValues.mood = d.mood;
+  if (d.rulesFollowed !== undefined) updateValues.rulesFollowed = serializeJson(d.rulesFollowed);
   if (d.notes !== undefined) updateValues.notes = d.notes;
   if (d.tags !== undefined) updateValues.tags = d.tags;
+  if (d.screenshot !== undefined) updateValues.screenshot = d.screenshot;
+  if (d.accountType !== undefined) updateValues.accountType = d.accountType;
+  if (d.aiGrade !== undefined) updateValues.aiGrade = d.aiGrade;
+  if (d.aiFeedback !== undefined) updateValues.aiFeedback = serializeJson(d.aiFeedback);
 
   const [row] = await db
     .update(tradesTable)
     .set(updateValues)
-    .where(eq(tradesTable.id, params.data.id))
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)))
     .returning();
 
-  const trade = {
-    ...row,
-    entryPrice: toNum(row.entryPrice),
-    exitPrice: toNum(row.exitPrice),
-    quantity: toNum(row.quantity),
-    pnl: toNum(row.pnl),
-    pnlPercent: row.pnlPercent != null ? toNum(row.pnlPercent) : null,
-    riskRewardRatio: row.riskRewardRatio != null ? toNum(row.riskRewardRatio) : null,
-    stopLoss: row.stopLoss != null ? toNum(row.stopLoss) : null,
-    takeProfit: row.takeProfit != null ? toNum(row.takeProfit) : null,
-    entryDate: row.entryDate.toISOString(),
-    exitDate: row.exitDate.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-
-  res.json(UpdateTradeResponse.parse(trade));
+  res.json(UpdateTradeResponse.parse(mapRow(row)));
 });
 
 // Delete trade
@@ -278,7 +270,7 @@ router.delete("/trades/:id", async (req, res): Promise<void> => {
 
   const [deleted] = await db
     .delete(tradesTable)
-    .where(eq(tradesTable.id, params.data.id))
+    .where(and(eq(tradesTable.id, params.data.id), eq(tradesTable.userId, req.userId)))
     .returning();
 
   if (!deleted) {
@@ -290,8 +282,11 @@ router.delete("/trades/:id", async (req, res): Promise<void> => {
 });
 
 // Stats: summary
-router.get("/stats/summary", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/summary", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const totalTrades = rows.length;
   const totalPnl = rows.reduce((s, r) => s + toNum(r.pnl), 0);
@@ -304,14 +299,15 @@ router.get("/stats/summary", async (_req, res): Promise<void> => {
     losses.length > 0 ? losses.reduce((s, r) => s + toNum(r.pnl), 0) / losses.length : 0;
   const totalWinAmount = wins.reduce((s, r) => s + toNum(r.pnl), 0);
   const totalLossAmount = Math.abs(losses.reduce((s, r) => s + toNum(r.pnl), 0));
-  const profitFactor = totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount > 0 ? 999 : 0;
+  const profitFactor =
+    totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount > 0 ? 999 : 0;
   const rrRows = rows.filter((r) => r.riskRewardRatio != null);
   const avgRiskReward =
     rrRows.length > 0
       ? rrRows.reduce((s, r) => s + toNum(r.riskRewardRatio), 0) / rrRows.length
       : 0;
 
-  const summary = {
+  res.json(GetStatsSummaryResponse.parse({
     totalTrades,
     totalPnl,
     winRate,
@@ -322,14 +318,15 @@ router.get("/stats/summary", async (_req, res): Promise<void> => {
     winCount: wins.length,
     lossCount: losses.length,
     breakevenCount: breakevenRows.length,
-  };
-
-  res.json(GetStatsSummaryResponse.parse(summary));
+  }));
 });
 
 // Stats: by symbol
-router.get("/stats/by-symbol", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/by-symbol", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const map: Record<string, { pnl: number; total: number; wins: number }> = {};
   for (const r of rows) {
@@ -352,10 +349,11 @@ router.get("/stats/by-symbol", async (_req, res): Promise<void> => {
 });
 
 // Stats: equity curve
-router.get("/stats/equity-curve", async (_req, res): Promise<void> => {
+router.get("/stats/equity-curve", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId))
     .orderBy(tradesTable.exitDate);
 
   const dateMap: Record<string, number> = {};
@@ -374,8 +372,11 @@ router.get("/stats/equity-curve", async (_req, res): Promise<void> => {
 });
 
 // Stats: by day of week
-router.get("/stats/by-day", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(tradesTable);
+router.get("/stats/by-day", async (req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
 
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const map: Record<string, { pnl: number; total: number; wins: number }> = {};
