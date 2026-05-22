@@ -28,12 +28,14 @@ export const ListTradesQueryParams = zod.object({
   "symbol": zod.coerce.string().optional().describe('Filter by ticker symbol'),
   "direction": zod.enum(['long', 'short']).optional().describe('Filter by trade direction'),
   "outcome": zod.enum(['win', 'loss', 'breakeven']).optional().describe('Filter by outcome'),
+  "accountId": zod.string().optional().describe('Filter by account ID'),
   "limit": zod.coerce.number().default(listTradesQueryLimitDefault),
   "offset": zod.coerce.number().default(listTradesQueryOffsetDefault)
 })
 
 export const ListTradesResponseItem = zod.object({
   "id": zod.number(),
+  "accountId": zod.string().nullish(),
   "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
@@ -67,6 +69,7 @@ export const ListTradesResponse = zod.array(ListTradesResponseItem)
  * @summary Log a new trade
  */
 export const CreateTradeBody = zod.object({
+  "accountId": zod.string().nullish(),
   "symbol": zod.string(),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
@@ -99,6 +102,7 @@ export const GetTradeParams = zod.object({
 
 export const GetTradeResponse = zod.object({
   "id": zod.number(),
+  "accountId": zod.string().nullish(),
   "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),
@@ -135,6 +139,7 @@ export const UpdateTradeParams = zod.object({
 })
 
 export const UpdateTradeBody = zod.object({
+  "accountId": zod.string().nullish(),
   "symbol": zod.string().optional(),
   "direction": zod.enum(['long', 'short']).optional(),
   "entryPrice": zod.number().optional(),
@@ -159,6 +164,7 @@ export const UpdateTradeBody = zod.object({
 
 export const UpdateTradeResponse = zod.object({
   "id": zod.number(),
+  "accountId": zod.string().nullish(),
   "symbol": zod.string().describe('Ticker symbol (e.g. ES1!, NQ1!, AAPL)'),
   "direction": zod.enum(['long', 'short']),
   "entryPrice": zod.number(),

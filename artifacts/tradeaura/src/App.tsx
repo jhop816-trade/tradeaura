@@ -42,14 +42,86 @@ const inp = (x: React.CSSProperties = {}): React.CSSProperties => ({ width:"100%
 function Tag({color,children}: {color:string,children:React.ReactNode}){ return <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:color+"22",color,fontWeight:600}}>{children}</span>; }
 function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
 
-async function callAI(prompt: string, maxTokens=600) {
-  const res = await fetch("/api/ai/grade", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ prompt, maxTokens })
+// ── API CLIENT ────────────────────────────────────────────────────────────────
+async function getAuthToken(): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? "";
+}
+
+async function apiCall(method: string, path: string, body?: unknown): Promise<any> {
+  const token = await getAuthToken();
+  const res = await fetch(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body != null ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error("AI request failed");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error ?? `API error ${res.status}`);
+  }
+  if (res.status === 204) return null;
   return res.json();
+}
+
+// Map frontend form shape → API request payload
+function toApiPayload(trade: any, accountId: string | null) {
+  const n = (v: any) => (v === "" || v == null ? null : Number(v));
+  const dateStr = trade.date || new Date().toISOString().slice(0, 10);
+  return {
+    accountId: accountId ?? null,
+    symbol: trade.instrument,
+    direction: (trade.direction || "long").toLowerCase() as "long" | "short",
+    entryPrice: n(trade.entry) ?? 0,
+    exitPrice: n(trade.exit) ?? 0,
+    quantity: n(trade.contracts) ?? 1,
+    entryDate: `${dateStr}T12:00:00Z`,
+    exitDate: `${dateStr}T12:00:00Z`,
+    stopLoss: n(trade.stop_loss),
+    manualPnl: n(trade.manual_pnl),
+    setup: trade.setup || null,
+    session: trade.session || null,
+    mood: trade.mood || null,
+    rulesFollowed: (trade.rules_followed?.length ? trade.rules_followed : null) as string[] | null,
+    notes: trade.notes || null,
+    screenshot: trade.screenshot || null,
+    accountType: (trade.account_type || "live").toLowerCase(),
+    aiGrade: trade.ai_grade || null,
+    aiFeedback: trade.ai_feedback || null,
+  };
+}
+
+// Map API response → frontend trade shape used by all views
+function fromApiTrade(t: any) {
+  const capFirst = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  return {
+    id: t.id,
+    _accountId: t.accountId ?? null,
+    date: (t.entryDate ?? t.exitDate ?? "").slice(0, 10),
+    instrument: t.symbol,
+    direction: t.direction === "long" ? "Long" : "Short",
+    entry: t.entryPrice != null ? String(t.entryPrice) : "",
+    exit: t.exitPrice != null ? String(t.exitPrice) : "",
+    contracts: t.quantity != null ? String(t.quantity) : "1",
+    stop_loss: t.stopLoss != null ? String(t.stopLoss) : "",
+    manual_pnl: t.manualPnl != null ? String(t.manualPnl) : "",
+    pnl: t.pnl ?? 0,
+    session: t.session ?? null,
+    setup: t.setup ?? null,
+    mood: t.mood ?? null,
+    rules_followed: t.rulesFollowed ?? [],
+    notes: t.notes ?? null,
+    screenshot: t.screenshot ?? null,
+    account_type: t.accountType ? capFirst(t.accountType) : "Live",
+    ai_grade: t.aiGrade ?? null,
+    ai_feedback: t.aiFeedback ?? null,
+  };
+}
+
+async function callAI(prompt: string, maxTokens=600) {
+  return apiCall("POST", "/api/ai/grade", { prompt, maxTokens });
 }
 
 // ── AUTH SCREEN ───────────────────────────────────────────────────────────────
@@ -703,59 +775,31 @@ export default function App() {
   // ── LOAD TRADES ──
   useEffect(()=>{
     if(!activeAccountId)return;
-    async function loadTrades(){
-      const {data}=await supabase.from("trades").select("*").eq("account_id",activeAccountId).order("date",{ascending:false});
-      if(data)setTrades(data);
-    }
-    loadTrades();
+    apiCall("GET",`/api/trades?accountId=${activeAccountId}&limit=500`)
+      .then((data: any[])=>setTrades(data.map(fromApiTrade)))
+      .catch(e=>console.error("Failed to load trades:",e));
   },[activeAccountId]);
 
   // ── TRADE ACTIONS ──
-  function cleanPayload(trade: any) {
-    const n = (v: any) => (v === "" || v === undefined || v === null ? null : Number(v));
-    return {
-      account_id: activeAccountId,
-      user_id: user.id,
-      date: trade.date,
-      instrument: trade.instrument,
-      direction: trade.direction,
-      session: trade.session || null,
-      setup: trade.setup || null,
-      mood: trade.mood || null,
-      notes: trade.notes || null,
-      screenshot: trade.screenshot || null,
-      account_type: trade.account_type || "Live",
-      rules_followed: trade.rules_followed || [],
-      entry: n(trade.entry),
-      exit: n(trade.exit),
-      contracts: n(trade.contracts) ?? 1,
-      stop_loss: n(trade.stop_loss),
-      manual_pnl: n(trade.manual_pnl),
-      pnl: trade.pnl ?? 0,
-      ai_grade: trade.ai_grade || null,
-      ai_feedback: trade.ai_feedback || null,
-    };
-  }
-
   async function saveTrade(trade: any){
-    const pnl=trade.pnl||0;
-    const payload = cleanPayload({...trade, pnl});
-    if(trade.id&&!trade.id.startsWith("id_")){
-      const {error}=await supabase.from("trades").update(payload).eq("id",trade.id);
-      if(error){alert("Save failed: "+error.message);return;}
-      setTrades(prev=>prev.map(t=>t.id===trade.id?{...payload,id:trade.id}:t));
-    } else {
-      const {data,error}=await supabase.from("trades").insert(payload).select().single();
-      if(error){alert("Save failed: "+error.message);return;}
-      if(data)setTrades(prev=>[data,...prev]);
-    }
+    const payload = toApiPayload(trade, activeAccountId);
+    try {
+      if(typeof trade.id === "number"){
+        const updated = await apiCall("PATCH",`/api/trades/${trade.id}`,payload);
+        setTrades(prev=>prev.map(t=>t.id===trade.id?fromApiTrade(updated):t));
+      } else {
+        const created = await apiCall("POST","/api/trades",payload);
+        setTrades(prev=>[fromApiTrade(created),...prev]);
+      }
+    } catch(e: any){ alert("Save failed: "+e.message); return; }
     setShowNewTrade(false); setEditingTrade(null);
   }
 
   async function deleteTrade(id: any){
-    const {error}=await supabase.from("trades").delete().eq("id",id);
-    if(error){alert("Delete failed: "+error.message);return;}
-    setTrades(prev=>prev.filter(t=>t.id!==id));
+    try {
+      await apiCall("DELETE",`/api/trades/${id}`);
+      setTrades(prev=>prev.filter(t=>t.id!==id));
+    } catch(e: any){ alert("Delete failed: "+e.message); }
   }
 
   // ── ACCOUNT ACTIONS ──
@@ -825,7 +869,7 @@ export default function App() {
         </div>
       </div>
 
-      {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);const acct=accounts.find(a=>a.id===id);if(acct)supabase.from("trades").select("*").eq("account_id",id).order("date",{ascending:false}).then(({data})=>{if(data)setTrades(data);});}} onAdd={addAccount} onClose={()=>setShowModal(false)}/>}
+      {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onClose={()=>setShowModal(false)}/>}
     </div>
   );
 }

@@ -53,6 +53,11 @@ paths:
             type: string
             enum: [win, loss, breakeven]
           description: Filter by outcome
+        - name: accountId
+          in: query
+          schema:
+            type: string
+          description: Filter by account ID (UUID)
         - name: limit
           in: query
           schema:
@@ -232,6 +237,9 @@ components:
       properties:
         id:
           type: integer
+        accountId:
+          type: ["string", "null"]
+          description: Account UUID this trade belongs to
         symbol:
           type: string
           description: Ticker symbol (e.g. ES1!, NQ1!, AAPL)
@@ -312,6 +320,8 @@ components:
         - entryDate
         - exitDate
       properties:
+        accountId:
+          type: ["string", "null"]
         symbol:
           type: string
         direction:
@@ -361,6 +371,8 @@ components:
     TradeUpdate:
       type: object
       properties:
+        accountId:
+          type: ["string", "null"]
         symbol:
           type: string
         direction:

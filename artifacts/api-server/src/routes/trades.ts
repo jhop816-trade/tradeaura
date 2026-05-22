@@ -79,12 +79,13 @@ router.get("/trades", async (req, res): Promise<void> => {
     return;
   }
 
-  const { symbol, direction, outcome, limit = 50, offset = 0 } = query.data;
+  const { symbol, direction, outcome, accountId, limit = 50, offset = 0 } = query.data;
 
   const conditions = [eq(tradesTable.userId, req.userId)];
   if (symbol) conditions.push(eq(tradesTable.symbol, symbol.toUpperCase()));
   if (direction) conditions.push(eq(tradesTable.direction, direction));
   if (outcome) conditions.push(eq(tradesTable.outcome, outcome));
+  if (accountId) conditions.push(eq(tradesTable.accountId, accountId));
 
   const rows = await db
     .select()
@@ -125,6 +126,7 @@ router.post("/trades", async (req, res): Promise<void> => {
     .insert(tradesTable)
     .values({
       userId: req.userId,
+      accountId: d.accountId ?? null,
       symbol: d.symbol.toUpperCase(),
       direction: d.direction,
       entryPrice: String(entryPrice),
@@ -234,6 +236,7 @@ router.patch("/trades/:id", async (req, res): Promise<void> => {
     manualPnl: manualPnlRaw != null ? String(manualPnlRaw) : null,
   };
 
+  if (d.accountId !== undefined) updateValues.accountId = d.accountId;
   if (d.symbol != null) updateValues.symbol = d.symbol.toUpperCase();
   if (d.entryDate != null) updateValues.entryDate = new Date(d.entryDate);
   if (d.exitDate != null) updateValues.exitDate = new Date(d.exitDate);
