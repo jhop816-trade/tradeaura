@@ -1,5 +1,12 @@
 import { Router, type IRouter } from "express";
 
+interface FetchResponse {
+  ok: boolean;
+  status: number;
+  text(): Promise<string>;
+  json(): Promise<unknown>;
+}
+
 const router: IRouter = Router();
 
 const TUTOR_SYSTEM = `You are an elite trading coach and educator inside TradeAura, a professional trading journal app. Your sole purpose is to help traders learn and improve.
@@ -39,7 +46,7 @@ router.post("/ai/chat", async (req, res) => {
         system: TUTOR_SYSTEM,
         messages,
       }),
-    });
+    }) as unknown as FetchResponse;
 
     if (!response.ok) {
       const err = await response.text();
@@ -48,7 +55,7 @@ router.post("/ai/chat", async (req, res) => {
       return;
     }
 
-    const data = await response.json() as { content: { text?: string }[] };
+    const data = await response.json() as unknown as { content: { text?: string }[] };
     const reply = data.content.map((b) => b.text || "").join("");
     res.json({ reply });
   } catch (err) {
@@ -84,7 +91,7 @@ router.post("/ai/grade", async (req, res) => {
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
       }),
-    });
+    }) as unknown as FetchResponse;
 
     if (!response.ok) {
       const err = await response.text();
@@ -93,7 +100,7 @@ router.post("/ai/grade", async (req, res) => {
       return;
     }
 
-    const data = await response.json() as { content: { text?: string }[] };
+    const data = await response.json() as unknown as { content: { text?: string }[] };
     const text = data.content.map((b) => b.text || "").join("");
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) {
