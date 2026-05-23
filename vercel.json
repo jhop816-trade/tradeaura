@@ -1,5 +1,5 @@
 {
-  "outputDirectory": "dist/public",
+  "outputDirectory": "artifacts/tradeaura/dist/public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
