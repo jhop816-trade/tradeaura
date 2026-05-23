@@ -1,5 +1,6 @@
 {
-  "outputDirectory": "dist/public",
+  "buildCommand": "pnpm --filter @workspace/tradeaura run build",
+  "outputDirectory": "artifacts/tradeaura/dist/public",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
