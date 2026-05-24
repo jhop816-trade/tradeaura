@@ -1,6 +1,7 @@
 {
   "outputDirectory": "dist/public",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://tradeaura-api-server.vercel.app/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
