@@ -45,7 +45,7 @@ function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:str
 // ── API CLIENT ────────────────────────────────────────────────────────────────
 // Set VITE_API_URL in Vercel env vars to the api-server deployment URL.
 // Leave unset (or empty) for local dev where /api is served from the same origin.
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://tradeaura-api-server.vercel.app";
 
 async function getAuthToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
