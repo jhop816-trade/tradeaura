@@ -54,16 +54,21 @@ async function getAuthToken(): Promise<string> {
 
 async function apiCall(method: string, path: string, body?: unknown): Promise<any> {
   const token = await getAuthToken();
-  const res = await fetch(API_BASE + path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body != null ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(API_BASE + path, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body != null ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkErr: any) {
+    throw new Error(`Network error: ${networkErr?.message || networkErr?.toString() || "fetch failed"}`);
+  }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(err.error ?? `API error ${res.status}`);
   }
   if (res.status === 204) return null;
