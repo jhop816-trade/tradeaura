@@ -33,7 +33,9 @@ app.use("/api", router);
 
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error(err, "Unhandled error");
-  res.status(500).json({ error: err.message || "Internal server error" });
+  const cause = (err as any).cause;
+  const causeMsg = cause instanceof Error ? cause.message : (cause ? String(cause) : "");
+  res.status(500).json({ error: causeMsg || err.message || "Internal server error" });
 });
 
 export default app;
