@@ -1,3 +1,5 @@
-module.exports = (req, res) => {
-  res.status(200).json({ status: 'diagnostic-ok' });
+'use strict';
+module.exports = function handler(req, res) {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end('{"status":"ok"}');
 };
