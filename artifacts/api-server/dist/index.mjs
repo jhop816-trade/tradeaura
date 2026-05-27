@@ -31592,11 +31592,11 @@ var require_connection = __commonJS({
           }
         });
       }
-      connect(port, host) {
+      connect(port2, host) {
         const self2 = this;
         this._connecting = true;
         this.stream.setNoDelay(true);
-        this.stream.connect(port, host);
+        this.stream.connect(port2, host);
         this.stream.once("connect", function() {
           if (self2._keepAlive) {
             self2.stream.setKeepAlive(true, self2._keepAliveInitialDelayMillis);
@@ -78315,9 +78315,25 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: causeMsg || err.message || "Internal server error" });
 });
 var app_default = app;
-export {
-  app_default as default
-};
+
+// src/index.ts
+var rawPort = process.env["PORT"];
+if (!rawPort) {
+  throw new Error(
+    "PORT environment variable is required but was not provided."
+  );
+}
+var port = Number(rawPort);
+if (Number.isNaN(port) || port <= 0) {
+  throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+app_default.listen(port, (err) => {
+  if (err) {
+    logger.error({ err }, "Error listening on port");
+    process.exit(1);
+  }
+  logger.info({ port }, "Server listening");
+});
 /*! Bundled license information:
 
 depd/index.js:
@@ -78608,4 +78624,4 @@ object-assign/index.js:
   @license MIT
   *)
 */
-//# sourceMappingURL=app.mjs.map
+//# sourceMappingURL=index.mjs.map
