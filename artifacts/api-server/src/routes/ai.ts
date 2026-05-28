@@ -45,46 +45,22 @@ router.post("/ai/chat", async (req, res) => {
         max_tokens: 800,
         system: TUTOR_SYSTEM,
         messages,
-        stream: true,
       }),
-    }) as unknown as { ok: boolean; status: number; body: ReadableStream<Uint8Array> | null };
+    }) as unknown as FetchResponse;
 
     if (!response.ok) {
-      req.log.error({ status: response.status }, "Anthropic API error");
+      const err = await response.text();
+      req.log.error({ status: response.status, err }, "Anthropic API error");
       res.status(502).json({ error: "AI request failed" });
       return;
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    const reader = (response.body as ReadableStream<Uint8Array>).getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (data === "[DONE]") { res.write("data: [DONE]\n\n"); continue; }
-        try {
-          const evt = JSON.parse(data) as { type: string; delta?: { type: string; text?: string } };
-          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta" && evt.delta.text) {
-            res.write(`data: ${JSON.stringify({ text: evt.delta.text })}\n\n`);
-          }
-        } catch { /* skip malformed lines */ }
-      }
-    }
-    res.end();
+    const data = await response.json() as unknown as { content: { text?: string }[] };
+    const reply = data.content.map((b) => b.text || "").join("");
+    res.json({ reply });
   } catch (err) {
     req.log.error(err, "AI chat error");
-    if (!res.headersSent) res.status(500).json({ error: "Internal error" });
+    res.status(500).json({ error: "Internal error" });
   }
 });
 
