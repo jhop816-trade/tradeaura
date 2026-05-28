@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function handler(req, res) {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end('{"status":"ok"}');
+module.exports = async function handler(req, res) {
+  const { default: app } = await import('../dist/app.mjs');
+  app(req, res);
 };
