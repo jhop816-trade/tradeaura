@@ -1,5 +1,6 @@
 {
   "buildCommand": "echo 'using committed dist files'",
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/(.*)",
