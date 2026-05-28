@@ -863,7 +863,7 @@ export default function App() {
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
-        {view==="learn"&&<EducationCenter userPlan={plan}/>}
+        {view==="learn"&&<EducationCenter userPlan={plan} apiBase={API_BASE}/>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
 

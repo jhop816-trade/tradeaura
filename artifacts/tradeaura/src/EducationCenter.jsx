@@ -591,7 +591,7 @@ const COURSES = [
   }
 ];
 
-export default function EducationCenter({ userPlan = "free" }) {
+export default function EducationCenter({ userPlan = "free", apiBase = "" }) {
   const [activeModule, setActiveModule] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
   const [quizMode, setQuizMode] = useState(false);
@@ -641,7 +641,7 @@ export default function EducationCenter({ userPlan = "free" }) {
     setChatMessages([...updatedMessages, { role: "assistant", content: "" }]);
     setChatLoading(true);
     try {
-      const res = await fetch("/api/ai/chat", {
+      const res = await fetch(apiBase + "/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) })
