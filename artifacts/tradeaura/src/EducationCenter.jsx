@@ -638,20 +638,46 @@ export default function EducationCenter({ userPlan = "free" }) {
     const userMsg = chatInput.trim();
     setChatInput("");
     const updatedMessages = [...chatMessages, { role: "user", content: userMsg }];
-    setChatMessages(updatedMessages);
+    setChatMessages([...updatedMessages, { role: "assistant", content: "" }]);
     setChatLoading(true);
     try {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
-        })
+        body: JSON.stringify({ messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) })
       });
-      const data = await res.json();
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply || "Sorry, I had trouble with that. Try asking again!" }]);
+      if (!res.ok || !res.body) throw new Error("bad response");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.text) {
+              setChatMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: updated[updated.length - 1].content + evt.text };
+                return updated;
+              });
+            }
+          } catch { /* skip */ }
+        }
+      }
     } catch(e) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Connection issue. Please try again!" }]);
+      setChatMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: "assistant", content: "Connection issue. Please try again!" };
+        return updated;
+      });
     }
     setChatLoading(false);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);

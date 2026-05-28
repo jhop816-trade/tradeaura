@@ -41,26 +41,50 @@ router.post("/ai/chat", async (req, res) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 800,
         system: TUTOR_SYSTEM,
         messages,
+        stream: true,
       }),
-    }) as unknown as FetchResponse;
+    }) as unknown as { ok: boolean; status: number; body: ReadableStream<Uint8Array> | null };
 
     if (!response.ok) {
-      const err = await response.text();
-      req.log.error({ status: response.status, err }, "Anthropic API error");
+      req.log.error({ status: response.status }, "Anthropic API error");
       res.status(502).json({ error: "AI request failed" });
       return;
     }
 
-    const data = await response.json() as unknown as { content: { text?: string }[] };
-    const reply = data.content.map((b) => b.text || "").join("");
-    res.json({ reply });
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const reader = (response.body as ReadableStream<Uint8Array>).getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const data = line.slice(6).trim();
+        if (data === "[DONE]") { res.write("data: [DONE]\n\n"); continue; }
+        try {
+          const evt = JSON.parse(data) as { type: string; delta?: { type: string; text?: string } };
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta" && evt.delta.text) {
+            res.write(`data: ${JSON.stringify({ text: evt.delta.text })}\n\n`);
+          }
+        } catch { /* skip malformed lines */ }
+      }
+    }
+    res.end();
   } catch (err) {
     req.log.error(err, "AI chat error");
-    res.status(500).json({ error: "Internal error" });
+    if (!res.headersSent) res.status(500).json({ error: "Internal error" });
   }
 });
 
