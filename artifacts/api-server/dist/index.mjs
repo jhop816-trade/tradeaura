@@ -46551,15 +46551,15 @@ var require_main3 = __commonJS({
 });
 
 // src/app.ts
-var import_express6 = __toESM(require_express2(), 1);
-var import_cors = __toESM(require_lib3(), 1);
-var import_pino_http = __toESM(require_logger(), 1);
+var import_express6 = __toESM(require_express2());
+var import_cors = __toESM(require_lib3());
+var import_pino_http = __toESM(require_logger());
 
 // src/routes/index.ts
-var import_express5 = __toESM(require_express2(), 1);
+var import_express5 = __toESM(require_express2());
 
 // src/routes/health.ts
-var import_express = __toESM(require_express2(), 1);
+var import_express = __toESM(require_express2());
 
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v3/helpers/util.js
 var util;
@@ -50646,7 +50646,7 @@ router.get("/healthz", (_req, res) => {
 var health_default = router;
 
 // src/routes/trades.ts
-var import_express2 = __toESM(require_express2(), 1);
+var import_express2 = __toESM(require_express2());
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.20.0/node_modules/drizzle-orm/entity.js
 var entityKind = /* @__PURE__ */ Symbol.for("drizzle:entityKind");
@@ -69353,7 +69353,7 @@ router2.get("/stats/by-day", async (req, res) => {
 var trades_default = router2;
 
 // src/routes/instruments.ts
-var import_express3 = __toESM(require_express2(), 1);
+var import_express3 = __toESM(require_express2());
 var router3 = (0, import_express3.Router)();
 function getUserEmail(req) {
   const raw = req.headers["x-user-email"];
@@ -69444,7 +69444,7 @@ router3.delete("/instruments/:symbol", async (req, res) => {
 var instruments_default = router3;
 
 // src/routes/ai.ts
-var import_express4 = __toESM(require_express2(), 1);
+var import_express4 = __toESM(require_express2());
 var router4 = (0, import_express4.Router)();
 var TUTOR_SYSTEM = `You are an elite trading coach and educator inside TradeAura, a professional trading journal app. Your sole purpose is to help traders learn and improve.
 
@@ -69474,24 +69474,52 @@ router4.post("/ai/chat", async (req, res) => {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 800,
         system: TUTOR_SYSTEM,
-        messages
+        messages,
+        stream: true
       })
     });
     if (!response.ok) {
-      const err = await response.text();
-      req.log.error({ status: response.status, err }, "Anthropic API error");
+      req.log.error({ status: response.status }, "Anthropic API error");
       res.status(502).json({ error: "AI request failed" });
       return;
     }
-    const data = await response.json();
-    const reply = data.content.map((b) => b.text || "").join("");
-    res.json({ reply });
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line2 of lines) {
+        if (!line2.startsWith("data: ")) continue;
+        const data = line2.slice(6).trim();
+        if (data === "[DONE]") {
+          res.write("data: [DONE]\n\n");
+          continue;
+        }
+        try {
+          const evt = JSON.parse(data);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta" && evt.delta.text) {
+            res.write(`data: ${JSON.stringify({ text: evt.delta.text })}
+
+`);
+          }
+        } catch {
+        }
+      }
+    }
+    res.end();
   } catch (err) {
     req.log.error(err, "AI chat error");
-    res.status(500).json({ error: "Internal error" });
+    if (!res.headersSent) res.status(500).json({ error: "Internal error" });
   }
 });
 router4.post("/ai/grade", async (req, res) => {
@@ -78273,7 +78301,7 @@ router5.use(ai_default);
 var routes_default = router5;
 
 // src/lib/logger.ts
-var import_pino = __toESM(require_pino(), 1);
+var import_pino = __toESM(require_pino());
 var logger = (0, import_pino.default)({
   level: process.env.LOG_LEVEL ?? "info",
   redact: [
