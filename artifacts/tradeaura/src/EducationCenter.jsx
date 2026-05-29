@@ -591,7 +591,7 @@ const COURSES = [
   }
 ];
 
-export default function EducationCenter({ userPlan = "free" }) {
+export default function EducationCenter({ userPlan = "free", apiCall }) {
   const [activeModule, setActiveModule] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
   const [quizMode, setQuizMode] = useState(false);
@@ -641,21 +641,10 @@ export default function EducationCenter({ userPlan = "free" }) {
     setChatMessages(updatedMessages);
     setChatLoading(true);
     try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) })
-      });
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = {}; }
-      if (!res.ok || !data.reply) {
-        setChatMessages(prev => [...prev, { role: "assistant", content: `Error ${res.status}: ${data.error || text.slice(0, 300)}` }]);
-      } else {
-        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
-      }
+      const data = await apiCall("POST", "/api/ai/chat", { messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) });
+      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply || "Sorry, I had trouble with that. Try asking again!" }]);
     } catch(e) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: `Network error: ${e?.message || String(e)}` }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: `Error: ${e?.message || "Connection issue"}` }]);
     }
     setChatLoading(false);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
