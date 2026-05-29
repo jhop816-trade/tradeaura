@@ -644,7 +644,7 @@ export default function EducationCenter({ userPlan = "free", apiCall }) {
       const data = await apiCall("POST", "/api/ai/chat", { messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) });
       setChatMessages(prev => [...prev, { role: "assistant", content: data.reply || "Sorry, I had trouble with that. Try asking again!" }]);
     } catch(e) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: `Error: ${e?.message || "Connection issue"}` }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't connect. Please try again!" }]);
     }
     setChatLoading(false);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
