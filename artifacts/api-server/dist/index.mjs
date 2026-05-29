@@ -69483,7 +69483,7 @@ router4.post("/ai/chat", async (req, res) => {
     if (!response.ok) {
       const err = await response.text();
       req.log.error({ status: response.status, err }, "Anthropic API error");
-      res.status(502).json({ error: "AI request failed" });
+      res.status(502).json({ error: `Anthropic ${response.status}: ${err.slice(0, 300)}` });
       return;
     }
     const data = await response.json();
