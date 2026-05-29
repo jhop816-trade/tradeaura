@@ -1065,34 +1065,53 @@ function ReviewResult({review:r}: {review:any}){
 function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   const [tab,setTab]=useState("prep");
   const [prep,setPrep]=useState<any>(null),[prepLoading,setPrepLoading]=useState(false),[prepDate,setPrepDate]=useState("");
+  const [marketCtx,setMarketCtx]=useState<any>(null);
   const [chatMsgs,setChatMsgs]=useState<{role:string,content:string}[]>([]);
   const [chatInput,setChatInput]=useState(""),[chatLoading,setChatLoading]=useState(false);
   const chatEndRef=useRef<any>(null);
   const [patterns,setPatterns]=useState<any[]>([]),[aiPR,setAiPR]=useState<any>(null),[aiPL,setAiPL]=useState(false);
   const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
 
+  async function fetchMarketContext(){
+    try{const ctx=await apiFn("GET","/api/ai/market-context");setMarketCtx(ctx);return ctx;}catch(e){return null;}
+  }
+
   async function generatePrep(){
     setPrepLoading(true);setPrep(null);
+    const ctx=marketCtx||await fetchMarketContext();
     const today=new Date();
-    const dayName=today.toLocaleDateString("en-US",{weekday:"long"});
-    const dateStr=today.toISOString().slice(0,10);
+    const dayName=ctx?.dayName||today.toLocaleDateString("en-US",{weekday:"long"});
+    const dateStr=ctx?.date||today.toISOString().slice(0,10);
+    const timeET=ctx?.timeET||"";
     const recent=trades.slice(0,20);
     const recentPnl=recent.reduce((s,t)=>s+(t.pnl||0),0);
     const favSetups=[...new Set(recent.map(t=>t.setup).filter(Boolean))].slice(0,3).join(", ")||"various";
     const favSessions=[...new Set(recent.map(t=>t.session).filter(Boolean))].slice(0,2).join(", ")||"New York";
     const favInstruments=[...new Set(recent.map(t=>t.instrument).filter(Boolean))].slice(0,3).join(", ")||"futures";
     const wr=recent.length?(recent.filter(t=>(t.pnl||0)>0).length/recent.length*100).toFixed(0):0;
-    const prompt=`You are an elite trading coach. Generate a concise morning market prep briefing.\nToday: ${dayName}, ${dateStr}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%\n\nJSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:900});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
+    const newsBlock=ctx?.hasNews
+      ?`\n\nLIVE NEWS HEADLINES (${dateStr}):\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
+      :"";
+    const prompt=`You are an elite trading coach with access to today's live market news. Generate a morning market prep briefing.\nToday: ${dayName}, ${dateStr}${timeET?` at ${timeET} ET`:""}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%${newsBlock}\n\nUse the live news headlines above to inform the briefing where relevant. JSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
     setPrepLoading(false);
   }
 
   async function sendChat(){
     if(!chatInput.trim())return;
     const userMsg={role:"user",content:chatInput};
-    const newMsgs=[...chatMsgs,userMsg];
-    setChatMsgs(newMsgs);setChatInput("");setChatLoading(true);
-    try{const data=await apiFn("POST","/api/ai/chat",{messages:newMsgs});setChatMsgs([...newMsgs,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
+    // Inject live news context as first system-like message if we have it and this is a news/market question
+    const isMarketQ=/news|today|week|predict|forecast|market|price|level|iwm|spy|qqq|btc|eth|gold|oil|fed|cpi|jobs|nfp/i.test(chatInput);
+    let msgs=[...chatMsgs];
+    if(isMarketQ&&!marketCtx){await fetchMarketContext();}
+    const ctx=marketCtx;
+    if(isMarketQ&&ctx?.hasNews&&msgs.length===0){
+      const newsContext=`[Current market context: Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET. Live headlines: ${ctx.headlines.slice(0,6).map((h:any)=>h.title).join(" | ")}]`;
+      msgs=[{role:"user",content:newsContext},{role:"assistant",content:"Got it — I have today's live market context. What would you like to know?"},...msgs];
+    }
+    const newMsgs=[...msgs,userMsg];
+    setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
+    try{const data=await apiFn("POST","/api/ai/chat",{messages:newMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
     setChatLoading(false);
     setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
   }
@@ -1151,11 +1170,16 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     setWeekLoading(false);
   }
 
+  useEffect(()=>{fetchMarketContext();},[]);
+
   return(
     <div style={{padding:"16px 16px 20px"}}>
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:9,color:C.blue,letterSpacing:"0.2em",marginBottom:4}}>INTELLIGENCE</div>
-        <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>AI Assistant</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <div style={{fontSize:9,color:C.blue,letterSpacing:"0.2em",marginBottom:4}}>INTELLIGENCE</div>
+          <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>AI Assistant</div>
+        </div>
+        {marketCtx?.hasNews&&<Tag color={C.green}>🔴 Live News</Tag>}
       </div>
       <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
         {[{id:"prep",l:"📋 Market Prep"},{id:"chat",l:"💬 Chat"},{id:"patterns",l:"🔍 Patterns"},{id:"report",l:"📊 Weekly"}].map(t=>(
@@ -1169,12 +1193,19 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div>
                 <div style={{fontSize:9,color:C.blue,letterSpacing:"0.15em",marginBottom:4}}>MORNING BRIEFING</div>
-                <div style={{fontSize:13,fontWeight:700,color:C.txt}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.txt}}>{marketCtx?.dayName||new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}{marketCtx?.timeET&&<span style={{fontSize:11,color:C.muted,fontWeight:400}}> · {marketCtx.timeET} ET</span>}</div>
               </div>
               {prep&&prepDate===new Date().toISOString().slice(0,10)&&<Tag color={C.green}>Today</Tag>}
             </div>
+            {marketCtx?.hasNews&&(
+              <div style={{marginBottom:10,padding:"8px 10px",background:"#0a0d14",borderRadius:8,border:`1px solid ${C.green}25`}}>
+                <div style={{fontSize:9,color:C.green,letterSpacing:"0.1em",marginBottom:6}}>🔴 LIVE HEADLINES LOADED</div>
+                {marketCtx.headlines.slice(0,3).map((h:any,i:number)=><div key={i} style={{fontSize:10,color:C.dim,marginBottom:3,lineHeight:1.4}}>· {h.title}</div>)}
+                {marketCtx.headlines.length>3&&<div style={{fontSize:9,color:C.muted,marginTop:2}}>+{marketCtx.headlines.length-3} more</div>}
+              </div>
+            )}
             <button onClick={generatePrep} disabled={prepLoading} style={{width:"100%",padding:13,background:prepLoading?C.muted:C.blue,color:"#fff",border:"none",borderRadius:10,cursor:prepLoading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700}}>
-              {prepLoading?"🤖 Generating…":"📋 Generate Today's Prep"}
+              {prepLoading?"🤖 Generating…":marketCtx?.hasNews?"📋 Generate Prep (Live News ✓)":"📋 Generate Today's Prep"}
             </button>
           </div>
           {prep&&(

@@ -114,4 +114,35 @@ router.post("/ai/grade", async (req, res) => {
   }
 });
 
+// ── MARKET CONTEXT ────────────────────────────────────────────────────────────
+// Returns live news headlines + current date/time to inject into AI prompts.
+// Requires NEWS_API_KEY env var (free at newsapi.org — 100 req/day developer plan).
+router.get("/ai/market-context", async (req, res) => {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+  const dayName = now.toLocaleDateString("en-US", { weekday: "long", timeZone: "America/New_York" });
+  const timeET = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" });
+
+  const newsKey = process.env.NEWS_API_KEY;
+  let headlines: { title: string; source: string; publishedAt: string }[] = [];
+
+  if (newsKey) {
+    try {
+      const url = `https://newsapi.org/v2/top-headlines?category=business&language=en&pageSize=12&apiKey=${newsKey}`;
+      const r = await fetch(url) as unknown as FetchResponse;
+      if (r.ok) {
+        const data = await r.json() as unknown as { articles: { title: string; source: { name: string }; publishedAt: string }[] };
+        headlines = (data.articles || [])
+          .filter(a => a.title && !a.title.includes("[Removed]"))
+          .slice(0, 10)
+          .map(a => ({ title: a.title, source: a.source?.name || "", publishedAt: a.publishedAt }));
+      }
+    } catch (e) {
+      req.log.warn(e, "NewsAPI fetch failed");
+    }
+  }
+
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
+});
+
 export default router;

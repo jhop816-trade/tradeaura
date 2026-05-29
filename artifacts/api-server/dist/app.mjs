@@ -69538,6 +69538,27 @@ router4.post("/ai/grade", async (req, res) => {
     res.status(500).json({ error: "Internal error" });
   }
 });
+router4.get("/ai/market-context", async (req, res) => {
+  const now = /* @__PURE__ */ new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+  const dayName = now.toLocaleDateString("en-US", { weekday: "long", timeZone: "America/New_York" });
+  const timeET = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" });
+  const newsKey = process.env.NEWS_API_KEY;
+  let headlines = [];
+  if (newsKey) {
+    try {
+      const url2 = `https://newsapi.org/v2/top-headlines?category=business&language=en&pageSize=12&apiKey=${newsKey}`;
+      const r = await fetch(url2);
+      if (r.ok) {
+        const data = await r.json();
+        headlines = (data.articles || []).filter((a) => a.title && !a.title.includes("[Removed]")).slice(0, 10).map((a) => ({ title: a.title, source: a.source?.name || "", publishedAt: a.publishedAt }));
+      }
+    } catch (e) {
+      req.log.warn(e, "NewsAPI fetch failed");
+    }
+  }
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
+});
 var ai_default = router4;
 
 // ../../node_modules/.pnpm/@supabase+supabase-js@2.105.4/node_modules/@supabase/supabase-js/dist/index.mjs
