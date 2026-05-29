@@ -646,10 +646,16 @@ export default function EducationCenter({ userPlan = "free" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) })
       });
-      const data = await res.json();
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply || "Sorry, I had trouble with that. Try asking again!" }]);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = {}; }
+      if (!res.ok || !data.reply) {
+        setChatMessages(prev => [...prev, { role: "assistant", content: `Error ${res.status}: ${data.error || text.slice(0, 300)}` }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      }
     } catch(e) {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Connection issue. Please try again!" }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: `Network error: ${e?.message || String(e)}` }]);
     }
     setChatLoading(false);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
