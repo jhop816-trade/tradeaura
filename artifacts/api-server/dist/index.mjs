@@ -69474,7 +69474,7 @@ router4.post("/ai/chat", async (req, res) => {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-3-5-haiku-20241022",
         max_tokens: 800,
         system: TUTOR_SYSTEM,
         messages
