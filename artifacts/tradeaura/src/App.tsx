@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import EducationCenter from "./EducationCenter";
+const EducationCenter = lazy(() => import("./EducationCenter"));
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -37,7 +37,7 @@ const C = {
 const gradeColor = (g: string) => (({A:C.green,B:"#6ee7b7",C:C.gold,D:"#fb923c",F:C.red} as Record<string,string>)[g]||C.muted);
 const typeColor  = (t: string) => (({Live:C.green,Funded:C.gold,Demo:C.blue} as Record<string,string>)[t]||C.muted);
 const CS: React.CSSProperties = { background:C.surf, border:`1px solid ${C.bord}`, borderRadius:12, padding:16 };
-const inp = (x: React.CSSProperties = {}): React.CSSProperties => ({ width:"100%", background:"#0a0d14", border:`1px solid ${C.bord}`, color:C.txt, padding:"11px 14px", borderRadius:8, fontSize:13, fontFamily:"inherit", boxSizing:"border-box", outline:"none", ...x });
+const inp = (x: React.CSSProperties = {}): React.CSSProperties => ({ width:"100%", background:"#0a0d14", border:`1px solid ${C.bord}`, color:C.txt, padding:"11px 14px", borderRadius:8, fontSize:16, fontFamily:"inherit", boxSizing:"border-box", outline:"none", ...x });
 
 function Tag({color,children}: {color:string,children:React.ReactNode}){ return <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:color+"22",color,fontWeight:600}}>{children}</span>; }
 function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
@@ -179,11 +179,11 @@ function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
           {success && <div style={{background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.green,marginBottom:16}}>{success}</div>}
 
           <div style={{marginBottom:12}}>
-            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EMAIL</div>
+            <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EMAIL</div>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" style={inp()} />
           </div>
           <div style={{marginBottom:20}}>
-            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>PASSWORD</div>
+            <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>PASSWORD</div>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" style={inp()} onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
 
@@ -312,18 +312,18 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
     <div style={Object.assign({},CS,{marginBottom:12})}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div style={{fontSize:14,fontWeight:700,color:C.txt}}>{isEdit?"Edit Trade":"New Trade"}</div>
-        {onCancel&&<button onClick={onCancel} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:22}}>×</button>}
+        {onCancel&&<button onClick={onCancel} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:22,padding:"8px 10px",minWidth:44,minHeight:44,lineHeight:1}}>×</button>}
       </div>
 
       <div style={{marginBottom:12}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>ACCOUNT TYPE</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>ACCOUNT TYPE</div>
         <div style={{display:"flex",gap:6}}>{ACCT_TYPES.map(a=><Pill key={a} active={form.account_type===a} color={typeColor(a)} onClick={()=>set("account_type",a)}>{a}</Pill>)}</div>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>DATE</div><input type="date" value={form.date} onChange={e=>set("date",e.target.value)} style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>DATE</div><input type="date" value={form.date} onChange={e=>set("date",e.target.value)} style={inp()}/></div>
         <div>
-          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SYMBOL</div>
+          <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SYMBOL</div>
           <div style={{position:"relative"}}>
             <input type="text" value={form.instrument} onChange={e=>set("instrument",e.target.value.toUpperCase())} placeholder="ES1!, NQ1!, AAPL…" style={inp({paddingRight:38})}/>
             <button onClick={()=>toggleFav(form.instrument)} title={favSymbols.includes(form.instrument)?"Remove from favorites":"Save as favorite"} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",cursor:"pointer",fontSize:18,color:favSymbols.includes(form.instrument)?C.gold:C.muted,lineHeight:1,padding:0}}>★</button>
@@ -333,41 +333,41 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>DIRECTION</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>DIRECTION</div>
         <div style={{display:"flex",gap:8}}>
           {["Long","Short"].map(d=>{const active=form.direction===d,col=d==="Long"?C.green:C.red;return(<button key={d} onClick={()=>set("direction",d)} style={{flex:1,padding:11,borderRadius:8,fontFamily:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",background:active?col+"20":"transparent",color:active?col:C.muted,border:`1px solid ${active?col+"50":C.bord}`}}>{d==="Long"?"▲ Long":"▼ Short"}</button>);})}
         </div>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>ENTRY</div><input type="number" value={form.entry} onChange={e=>set("entry",e.target.value)} placeholder="7288.50" style={inp()}/></div>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EXIT</div><input type="number" value={form.exit} onChange={e=>set("exit",e.target.value)} placeholder="7300.00" style={inp()}/></div>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>CONTRACTS</div><input type="number" value={form.contracts} onChange={e=>set("contracts",e.target.value)} placeholder="1" style={inp()}/></div>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>STOP LOSS</div><input type="number" value={form.stop_loss} onChange={e=>set("stop_loss",e.target.value)} placeholder="7280.00" style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>ENTRY</div><input type="number" value={form.entry} onChange={e=>set("entry",e.target.value)} placeholder="7288.50" style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EXIT</div><input type="number" value={form.exit} onChange={e=>set("exit",e.target.value)} placeholder="7300.00" style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>CONTRACTS</div><input type="number" value={form.contracts} onChange={e=>set("contracts",e.target.value)} placeholder="1" style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>STOP LOSS</div><input type="number" value={form.stop_loss} onChange={e=>set("stop_loss",e.target.value)} placeholder="7280.00" style={inp()}/></div>
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span>PROFIT / LOSS $ <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
           <div style={{display:"flex",gap:4}}>
-            {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+            {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",minHeight:32,background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
           </div>
         </div>
         <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder="Enter exact dollar amount..." style={inp()}/>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SESSION</div><select value={form.session} onChange={e=>set("session",e.target.value)} style={inp()}>{SESSIONS.map(o=><option key={o}>{o}</option>)}</select></div>
-        <div><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SETUP</div><select value={form.setup} onChange={e=>set("setup",e.target.value)} style={inp()}>{SETUPS.map(o=><option key={o}>{o}</option>)}</select></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SESSION</div><select value={form.session} onChange={e=>set("session",e.target.value)} style={inp()}>{SESSIONS.map(o=><option key={o}>{o}</option>)}</select></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SETUP</div><select value={form.setup} onChange={e=>set("setup",e.target.value)} style={inp()}>{SETUPS.map(o=><option key={o}>{o}</option>)}</select></div>
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>MOOD</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>MOOD</div>
         <select value={form.mood} onChange={e=>set("mood",e.target.value)} style={inp()}>{MOODS.map(o=><option key={o}>{o}</option>)}</select>
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>RULES CHECKLIST</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>RULES CHECKLIST</div>
         {RULES.map(r=>{const checked=(form.rules_followed||[]).includes(r);return(
           <label key={r} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"9px 12px",background:checked?C.green+"15":"#0a0d14",borderRadius:8,border:`1px solid ${checked?C.green+"40":C.bord}`,marginBottom:6}}>
             <input type="checkbox" checked={checked} onChange={e=>set("rules_followed",e.target.checked?[...(form.rules_followed||[]),r]:(form.rules_followed||[]).filter((x: string)=>x!==r))} style={{accentColor:C.green,width:15,height:15}}/>
@@ -377,12 +377,12 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>NOTES</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>NOTES</div>
         <textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={3} placeholder="Setup context, emotions, what you saw..." style={inp({resize:"vertical",lineHeight:1.6} as any)}/>
       </div>
 
       <div style={{marginBottom:14}}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>CHART SCREENSHOT</div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>CHART SCREENSHOT</div>
         <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${C.bord}`,borderRadius:10,padding:14,textAlign:"center",cursor:"pointer",color:C.muted,fontSize:12}}>{form.screenshot?"✅ Screenshot attached":"📸 Tap to upload"}</div>
         <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>set("screenshot",(ev.target as any).result);r.readAsDataURL(f);}}/>
         {form.screenshot&&<img src={form.screenshot} alt="chart" style={{width:"100%",borderRadius:8,marginTop:8,border:`1px solid ${C.bord}`}}/>}
@@ -436,7 +436,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
             <div style={{display:"flex",gap:4}}>
-              {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"3px 10px",borderRadius:20,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
+              {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",minHeight:32,background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
             </div>
             <div style={{textAlign:"right"}}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>TODAY TRADES</div><div style={{fontSize:16,fontWeight:800,color:C.txt,marginTop:2}}>{todayCount}</div></div>
           </div>
@@ -479,8 +479,8 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
                   </div>
                 )}
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setEditingTrade({...trade})} style={{flex:1,padding:10,background:C.blue+"20",border:`1px solid ${C.blue}35`,color:C.blue,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>✏️ Edit</button>
-                  <button onClick={()=>onDelete(trade.id)} style={{flex:1,padding:10,background:C.red+"20",border:`1px solid ${C.red}35`,color:C.red,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>🗑 Delete</button>
+                  <button onClick={()=>setEditingTrade({...trade})} style={{flex:1,padding:"13px 10px",background:C.blue+"20",border:`1px solid ${C.blue}35`,color:C.blue,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>✏️ Edit</button>
+                  <button onClick={()=>onDelete(trade.id)} style={{flex:1,padding:"13px 10px",background:C.red+"20",border:`1px solid ${C.red}35`,color:C.red,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>🗑 Delete</button>
                 </div>
               </div>
             )}
@@ -546,9 +546,9 @@ function CalendarView({trades}: {trades:any[]}) {
             const key=dateKey(d),data=dailyMap[key],isToday=key===today,isSelected=selectedDay===d,pnl=data?.pnl;
             const bgColor=pnl>0?C.green+"25":pnl<0?C.red+"25":"transparent";
             const borderColor=isSelected?C.blue:isToday?C.gold:pnl>0?C.green+"60":pnl<0?C.red+"60":C.bord;
-            return(<div key={i} onClick={()=>setSelectedDay(isSelected?null:d)} style={{textAlign:"center",padding:"6px 2px",borderRadius:6,background:bgColor,border:`1px solid ${borderColor}`,cursor:data?"pointer":"default",minHeight:36,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-              <div style={{fontSize:10,color:isToday?C.gold:C.txt,fontWeight:isToday?700:400}}>{d}</div>
-              {pnl!==undefined&&<div style={{fontSize:7,color:pnl>=0?C.green:C.red,fontWeight:700,marginTop:1}}>{pnl>=0?"+":""}${Math.abs(pnl).toFixed(0)}</div>}
+            return(<div key={i} onClick={()=>setSelectedDay(isSelected?null:d)} style={{textAlign:"center",padding:"6px 2px",borderRadius:6,background:bgColor,border:`1px solid ${borderColor}`,cursor:data?"pointer":"default",minHeight:44,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+              <div style={{fontSize:12,color:isToday?C.gold:C.txt,fontWeight:isToday?700:400}}>{d}</div>
+              {pnl!==undefined&&<div style={{fontSize:9,color:pnl>=0?C.green:C.red,fontWeight:700,marginTop:1}}>{pnl>=0?"+":""}${Math.abs(pnl).toFixed(0)}</div>}
             </div>);
           })}
         </div>
@@ -693,7 +693,7 @@ function FeedbackView({user}: {user:any}) {
         </div>
 
         <div style={{marginBottom:16}}>
-          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>YOUR MESSAGE</div>
+          <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>YOUR MESSAGE</div>
           <textarea value={message} onChange={e=>setMessage(e.target.value)} rows={4} placeholder="Tell us what's on your mind..." style={inp({resize:"vertical",lineHeight:1.6} as any)}/>
         </div>
 
@@ -863,15 +863,15 @@ export default function App() {
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
-        {view==="learn"&&<EducationCenter userPlan={plan} apiCall={apiCall}/>}
+        {view==="learn"&&<Suspense fallback={<div style={{textAlign:"center",padding:60,color:C.muted}}>Loading…</div>}><EducationCenter userPlan={plan} apiCall={apiCall}/></Suspense>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
 
       {/* BOTTOM NAV */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:C.surf,borderTop:`1px solid ${C.bord}`,display:"flex",padding:"8px 0 18px",zIndex:20,overflowX:"auto"}}>
-        {nav.map(n=>(<button key={n.id} onClick={()=>{setView(n.id);setShowNewTrade(false);setEditingTrade(null);}} style={{flex:1,minWidth:50,background:"transparent",border:"none",cursor:"pointer",color:view===n.id?C.blue:C.muted,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"0 4px"}}>
-          <span style={{fontSize:16,lineHeight:1}}>{n.icon}</span>
-          <span style={{fontSize:7,letterSpacing:"0.06em",fontWeight:view===n.id?700:400}}>{n.label}</span>
+        {nav.map(n=>(<button key={n.id} onClick={()=>{setView(n.id);setShowNewTrade(false);setEditingTrade(null);}} style={{flex:1,minWidth:50,background:"transparent",border:"none",cursor:"pointer",color:view===n.id?C.blue:C.muted,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"10px 4px"}}>
+          <span style={{fontSize:18,lineHeight:1}}>{n.icon}</span>
+          <span style={{fontSize:9,letterSpacing:"0.06em",fontWeight:view===n.id?700:400}}>{n.label}</span>
         </button>))}
         <div style={{position:"absolute",top:-22,left:"50%",transform:"translateX(-50%)"}}>
           <button onClick={()=>{setView("journal");setEditingTrade(null);setShowNewTrade(s=>!s);}} style={{width:48,height:48,borderRadius:"50%",background:C.blue,border:`3px solid ${C.bg}`,color:"#fff",fontSize:24,cursor:"pointer",boxShadow:`0 4px 20px ${C.blue}55`,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
