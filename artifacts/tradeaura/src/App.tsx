@@ -356,15 +356,31 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch{return [];}});
   const [newRule,setNewRule]=useState("");
   const [showRuleTemplates,setShowRuleTemplates]=useState(false);
-  function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();const next=[...customRules,r];setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));setNewRule("");}
-  function removeCustomRule(r: string){const next=customRules.filter(x=>x!==r);setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));set("rules_followed",(form.rules_followed||[]).filter((x: string)=>x!==r));}
+  const [activeTemplate,setActiveTemplate]=useState<string|null>(null);
+  const [expandEditor,setExpandEditor]=useState(false);
+  const [checklistName,setChecklistName]=useState(()=>localStorage.getItem("checklist_name")||"");
+  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch{return [];}});
+  function saveRules(next: string[]){setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}
+  function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();if(!allRules.includes(r))saveRules([...customRules,r]);setNewRule("");}
+  function addBulkRules(){const lines=newRule.split("\n").map(l=>l.trim()).filter(l=>l&&!allRules.includes(l));if(lines.length)saveRules([...customRules,...lines]);setNewRule("");}
+  function removeCustomRule(r: string){saveRules(customRules.filter(x=>x!==r));set("rules_followed",(form.rules_followed||[]).filter((x: string)=>x!==r));}
   const RULE_TEMPLATES: Record<string,string[]> = {
     Scalp:["HTF pullback confirmed","Momentum in direction","Target within 5 bars","Risk ≤ 0.5%","News window clear"],
     Swing:["HTF trend aligned","Key S/R level","RR ≥ 2:1","Catalyst identified","Overnight risk accepted"],
     "Day Trade":["Opening range noted","Pre-market news checked","Volume confirmation","Daily bias set","Max 3 trades/day"],
     SMC:["Market structure shift","FVG or OB identified","Liquidity swept","Session time valid","Confluences stacked ≥3"],
   };
-  function applyTemplate(tpl: string){const rules=RULE_TEMPLATES[tpl];const filtered=rules.filter(r=>![...RULES,...customRules].includes(r));if(filtered.length){const next=[...customRules,...filtered];setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}setShowRuleTemplates(false);}
+  function applyTemplate(tpl: string){
+    let current=[...customRules];
+    if(activeTemplate)current=current.filter(r=>!(RULE_TEMPLATES[activeTemplate]||[]).includes(r));
+    if(activeTemplate===tpl){saveRules(current);setActiveTemplate(null);}
+    else{const toAdd=RULE_TEMPLATES[tpl].filter(r=>!RULES.includes(r)&&!current.includes(r));saveRules([...current,...toAdd]);setActiveTemplate(tpl);}
+    setShowRuleTemplates(false);
+  }
+  function saveChecklist(){if(!checklistName.trim())return;const entry={id:makeId(),name:checklistName.trim(),rules:customRules,fav:false};const next=[entry,...savedChecklists.filter((c:any)=>c.name!==checklistName.trim())];setSavedChecklists(next);localStorage.setItem("saved_checklists",JSON.stringify(next));localStorage.setItem("checklist_name",checklistName.trim());}
+  function loadChecklist(c: any){saveRules(c.rules);setChecklistName(c.name);localStorage.setItem("checklist_name",c.name);setActiveTemplate(null);}
+  function toggleFavChecklist(id: string){const next=savedChecklists.map((c:any)=>({...c,fav:c.id===id?!c.fav:c.fav}));setSavedChecklists(next);localStorage.setItem("saved_checklists",JSON.stringify(next));}
+  function deleteChecklist(id: string){const next=savedChecklists.filter((c:any)=>c.id!==id);setSavedChecklists(next);localStorage.setItem("saved_checklists",JSON.stringify(next));}
   const allRules=[...RULES,...customRules.filter(r=>!RULES.includes(r))];
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
@@ -447,31 +463,84 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
       </div>
 
       <div style={{marginBottom:10}}>
+        {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em"}}>RULES CHECKLIST</div>
-          <button onClick={()=>setShowRuleTemplates(s=>!s)} style={{padding:"4px 10px",background:C.gold+"18",border:`1px solid ${C.gold}40`,color:C.gold,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:10,fontWeight:700}}>Templates</button>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em"}}>RULES CHECKLIST</div>
+            {checklistName&&<span style={{fontSize:10,color:C.blue,background:C.blue+"15",padding:"2px 8px",borderRadius:10,fontWeight:600}}>{checklistName}</span>}
+          </div>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={()=>{setExpandEditor(s=>!s);setShowRuleTemplates(false);}} style={{padding:"4px 10px",background:expandEditor?C.blue+"22":"transparent",border:`1px solid ${expandEditor?C.blue+"50":C.bord}`,color:expandEditor?C.blue:C.muted,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:10,fontWeight:700}}>✏️ Edit</button>
+            <button onClick={()=>{setShowRuleTemplates(s=>!s);setExpandEditor(false);}} style={{padding:"4px 10px",background:activeTemplate?C.gold+"22":C.gold+"12",border:`1px solid ${activeTemplate?C.gold+"70":C.gold+"40"}`,color:C.gold,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:10,fontWeight:700}}>{activeTemplate?`✓ ${activeTemplate}`:"Templates"}</button>
+          </div>
         </div>
+
+        {/* Templates panel */}
         {showRuleTemplates&&(
           <div style={{background:C.bg,border:`1px solid ${C.bord}`,borderRadius:10,padding:10,marginBottom:10}}>
-            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>Tap a template to add its rules:</div>
+            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>Tap to apply — switching removes previous template rules:</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
               {Object.keys(RULE_TEMPLATES).map(tpl=>(
-                <button key={tpl} onClick={()=>applyTemplate(tpl)} style={{padding:"6px 12px",background:C.gold+"15",border:`1px solid ${C.gold}40`,color:C.gold,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:600}}>{tpl}</button>
+                <button key={tpl} onClick={()=>applyTemplate(tpl)} style={{padding:"8px 14px",background:activeTemplate===tpl?C.gold+"35":"transparent",border:`2px solid ${activeTemplate===tpl?C.gold:C.gold+"40"}`,color:C.gold,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700}}>
+                  {activeTemplate===tpl?"✓ ":""}{tpl}
+                </button>
               ))}
             </div>
           </div>
         )}
+
+        {/* Expanded editor */}
+        {expandEditor&&(
+          <div style={{background:C.bg,border:`1px solid ${C.blue}35`,borderRadius:12,padding:14,marginBottom:10}}>
+            {/* Name + save */}
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:6}}>CHECKLIST NAME</div>
+              <div style={{display:"flex",gap:6}}>
+                <input value={checklistName} onChange={e=>setChecklistName(e.target.value)} placeholder="e.g. My FTMO Rules, SMC List…" style={inp({flex:1,fontSize:14,padding:"10px 14px"})}/>
+                <button onClick={saveChecklist} style={{padding:"10px 16px",background:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,flexShrink:0}}>Save</button>
+              </div>
+            </div>
+            {/* Saved checklists */}
+            {savedChecklists.length>0&&(
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:8}}>SAVED CHECKLISTS</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {savedChecklists.map((c:any)=>(
+                    <div key={c.id} style={{display:"flex",alignItems:"center",gap:8,background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:8,padding:"8px 10px"}}>
+                      <button onClick={()=>toggleFavChecklist(c.id)} style={{background:"none",border:"none",color:c.fav?C.gold:C.muted,cursor:"pointer",fontSize:16,padding:0,lineHeight:1,flexShrink:0}}>★</button>
+                      <button onClick={()=>loadChecklist(c)} style={{background:"none",border:"none",color:C.txt,cursor:"pointer",fontFamily:"inherit",fontSize:13,padding:0,flex:1,textAlign:"left",fontWeight:600}}>{c.name}</button>
+                      <span style={{fontSize:10,color:C.muted}}>{c.rules.length} rules</span>
+                      <button onClick={()=>deleteChecklist(c.id)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,padding:0,lineHeight:1,flexShrink:0}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Bulk add textarea */}
+            <div>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:6}}>ADD RULES (one per line)</div>
+              <textarea value={newRule} onChange={e=>setNewRule(e.target.value)} rows={5} placeholder={"Rule 1\nRule 2\nRule 3\n..."} style={inp({resize:"vertical",lineHeight:1.8,fontSize:14,padding:"12px 14px"} as any)}/>
+              <button onClick={addBulkRules} style={{width:"100%",padding:"11px",background:C.green+"20",border:`1px solid ${C.green}40`,color:C.green,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,marginTop:6}}>+ Add Rules</button>
+            </div>
+          </div>
+        )}
+
+        {/* Checklist items */}
         {allRules.map(r=>{const checked=(form.rules_followed||[]).includes(r);const isCustom=customRules.includes(r);return(
           <label key={r} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"9px 12px",background:checked?C.green+"15":"#0a0d14",borderRadius:8,border:`1px solid ${checked?C.green+"40":C.bord}`,marginBottom:6}}>
             <input type="checkbox" checked={checked} onChange={e=>set("rules_followed",e.target.checked?[...(form.rules_followed||[]),r]:(form.rules_followed||[]).filter((x: string)=>x!==r))} style={{accentColor:C.green,width:15,height:15}}/>
             <span style={{fontSize:12,color:checked?C.green:C.dim,flex:1}}>{r}</span>
-            {isCustom&&<button onClick={e=>{e.preventDefault();removeCustomRule(r);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,padding:0,lineHeight:1}}>×</button>}
+            {isCustom&&<button onClick={e=>{e.preventDefault();removeCustomRule(r);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:"0 4px",lineHeight:1}}>×</button>}
           </label>
         );})}
-        <div style={{display:"flex",gap:6,marginTop:8}}>
-          <input value={newRule} onChange={e=>setNewRule(e.target.value)} placeholder="Add custom rule…" style={inp({fontSize:12,padding:"7px 10px"})} onKeyDown={e=>e.key==="Enter"&&addCustomRule()}/>
-          <button onClick={addCustomRule} style={{padding:"7px 12px",background:C.green+"18",border:`1px solid ${C.green}40`,color:C.green,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,flexShrink:0}}>+ Add</button>
-        </div>
+
+        {/* Quick add (collapsed mode only) */}
+        {!expandEditor&&(
+          <div style={{display:"flex",gap:6,marginTop:8}}>
+            <input value={newRule} onChange={e=>setNewRule(e.target.value)} placeholder="Quick add rule…" style={inp({fontSize:13,padding:"9px 12px"})} onKeyDown={e=>e.key==="Enter"&&addCustomRule()}/>
+            <button onClick={addCustomRule} style={{padding:"9px 14px",background:C.green+"18",border:`1px solid ${C.green}40`,color:C.green,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,flexShrink:0}}>+ Add</button>
+          </div>
+        )}
       </div>
 
       <div style={{marginBottom:10}}>
