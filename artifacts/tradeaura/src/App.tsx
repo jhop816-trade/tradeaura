@@ -360,10 +360,12 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const [expandEditor,setExpandEditor]=useState(false);
   const [checklistName,setChecklistName]=useState(()=>localStorage.getItem("checklist_name")||"");
   const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch{return [];}});
+  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch{return [];}});
+  function saveHidden(next: string[]){setHiddenRules(next);localStorage.setItem("hidden_rules",JSON.stringify(next));}
   function saveRules(next: string[]){setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}
   function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();if(!allRules.includes(r))saveRules([...customRules,r]);setNewRule("");}
   function addBulkRules(){const lines=newRule.split("\n").map(l=>l.trim()).filter(l=>l&&!allRules.includes(l));if(lines.length)saveRules([...customRules,...lines]);setNewRule("");}
-  function removeCustomRule(r: string){saveRules(customRules.filter(x=>x!==r));set("rules_followed",(form.rules_followed||[]).filter((x: string)=>x!==r));}
+  function removeRule(r: string){if(RULES.includes(r)){saveHidden([...hiddenRules,r]);}else{saveRules(customRules.filter(x=>x!==r));}set("rules_followed",(form.rules_followed||[]).filter((x: string)=>x!==r));}
   const RULE_TEMPLATES: Record<string,string[]> = {
     Scalp:["HTF pullback confirmed","Momentum in direction","Target within 5 bars","Risk ≤ 0.5%","News window clear"],
     Swing:["HTF trend aligned","Key S/R level","RR ≥ 2:1","Catalyst identified","Overnight risk accepted"],
@@ -381,7 +383,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   function loadChecklist(c: any){saveRules(c.rules);setChecklistName(c.name);localStorage.setItem("checklist_name",c.name);setActiveTemplate(null);}
   function toggleFavChecklist(id: string){const next=savedChecklists.map((c:any)=>({...c,fav:c.id===id?!c.fav:c.fav}));setSavedChecklists(next);localStorage.setItem("saved_checklists",JSON.stringify(next));}
   function deleteChecklist(id: string){const next=savedChecklists.filter((c:any)=>c.id!==id);setSavedChecklists(next);localStorage.setItem("saved_checklists",JSON.stringify(next));}
-  const allRules=[...RULES,...customRules.filter(r=>!RULES.includes(r))];
+  const allRules=[...RULES.filter(r=>!hiddenRules.includes(r)),...customRules.filter(r=>!RULES.includes(r))];
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
@@ -516,6 +518,20 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
                 </div>
               </div>
             )}
+            {/* Restore hidden defaults */}
+            {hiddenRules.length>0&&(
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:8}}>HIDDEN DEFAULT RULES</div>
+                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  {hiddenRules.map((r:string)=>(
+                    <div key={r} style={{display:"flex",alignItems:"center",gap:8,background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:8,padding:"7px 10px"}}>
+                      <span style={{flex:1,fontSize:12,color:C.muted}}>{r}</span>
+                      <button onClick={()=>saveHidden(hiddenRules.filter(x=>x!==r))} style={{background:"none",border:`1px solid ${C.green}40`,color:C.green,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11,padding:"3px 8px",fontWeight:700}}>Restore</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Bulk add textarea */}
             <div>
               <div style={{fontSize:9,color:C.muted,letterSpacing:"0.1em",marginBottom:6}}>ADD RULES (one per line)</div>
@@ -526,11 +542,11 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
         )}
 
         {/* Checklist items */}
-        {allRules.map(r=>{const checked=(form.rules_followed||[]).includes(r);const isCustom=customRules.includes(r);return(
+        {allRules.map(r=>{const checked=(form.rules_followed||[]).includes(r);return(
           <label key={r} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"9px 12px",background:checked?C.green+"15":"#0a0d14",borderRadius:8,border:`1px solid ${checked?C.green+"40":C.bord}`,marginBottom:6}}>
             <input type="checkbox" checked={checked} onChange={e=>set("rules_followed",e.target.checked?[...(form.rules_followed||[]),r]:(form.rules_followed||[]).filter((x: string)=>x!==r))} style={{accentColor:C.green,width:15,height:15}}/>
             <span style={{fontSize:12,color:checked?C.green:C.dim,flex:1}}>{r}</span>
-            {isCustom&&<button onClick={e=>{e.preventDefault();removeCustomRule(r);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:"0 4px",lineHeight:1}}>×</button>}
+            <button onClick={e=>{e.preventDefault();removeRule(r);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16,padding:"0 4px",lineHeight:1}}>×</button>
           </label>
         );})}
 
