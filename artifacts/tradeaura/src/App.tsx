@@ -294,6 +294,24 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
   const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
+  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch{return [];}});
+  const [newSetup,setNewSetup]=useState("");
+  function addCustomSetup(){if(!newSetup.trim())return;const s=newSetup.trim();if([...SETUPS,...customSetups].includes(s)){set("setup",s);setNewSetup("");return;}const next=[...customSetups,s];setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));set("setup",s);setNewSetup("");}
+  function removeCustomSetup(s: string){const next=customSetups.filter(x=>x!==s);setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));}
+  const allSetups=[...SETUPS,...customSetups.filter(s=>!SETUPS.includes(s))];
+  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch{return [];}});
+  const [newRule,setNewRule]=useState("");
+  const [showRuleTemplates,setShowRuleTemplates]=useState(false);
+  function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();const next=[...customRules,r];setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));setNewRule("");}
+  function removeCustomRule(r: string){const next=customRules.filter(x=>x!==r);setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));set("rules_followed",(form.rules_followed||[]).filter((x: string)=>x!==r));}
+  const RULE_TEMPLATES: Record<string,string[]> = {
+    Scalp:["HTF pullback confirmed","Momentum in direction","Target within 5 bars","Risk ≤ 0.5%","News window clear"],
+    Swing:["HTF trend aligned","Key S/R level","RR ≥ 2:1","Catalyst identified","Overnight risk accepted"],
+    "Day Trade":["Opening range noted","Pre-market news checked","Volume confirmation","Daily bias set","Max 3 trades/day"],
+    SMC:["Market structure shift","FVG or OB identified","Liquidity swept","Session time valid","Confluences stacked ≥3"],
+  };
+  function applyTemplate(tpl: string){const rules=RULE_TEMPLATES[tpl];const filtered=rules.filter(r=>![...RULES,...customRules].includes(r));if(filtered.length){const next=[...customRules,...filtered];setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}setShowRuleTemplates(false);}
+  const allRules=[...RULES,...customRules.filter(r=>!RULES.includes(r))];
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
@@ -358,7 +376,15 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SESSION</div><select value={form.session} onChange={e=>set("session",e.target.value)} style={inp()}>{SESSIONS.map(o=><option key={o}>{o}</option>)}</select></div>
-        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SETUP</div><select value={form.setup} onChange={e=>set("setup",e.target.value)} style={inp()}>{SETUPS.map(o=><option key={o}>{o}</option>)}</select></div>
+        <div>
+          <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>SETUP</div>
+          <select value={form.setup} onChange={e=>set("setup",e.target.value)} style={inp()}>{allSetups.map(o=><option key={o}>{o}</option>)}</select>
+          {customSetups.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>{customSetups.map(s=><span key={s} style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:C.purp+"18",color:C.purp,border:`1px solid ${C.purp}40`,display:"flex",alignItems:"center",gap:4}}>{s}<button onClick={()=>removeCustomSetup(s)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,padding:0,lineHeight:1}}>×</button></span>)}</div>}
+          <div style={{display:"flex",gap:6,marginTop:6}}>
+            <input value={newSetup} onChange={e=>setNewSetup(e.target.value)} placeholder="Add custom setup…" style={inp({fontSize:12,padding:"7px 10px"})} onKeyDown={e=>e.key==="Enter"&&addCustomSetup()}/>
+            <button onClick={addCustomSetup} style={{padding:"7px 12px",background:C.purp+"20",border:`1px solid ${C.purp}40`,color:C.purp,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,flexShrink:0}}>+ Add</button>
+          </div>
+        </div>
       </div>
 
       <div style={{marginBottom:10}}>
@@ -367,13 +393,31 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>RULES CHECKLIST</div>
-        {RULES.map(r=>{const checked=(form.rules_followed||[]).includes(r);return(
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em"}}>RULES CHECKLIST</div>
+          <button onClick={()=>setShowRuleTemplates(s=>!s)} style={{padding:"4px 10px",background:C.gold+"18",border:`1px solid ${C.gold}40`,color:C.gold,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:10,fontWeight:700}}>Templates</button>
+        </div>
+        {showRuleTemplates&&(
+          <div style={{background:C.bg,border:`1px solid ${C.bord}`,borderRadius:10,padding:10,marginBottom:10}}>
+            <div style={{fontSize:10,color:C.muted,marginBottom:8}}>Tap a template to add its rules:</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {Object.keys(RULE_TEMPLATES).map(tpl=>(
+                <button key={tpl} onClick={()=>applyTemplate(tpl)} style={{padding:"6px 12px",background:C.gold+"15",border:`1px solid ${C.gold}40`,color:C.gold,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:600}}>{tpl}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        {allRules.map(r=>{const checked=(form.rules_followed||[]).includes(r);const isCustom=customRules.includes(r);return(
           <label key={r} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"9px 12px",background:checked?C.green+"15":"#0a0d14",borderRadius:8,border:`1px solid ${checked?C.green+"40":C.bord}`,marginBottom:6}}>
             <input type="checkbox" checked={checked} onChange={e=>set("rules_followed",e.target.checked?[...(form.rules_followed||[]),r]:(form.rules_followed||[]).filter((x: string)=>x!==r))} style={{accentColor:C.green,width:15,height:15}}/>
-            <span style={{fontSize:12,color:checked?C.green:C.dim}}>{r}</span>
+            <span style={{fontSize:12,color:checked?C.green:C.dim,flex:1}}>{r}</span>
+            {isCustom&&<button onClick={e=>{e.preventDefault();removeCustomRule(r);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,padding:0,lineHeight:1}}>×</button>}
           </label>
         );})}
+        <div style={{display:"flex",gap:6,marginTop:8}}>
+          <input value={newRule} onChange={e=>setNewRule(e.target.value)} placeholder="Add custom rule…" style={inp({fontSize:12,padding:"7px 10px"})} onKeyDown={e=>e.key==="Enter"&&addCustomRule()}/>
+          <button onClick={addCustomRule} style={{padding:"7px 12px",background:C.green+"18",border:`1px solid ${C.green}40`,color:C.green,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,flexShrink:0}}>+ Add</button>
+        </div>
       </div>
 
       <div style={{marginBottom:10}}>
@@ -462,7 +506,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
             {exp&&(
               <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.bord}`}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12,marginBottom:10}}>
-                  {[["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length}/${RULES.length} ✓`]].map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
+                  {[["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length} ✓`]].map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
                 </div>
                 {trade.notes&&<div style={{fontSize:12,color:C.dim,fontStyle:"italic",padding:"10px 12px",background:C.bg,borderRadius:8,marginBottom:10}}>"{trade.notes}"</div>}
                 {trade.screenshot&&<img src={trade.screenshot} alt="chart" style={{width:"100%",borderRadius:8,marginBottom:10,border:`1px solid ${C.bord}`}}/>}
@@ -582,7 +626,8 @@ function CalendarView({trades}: {trades:any[]}) {
 // ── STATS ─────────────────────────────────────────────────────────────────────
 function StatsView({trades}: {trades:any[]}) {
   if(!trades.length)return<div style={{textAlign:"center",padding:"80px 20px",color:C.muted}}><div style={{fontSize:44}}>📊</div><div style={{fontSize:13,fontWeight:600,marginTop:12}}>No data yet</div></div>;
-  const setupStats=SETUPS.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,pnl:st.reduce((a,t)=>a+(t.pnl||0),0),count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
+  const allSetupNames=[...new Set([...SETUPS,...trades.map(t=>t.setup).filter(Boolean)])];
+  const setupStats=allSetupNames.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,pnl:st.reduce((a,t)=>a+(t.pnl||0),0),count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
   return(
     <div style={{padding:"16px 16px 20px"}}>
       <div style={Object.assign({},CS,{marginBottom:12})}>
@@ -591,7 +636,7 @@ function StatsView({trades}: {trades:any[]}) {
       </div>
       <div style={Object.assign({},CS,{marginBottom:12})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>RULES COMPLIANCE</div>
-        {RULES.map(r=>{const pct=trades.length?(trades.filter(t=>(t.rules_followed||[]).includes(r)).length/trades.length*100).toFixed(0):0;const col=parseFloat(pct as string)>=80?C.green:parseFloat(pct as string)>=50?C.gold:C.red;return(<div key={r} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}><span style={{color:C.dim}}>{r}</span><span style={{color:col,fontWeight:600}}>{pct}%</span></div><div style={{height:5,background:C.bg,borderRadius:3}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:3}}/></div></div>);})}
+        {[...new Set([...RULES,...trades.flatMap(t=>t.rules_followed||[])])].map(r=>{const pct=trades.length?(trades.filter(t=>(t.rules_followed||[]).includes(r)).length/trades.length*100).toFixed(0):0;const col=parseFloat(pct as string)>=80?C.green:parseFloat(pct as string)>=50?C.gold:C.red;return(<div key={r} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}><span style={{color:C.dim}}>{r}</span><span style={{color:col,fontWeight:600}}>{pct}%</span></div><div style={{height:5,background:C.bg,borderRadius:3}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:3}}/></div></div>);})}
       </div>
       {trades.some(t=>t.ai_grade)&&(<div style={CS}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>AI GRADES</div><div style={{display:"flex",gap:8}}>{["A","B","C","D","F"].map(g=>{const count=trades.filter(t=>t.ai_grade===g).length;return(<div key={g} style={{flex:1,textAlign:"center",padding:"10px 0",background:count>0?gradeColor(g)+"15":C.bg,borderRadius:8,border:`1px solid ${count>0?gradeColor(g)+"35":C.bord}`}}><div style={{fontSize:18,fontWeight:800,color:gradeColor(g)}}>{count}</div><div style={{fontSize:10,color:C.muted,marginTop:2}}>{g}</div></div>);})}</div></div>)}
     </div>
@@ -719,24 +764,55 @@ function FeedbackView({user}: {user:any}) {
 }
 
 // ── ACCOUNT MODAL ─────────────────────────────────────────────────────────────
-function AccountModal({accounts,activeId,onSelect,onAdd,onClose}: {accounts:any[],activeId:any,onSelect:(id:any)=>void,onAdd:(name:string,type:string)=>void,onClose:()=>void}) {
-  const [name,setName]=useState(""),[type,setType]=useState("Live");
+function AccountModal({accounts,activeId,onSelect,onAdd,onDelete,onUpdateLimit,onClose}: {accounts:any[],activeId:any,onSelect:(id:any)=>void,onAdd:(name:string,type:string,limit:number)=>void,onDelete:(id:any)=>void,onUpdateLimit:(id:any,limit:number)=>void,onClose:()=>void}) {
+  const [name,setName]=useState(""),[type,setType]=useState("Live"),[newLimit,setNewLimit]=useState("5");
+  const [confirmDelete,setConfirmDelete]=useState<any>(null);
+  const [editingLimit,setEditingLimit]=useState<any>(null),[limitInput,setLimitInput]=useState("");
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:100,display:"flex",alignItems:"flex-end"}}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:C.surf,borderRadius:"20px 20px 0 0",padding:"24px 20px 44px",maxHeight:"80vh",overflowY:"auto"}}>
         <div style={{width:36,height:4,background:C.bord,borderRadius:2,margin:"0 auto 20px"}}/>
         <div style={{fontSize:16,fontWeight:700,marginBottom:16,color:C.txt}}>My Accounts</div>
-        {accounts.map(a=>(<div key={a.id} onClick={()=>onSelect(a.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:10,marginBottom:8,background:a.id===activeId?C.blue+"18":C.bg,border:`1px solid ${a.id===activeId?C.blue+"50":C.bord}`,cursor:"pointer"}}>
-          <span style={{width:10,height:10,borderRadius:"50%",background:typeColor(a.type),flexShrink:0,display:"inline-block"}}/>
-          <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:C.txt}}>{a.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{a.type} · ${(a.starting_balance||0).toLocaleString()}</div></div>
-          {a.id===activeId&&<span style={{color:C.blue,fontSize:14,fontWeight:700}}>✓</span>}
-        </div>))}
+        {accounts.map(a=>(
+          <div key={a.id} style={{borderRadius:10,marginBottom:8,background:a.id===activeId?C.blue+"18":C.bg,border:`1px solid ${a.id===activeId?C.blue+"50":C.bord}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",cursor:"pointer"}} onClick={()=>onSelect(a.id)}>
+              <span style={{width:10,height:10,borderRadius:"50%",background:typeColor(a.type),flexShrink:0,display:"inline-block"}}/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:600,color:C.txt}}>{a.name}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:2}}>{a.type} · ${(a.starting_balance||0).toLocaleString()} · {a.max_daily_trades||5} trades/day</div>
+              </div>
+              {a.id===activeId&&<span style={{color:C.blue,fontSize:14,fontWeight:700}}>✓</span>}
+              {accounts.length>1&&(confirmDelete===a.id
+                ?<div style={{display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
+                    <button onClick={()=>{onDelete(a.id);setConfirmDelete(null);}} style={{padding:"5px 10px",background:C.red+"20",border:`1px solid ${C.red}40`,color:C.red,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>Delete</button>
+                    <button onClick={()=>setConfirmDelete(null)} style={{padding:"5px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11}}>Cancel</button>
+                  </div>
+                :<button onClick={e=>{e.stopPropagation();setConfirmDelete(a.id);}} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:6,cursor:"pointer",fontSize:14,padding:"5px 8px",fontFamily:"inherit"}}>🗑</button>
+              )}
+            </div>
+            <div style={{borderTop:`1px solid ${C.bord}`,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}} onClick={e=>e.stopPropagation()}>
+              <span style={{fontSize:10,color:C.muted,flex:1}}>DAILY TRADE LIMIT</span>
+              {editingLimit===a.id
+                ?<div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <input type="number" value={limitInput} onChange={e=>setLimitInput(e.target.value)} style={{...inp(),width:60,padding:"5px 8px",fontSize:13}} min="1" max="50"/>
+                    <button onClick={()=>{const v=parseInt(limitInput);if(!isNaN(v)&&v>0){onUpdateLimit(a.id,v);setEditingLimit(null);}}} style={{padding:"5px 10px",background:C.green+"20",border:`1px solid ${C.green}40`,color:C.green,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>Save</button>
+                    <button onClick={()=>setEditingLimit(null)} style={{padding:"5px 8px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11}}>✕</button>
+                  </div>
+                :<button onClick={()=>{setEditingLimit(a.id);setLimitInput(String(a.max_daily_trades||5));}} style={{padding:"5px 12px",background:C.surf2,border:`1px solid ${C.bord}`,color:C.txt,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>{a.max_daily_trades||5} ✏️</button>
+              }
+            </div>
+          </div>
+        ))}
         <div style={{height:1,background:C.bord,margin:"14px 0"}}/>
         <div style={{fontSize:10,color:C.muted,letterSpacing:"0.1em",marginBottom:10}}>ADD ACCOUNT</div>
         <div style={{display:"flex",gap:6,marginBottom:10}}>{ACCT_TYPES.map(t=><Pill key={t} active={type===t} color={typeColor(t)} onClick={()=>setType(t)}>{t}</Pill>)}</div>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:10,color:C.muted,letterSpacing:"0.08em",marginBottom:6}}>DAILY TRADE LIMIT</div>
+          <input type="number" value={newLimit} onChange={e=>setNewLimit(e.target.value)} min="1" max="50" style={inp()} placeholder="5"/>
+        </div>
         <div style={{display:"flex",gap:8}}>
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="Account name…" style={inp({flex:1} as any)}/>
-          <button onClick={()=>{if(name.trim()){onAdd(name.trim(),type);setName("");onClose();}}} style={{padding:"11px 18px",background:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700}}>Add</button>
+          <button onClick={()=>{if(name.trim()){onAdd(name.trim(),type,parseInt(newLimit)||5);setName("");onClose();}}} style={{padding:"11px 18px",background:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700}}>Add</button>
         </div>
       </div>
     </div>
@@ -812,10 +888,26 @@ export default function App() {
   }
 
   // ── ACCOUNT ACTIONS ──
-  async function addAccount(name: string,type: string){
-    const {data,error}=await supabase.from("accounts").insert({user_id:user.id,name,type,starting_balance:25000,max_daily_trades:5}).select().single();
+  async function addAccount(name: string,type: string,limit=5){
+    const {data,error}=await supabase.from("accounts").insert({user_id:user.id,name,type,starting_balance:25000,max_daily_trades:limit}).select().single();
     if(error){alert("Could not create account: "+error.message);return;}
     if(data){setAccounts(prev=>[...prev,data]);setActiveAccountId(data.id);}
+  }
+
+  async function deleteAccount(id: any){
+    if(accounts.length<=1){alert("You need at least one account.");return;}
+    const {error}=await supabase.from("accounts").delete().eq("id",id);
+    if(error){alert("Delete failed: "+error.message);return;}
+    const remaining=accounts.filter(a=>a.id!==id);
+    setAccounts(remaining);
+    if(activeAccountId===id)setActiveAccountId(remaining[0]?.id||null);
+    setShowModal(false);
+  }
+
+  async function updateDailyLimit(id: any,limit: number){
+    const {error}=await supabase.from("accounts").update({max_daily_trades:limit}).eq("id",id);
+    if(error){alert("Update failed: "+error.message);return;}
+    setAccounts(prev=>prev.map(a=>a.id===id?{...a,max_daily_trades:limit}:a));
   }
 
   async function updateBalance(newBal: number){
@@ -878,7 +970,7 @@ export default function App() {
         </div>
       </div>
 
-      {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onClose={()=>setShowModal(false)}/>}
+      {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onDelete={deleteAccount} onUpdateLimit={updateDailyLimit} onClose={()=>setShowModal(false)}/>}
     </div>
   );
 }
