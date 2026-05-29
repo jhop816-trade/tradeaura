@@ -282,6 +282,60 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Weekly & Monthly P&L summary */}
+      {(()=>{
+        const now=new Date();
+        const todayStr=now.toISOString().slice(0,10);
+        const dayOfWeek=now.getDay();
+        const weekStart=new Date(now);weekStart.setDate(now.getDate()-(dayOfWeek===0?6:dayOfWeek-1));
+        const weekStartStr=weekStart.toISOString().slice(0,10);
+        const monthStartStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
+        const weekTrades=trades.filter(t=>t.date>=weekStartStr&&t.date<=todayStr);
+        const monthTrades=trades.filter(t=>t.date>=monthStartStr&&t.date<=todayStr);
+        const weekPnl=weekTrades.reduce((s,t)=>s+(t.pnl||0),0);
+        const monthPnl=monthTrades.reduce((s,t)=>s+(t.pnl||0),0);
+        if(!trades.length)return null;
+        return(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
+            {[{l:"THIS WEEK",pnl:weekPnl,count:weekTrades.length},{l:"THIS MONTH",pnl:monthPnl,count:monthTrades.length}].map(s=>(
+              <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"11px 12px"}}>
+                <div style={{fontSize:8,color:C.muted,letterSpacing:"0.1em",marginBottom:5}}>{s.l}</div>
+                <div style={{fontSize:15,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(2)}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:3}}>{s.count} trades</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* Personal Records */}
+      {trades.length>0&&(()=>{
+        const sortedTrades=trades.slice().sort((a,b)=>a.date.localeCompare(b.date));
+        const biggestWin=Math.max(...trades.map(t=>t.pnl||0));
+        const biggestLoss=Math.min(...trades.map(t=>t.pnl||0));
+        const dailyMap2: Record<string,number>={};
+        trades.forEach(t=>{dailyMap2[t.date]=(dailyMap2[t.date]||0)+(t.pnl||0);});
+        const dayPnls=Object.values(dailyMap2);
+        const bestDay2=dayPnls.length?Math.max(...dayPnls):0;
+        const worstDay2=dayPnls.length?Math.min(...dayPnls):0;
+        let maxWinStreak=0,maxLossStreak=0,curWin=0,curLoss=0;
+        sortedTrades.forEach(t=>{if((t.pnl||0)>0){curWin++;curLoss=0;maxWinStreak=Math.max(maxWinStreak,curWin);}else if((t.pnl||0)<0){curLoss++;curWin=0;maxLossStreak=Math.max(maxLossStreak,curLoss);}});
+        const records=[{l:"BIGGEST WIN",v:`+$${biggestWin.toFixed(0)}`,c:C.green},{l:"BIGGEST LOSS",v:`-$${Math.abs(biggestLoss).toFixed(0)}`,c:C.red},{l:"BEST DAY",v:`+$${bestDay2.toFixed(0)}`,c:C.green},{l:"WORST DAY",v:`-$${Math.abs(worstDay2).toFixed(0)}`,c:C.red},{l:"WIN STREAK",v:`${maxWinStreak}W`,c:C.green},{l:"LOSS STREAK",v:`${maxLossStreak}L`,c:C.red}];
+        return(
+          <div style={Object.assign({},CS,{marginTop:12,border:`1px solid ${C.gold}30`})}>
+            <div style={{fontSize:9,color:C.gold,letterSpacing:"0.15em",marginBottom:12}}>🏆 PERSONAL RECORDS</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+              {records.map(r=>(
+                <div key={r.l} style={{background:C.bg,borderRadius:8,padding:"10px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
+                  <div style={{fontSize:7,color:C.muted,letterSpacing:"0.08em",marginBottom:4}}>{r.l}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:r.c}}>{r.v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -624,16 +678,62 @@ function CalendarView({trades}: {trades:any[]}) {
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
-function StatsView({trades}: {trades:any[]}) {
+function StatsView({trades,account}: {trades:any[],account?:any}) {
   if(!trades.length)return<div style={{textAlign:"center",padding:"80px 20px",color:C.muted}}><div style={{fontSize:44}}>📊</div><div style={{fontSize:13,fontWeight:600,marginTop:12}}>No data yet</div></div>;
   const allSetupNames=[...new Set([...SETUPS,...trades.map(t=>t.setup).filter(Boolean)])];
   const setupStats=allSetupNames.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,pnl:st.reduce((a,t)=>a+(t.pnl||0),0),count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
+
+  // Session performance
+  const sessionStats=SESSIONS.map(s=>{const st=trades.filter(t=>t.session===s);return{name:s,count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length,pnl:st.reduce((a,t)=>a+(t.pnl||0),0)};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
+  const maxSessionCount=sessionStats.length?Math.max(...sessionStats.map(s=>s.count)):1;
+
+  // Drawdown
+  const startBal=account?.starting_balance||25000;
+  const sortedTrades=trades.slice().reverse();
+  let bal=startBal,peak=startBal,maxDD=0;
+  sortedTrades.forEach(t=>{bal+=(t.pnl||0);if(bal>peak)peak=bal;const dd=peak-bal;if(dd>maxDD)maxDD=dd;});
+  const currentDD=Math.max(0,peak-bal);
+  const maxDDPct=peak>0?(maxDD/peak*100):0;
+  const currentDDPct=peak>0?(currentDD/peak*100):0;
+  const ddColor=(pct: number)=>pct>5?C.red:pct>=2?C.gold:C.green;
+
   return(
     <div style={{padding:"16px 16px 20px"}}>
       <div style={Object.assign({},CS,{marginBottom:12})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>SETUP PERFORMANCE</div>
         {setupStats.map(s=>(<div key={s.name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}><div><div style={{fontSize:13,color:C.txt,fontWeight:500}}>{s.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{s.count} trades · {s.count?(s.wins/s.count*100).toFixed(0):0}% win</div></div><div style={{fontSize:15,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(0)}</div></div>))}
       </div>
+
+      {sessionStats.length>0&&(
+        <div style={Object.assign({},CS,{marginBottom:12})}>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>SESSION PERFORMANCE</div>
+          {sessionStats.map(s=>(
+            <div key={s.name} style={{marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <div>
+                  <span style={{fontSize:13,color:C.txt,fontWeight:500}}>{s.name}</span>
+                  <span style={{fontSize:10,color:C.muted,marginLeft:8}}>{s.count} trades · {s.count?(s.wins/s.count*100).toFixed(0):0}% win</span>
+                </div>
+                <span style={{fontSize:14,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(0)}</span>
+              </div>
+              <div style={{height:4,background:C.bg,borderRadius:2}}><div style={{height:"100%",width:`${(s.count/maxSessionCount)*100}%`,background:s.pnl>=0?C.green:C.red,borderRadius:2}}/></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={Object.assign({},CS,{marginBottom:12})}>
+        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>DRAWDOWN</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {[{l:"MAX DRAWDOWN",v:`$${maxDD.toFixed(0)}`,pct:maxDDPct},{l:"MAX DD %",v:`${maxDDPct.toFixed(2)}%`,pct:maxDDPct},{l:"CURRENT DD",v:`$${currentDD.toFixed(0)}`,pct:currentDDPct},{l:"CURRENT DD %",v:`${currentDDPct.toFixed(2)}%`,pct:currentDDPct}].map(d=>(
+            <div key={d.l} style={{background:C.bg,borderRadius:8,padding:"10px 10px",border:`1px solid ${C.bord}`}}>
+              <div style={{fontSize:8,color:C.muted,letterSpacing:"0.08em",marginBottom:4}}>{d.l}</div>
+              <div style={{fontSize:15,fontWeight:700,color:ddColor(d.pct)}}>{d.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={Object.assign({},CS,{marginBottom:12})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>RULES COMPLIANCE</div>
         {[...new Set([...RULES,...trades.flatMap(t=>t.rules_followed||[])])].map(r=>{const pct=trades.length?(trades.filter(t=>(t.rules_followed||[]).includes(r)).length/trades.length*100).toFixed(0):0;const col=parseFloat(pct as string)>=80?C.green:parseFloat(pct as string)>=50?C.gold:C.red;return(<div key={r} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}><span style={{color:C.dim}}>{r}</span><span style={{color:col,fontWeight:600}}>{pct}%</span></div><div style={{height:5,background:C.bg,borderRadius:3}}><div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:3}}/></div></div>);})}
@@ -643,11 +743,113 @@ function StatsView({trades}: {trades:any[]}) {
   );
 }
 
+// ── PLAYBOOK ──────────────────────────────────────────────────────────────────
+function PlaybookView({trades}: {trades:any[]}) {
+  const [entries,setEntries]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("playbook")||"[]");}catch{return [];}});
+  const [showForm,setShowForm]=useState(false);
+  const [formName,setFormName]=useState("");
+  const [formDesc,setFormDesc]=useState("");
+  const [formRules,setFormRules]=useState("");
+  const [formShot,setFormShot]=useState<string|null>(null);
+  const [confirmDel,setConfirmDel]=useState<string|null>(null);
+  const fileRef2=useRef<HTMLInputElement>(null);
+
+  function save(){
+    if(!formName.trim())return;
+    const entry={id:makeId(),name:formName.trim(),description:formDesc.trim(),rules:formRules.split("\n").map((r:string)=>r.trim()).filter(Boolean),screenshot:formShot,createdAt:new Date().toISOString()};
+    const next=[entry,...entries];
+    setEntries(next);localStorage.setItem("playbook",JSON.stringify(next));
+    setShowForm(false);setFormName("");setFormDesc("");setFormRules("");setFormShot(null);
+  }
+
+  function del(id: string){
+    const next=entries.filter((e:any)=>e.id!==id);
+    setEntries(next);localStorage.setItem("playbook",JSON.stringify(next));setConfirmDel(null);
+  }
+
+  function setupStats(name: string){
+    const st=trades.filter(t=>t.setup===name);
+    const wins=st.filter(t=>(t.pnl||0)>0);
+    const pnl=st.reduce((s:number,t:any)=>s+(t.pnl||0),0);
+    return{count:st.length,winRate:st.length?(wins.length/st.length*100).toFixed(0):0,pnl};
+  }
+
+  return(
+    <div style={{padding:"16px 16px 20px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontSize:16,fontWeight:800,color:C.txt}}>📖 PLAYBOOK</div>
+        <button onClick={()=>setShowForm(s=>!s)} style={{padding:"8px 14px",background:C.blue+"22",border:`1px solid ${C.blue}50`,color:C.blue,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700}}>+ Add Setup</button>
+      </div>
+
+      {showForm&&(
+        <div style={Object.assign({},CS,{marginBottom:16,border:`1px solid ${C.blue}30`})}>
+          <div style={{fontSize:11,color:C.blue,letterSpacing:"0.12em",marginBottom:12}}>NEW SETUP</div>
+          <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:5}}>SETUP NAME</div><input value={formName} onChange={e=>setFormName(e.target.value)} placeholder="e.g. BOS + Retest" style={inp()}/></div>
+          <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:5}}>DESCRIPTION</div><textarea value={formDesc} onChange={e=>setFormDesc(e.target.value)} rows={3} placeholder="Describe the setup, when to take it…" style={inp({resize:"vertical",lineHeight:1.6} as any)}/></div>
+          <div style={{marginBottom:10}}><div style={{fontSize:10,color:C.muted,marginBottom:5}}>RULES (one per line)</div><textarea value={formRules} onChange={e=>setFormRules(e.target.value)} rows={4} placeholder={"HTF trend aligned\nLiquidity swept\nEntry on retest"} style={inp({resize:"vertical",lineHeight:1.6} as any)}/></div>
+          <div style={{marginBottom:14}}><div style={{fontSize:10,color:C.muted,marginBottom:5}}>CHART SCREENSHOT</div><div onClick={()=>fileRef2.current?.click()} style={{border:`2px dashed ${C.bord}`,borderRadius:8,padding:12,textAlign:"center",cursor:"pointer",color:C.muted,fontSize:12}}>{formShot?"✅ Screenshot attached":"📸 Tap to upload"}</div><input ref={fileRef2} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>setFormShot((ev.target as any).result);r.readAsDataURL(f);}}/>{formShot&&<img src={formShot} alt="chart" style={{width:"100%",borderRadius:8,marginTop:8,border:`1px solid ${C.bord}`}}/>}</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={save} style={{flex:1,padding:12,background:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700}}>Save</button>
+            <button onClick={()=>setShowForm(false)} style={{padding:"12px 16px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13}}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {entries.length===0&&!showForm&&(
+        <div style={{textAlign:"center",padding:"80px 20px",color:C.muted}}>
+          <div style={{fontSize:44,marginBottom:12}}>📖</div>
+          <div style={{fontSize:13,fontWeight:600}}>No setups yet</div>
+          <div style={{fontSize:12,marginTop:6}}>Tap "+ Add Setup" to document your first trading setup</div>
+        </div>
+      )}
+
+      {entries.map((entry:any)=>{
+        const stats=setupStats(entry.name);
+        return(
+          <div key={entry.id} style={Object.assign({},CS,{marginBottom:12})}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div style={{fontSize:15,fontWeight:700,color:C.txt}}>{entry.name}</div>
+              {confirmDel===entry.id
+                ?<div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>del(entry.id)} style={{padding:"5px 10px",background:C.red+"20",border:`1px solid ${C.red}40`,color:C.red,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>Confirm</button>
+                    <button onClick={()=>setConfirmDel(null)} style={{padding:"5px 8px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:6,cursor:"pointer",fontFamily:"inherit",fontSize:11}}>Cancel</button>
+                  </div>
+                :<button onClick={()=>setConfirmDel(entry.id)} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:6,cursor:"pointer",fontSize:13,padding:"5px 8px",fontFamily:"inherit"}}>🗑</button>
+              }
+            </div>
+            {stats.count>0&&(
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:C.blue+"18",color:C.blue,fontWeight:600}}>{stats.count} trades</span>
+                <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:C.green+"18",color:C.green,fontWeight:600}}>{stats.winRate}% win</span>
+                <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:(stats.pnl>=0?C.green:C.red)+"18",color:stats.pnl>=0?C.green:C.red,fontWeight:600}}>{stats.pnl>=0?"+":""}${stats.pnl.toFixed(0)}</span>
+              </div>
+            )}
+            {entry.description&&<div style={{fontSize:12,color:C.dim,lineHeight:1.7,marginBottom:10}}>{entry.description}</div>}
+            {entry.rules.length>0&&(
+              <div style={{marginBottom:10}}>
+                {entry.rules.map((r:string,i:number)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:C.bg,borderRadius:6,marginBottom:4,fontSize:12,color:C.txt}}>
+                    <span style={{color:C.green,fontSize:14}}>☐</span>{r}
+                  </div>
+                ))}
+              </div>
+            )}
+            {entry.screenshot&&<img src={entry.screenshot} alt="chart" style={{width:"100%",borderRadius:8,border:`1px solid ${C.bord}`,marginBottom:8}}/>}
+            <div style={{fontSize:10,color:C.muted,marginTop:4}}>Added {new Date(entry.createdAt).toLocaleDateString()}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── REVIEW ────────────────────────────────────────────────────────────────────
 function ReviewView({trades}: {trades:any[]}) {
   const [period,setPeriod]=useState("week"),[cs,setCs]=useState(""),[ce,setCe]=useState("");
   const [tab,setTab]=useState("generate"),[review,setReview]=useState<any>(null),[loading,setLoading]=useState(false);
   const [copied,setCopied]=useState(false),[paste,setPaste]=useState("");
+  const [patterns,setPatterns]=useState<any[]>([]);
+  const [aiPatternResult,setAiPatternResult]=useState<any>(null),[aiPatternLoading,setAiPatternLoading]=useState(false);
 
   function getRange(){const n=new Date();if(period==="week"){const d=n.getDay();const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));const e=new Date(s);e.setDate(s.getDate()+6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}if(period==="lastweek"){const d=n.getDay();const e=new Date(n);e.setDate(n.getDate()-(d===0?0:d));const s=new Date(e);s.setDate(e.getDate()-6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}if(period==="month")return{s:`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`,e:n.toISOString().slice(0,10)};if(period==="lastmonth"){const lm=new Date(n.getFullYear(),n.getMonth()-1,1);const lme=new Date(n.getFullYear(),n.getMonth(),0);return{s:lm.toISOString().slice(0,10),e:lme.toISOString().slice(0,10)};}return{s:cs,e:ce};}
   const rng=getRange();
@@ -657,15 +859,104 @@ function ReviewView({trades}: {trades:any[]}) {
 
   async function runReview(text: string){setLoading(true);setReview(null);try{const result=await callAI(`Professional futures trading coach. Analyze this log with honest feedback.\n\n${text}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setReview(result);setTab("result");}catch(e){console.error(e);}setLoading(false);}
 
+  function computePatterns(){
+    if(!trades.length)return[];
+    const winRate=(ts:any[])=>ts.length?ts.filter(t=>(t.pnl||0)>0).length/ts.length*100:0;
+    const sessions=[...new Set(trades.map(t=>t.session).filter(Boolean))];
+    const sessionWR=sessions.map(s=>{const st=trades.filter(t=>t.session===s);return{name:s,wr:winRate(st),count:st.length};});
+    const bestSess=sessionWR.sort((a,b)=>b.wr-a.wr)[0];
+    const worstSess=[...sessionWR].sort((a,b)=>a.wr-b.wr)[0];
+    const moods=[...new Set(trades.map(t=>t.mood).filter(Boolean))];
+    const moodWR=moods.map(m=>{const mt=trades.filter(t=>t.mood===m);return{name:m,wr:winRate(mt),count:mt.length};});
+    const bestMood=moodWR.sort((a,b)=>b.wr-a.wr)[0];
+    const worstMood=[...moodWR].sort((a,b)=>a.wr-b.wr)[0];
+    const setups=[...new Set(trades.map(t=>t.setup).filter(Boolean))];
+    const setupWR=setups.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,wr:winRate(st),count:st.length};}).filter(s=>s.count>=2);
+    const bestSetup=setupWR.sort((a,b)=>b.wr-a.wr)[0];
+    const followed=trades.filter(t=>(t.rules_followed||[]).length>0&&(t.rules_followed||[]).length>=(t.rules_followed||[]).length);
+    const allFollowed=trades.filter(t=>{const rules=t.rules_followed||[];return rules.length>=3;});
+    const notFollowed=trades.filter(t=>{const rules=t.rules_followed||[];return rules.length<2;});
+    const avgPnlFollowed=allFollowed.length?allFollowed.reduce((s:number,t:any)=>s+(t.pnl||0),0)/allFollowed.length:0;
+    const avgPnlNotFollowed=notFollowed.length?notFollowed.reduce((s:number,t:any)=>s+(t.pnl||0),0)/notFollowed.length:0;
+    const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const dowStats=days.map((d,i)=>{const dt=trades.filter(t=>{const day=new Date(t.date+"T12:00:00").getDay();return day===i;});return{day:d,wr:winRate(dt),count:dt.length,pnl:dt.reduce((s:number,t:any)=>s+(t.pnl||0),0)};}).filter(d=>d.count>0).sort((a,b)=>b.wr-a.wr);
+    const bestDay=dowStats[0],worstDay=dowStats[dowStats.length-1];
+    const result:any[]=[];
+    if(bestSess)result.push({label:"Best Session",insight:`${bestSess.name} has your highest win rate at ${bestSess.wr.toFixed(0)}% over ${bestSess.count} trades`,color:C.green});
+    if(worstSess&&worstSess.name!==bestSess?.name)result.push({label:"Worst Session",insight:`${worstSess.name} is dragging you down at ${worstSess.wr.toFixed(0)}% win rate — consider reducing size`,color:C.red});
+    if(bestMood)result.push({label:"Best Mood",insight:`You trade best when ${bestMood.name} — ${bestMood.wr.toFixed(0)}% win rate`,color:C.green});
+    if(worstMood&&worstMood.name!==bestMood?.name)result.push({label:"Worst Mood",insight:`Avoid trading when ${worstMood.name} — only ${worstMood.wr.toFixed(0)}% win rate`,color:C.red});
+    if(bestSetup)result.push({label:"Best Setup",insight:`${bestSetup.name} wins ${bestSetup.wr.toFixed(0)}% of the time (${bestSetup.count} trades) — focus here`,color:C.green});
+    if(allFollowed.length>0||notFollowed.length>0)result.push({label:"Rules Discipline",insight:`Avg P&L with 3+ rules: $${avgPnlFollowed.toFixed(0)} vs <2 rules: $${avgPnlNotFollowed.toFixed(0)}`,color:avgPnlFollowed>avgPnlNotFollowed?C.green:C.gold});
+    if(bestDay)result.push({label:"Best Day of Week",insight:`${bestDay.day} is your strongest day at ${bestDay.wr.toFixed(0)}% win rate`,color:C.green});
+    if(worstDay&&worstDay.day!==bestDay?.day)result.push({label:"Worst Day of Week",insight:`${worstDay.day} is your weakest — ${worstDay.wr.toFixed(0)}% win rate, consider fewer trades`,color:C.red});
+    return result;
+  }
+
+  async function runAiPatternAnalysis(){
+    const pts=computePatterns();
+    if(!pts.length)return;
+    setAiPatternLoading(true);setAiPatternResult(null);
+    const summary=pts.map(p=>`${p.label}: ${p.insight}`).join("\n");
+    try{
+      const result=await callAI(`You are an elite trading coach. Based on these trading patterns, give actionable insights.\n\n${summary}\n\nJSON: {"insights":["..."],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,1200);
+      setAiPatternResult(result);
+    }catch(e){console.error(e);}
+    setAiPatternLoading(false);
+  }
+
+  const todayDow=new Date().getDay();
+
   return(
     <div style={{padding:"16px 16px 20px"}}>
-      <div style={{display:"flex",gap:6,marginBottom:16}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>setTab(t.id)}>{t.l}</Pill>)}</div>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());}}>{t.l}</Pill>)}</div>
       {tab==="generate"&&(<div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:14}}>{[{id:"week",l:"This Week"},{id:"lastweek",l:"Last Week"},{id:"month",l:"This Month"},{id:"lastmonth",l:"Last Month"},{id:"custom",l:"Custom"}].map(p=><Pill key={p.id} active={period===p.id} color={C.purp} onClick={()=>setPeriod(p.id)}>{p.l}</Pill>)}</div>
         {period==="custom"&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>FROM</div><input type="date" value={cs} onChange={e=>setCs(e.target.value)} style={inp()}/></div><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>TO</div><input type="date" value={ce} onChange={e=>setCe(e.target.value)} style={inp()}/></div></div>)}
+
+        {/* Weekly Report banner */}
+        <div style={Object.assign({},CS,{marginBottom:14,border:`1px solid ${todayDow===0?C.gold+"60":C.bord}`})}>
+          <div style={{fontSize:9,color:todayDow===0?C.gold:C.muted,letterSpacing:"0.12em",marginBottom:8}}>📅 WEEKLY REPORT</div>
+          {todayDow===0?(
+            <div>
+              <div style={{fontSize:12,color:C.txt,marginBottom:10}}>It's Sunday! Generate your weekly review now.</div>
+              <button onClick={()=>{setPeriod("week");const wt=trades.filter(t=>{const n=new Date();const d=n.getDay();const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));const eDate=new Date(s);eDate.setDate(s.getDate()+6);const sStr=s.toISOString().slice(0,10),eStr=eDate.toISOString().slice(0,10);return t.date>=sStr&&t.date<=eStr;});if(wt.length){const n=new Date();const d=n.getDay();const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));const eDate=new Date(s);eDate.setDate(s.getDate()+6);const sStr=s.toISOString().slice(0,10),eStr=eDate.toISOString().slice(0,10);const wins=wt.filter(t=>(t.pnl||0)>0),total=wt.reduce((s:number,t:any)=>s+(t.pnl||0),0);const lines=["=== TRADING REPORT ===",`Period: ${sStr} to ${eStr}`,`Trades:${wt.length} Wins:${wins.length} Losses:${wt.length-wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${wt.length?(wins.length/wt.length*100).toFixed(1):0}%`,""];wt.forEach((t:any,i:number)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`Entry:${t.entry} Exit:${t.exit} P&L:$${(t.pnl||0).toFixed(2)}`);lines.push(`Setup:${t.setup} Mood:${t.mood}`);lines.push(`Notes:${t.notes||"—"}`);lines.push("");});runReview(lines.join("\n"));}}} style={{width:"100%",padding:12,background:C.gold,color:"#000",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800}}>🏆 Generate This Week's Report</button>
+            </div>
+          ):(
+            <button onClick={()=>{setPeriod("week");const n=new Date();const d=n.getDay();const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));const eDate=new Date(s);eDate.setDate(s.getDate()+6);const sStr=s.toISOString().slice(0,10),eStr=eDate.toISOString().slice(0,10);const wt=trades.filter(t=>t.date>=sStr&&t.date<=eStr);if(wt.length){const wins=wt.filter(t=>(t.pnl||0)>0),total=wt.reduce((s:number,t:any)=>s+(t.pnl||0),0);const lines=["=== TRADING REPORT ===",`Period: ${sStr} to ${eStr}`,`Trades:${wt.length} Wins:${wins.length} Losses:${wt.length-wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${wt.length?(wins.length/wt.length*100).toFixed(1):0}%`,""];wt.forEach((t:any,i:number)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`Entry:${t.entry} Exit:${t.exit} P&L:$${(t.pnl||0).toFixed(2)}`);lines.push(`Setup:${t.setup} Mood:${t.mood}`);lines.push(`Notes:${t.notes||"—"}`);lines.push("");});runReview(lines.join("\n"));}}} style={{width:"100%",padding:10,background:"transparent",border:`1px solid ${C.purp}40`,color:C.purp,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>📅 Generate Week Report</button>
+          )}
+        </div>
+
         {ft.length>0?(<div><div style={Object.assign({},CS,{marginBottom:12})}><div style={{fontSize:11,color:C.purp,marginBottom:6}}>{rng.s} → {rng.e} · {ft.length} trades</div><div style={{fontSize:20,fontWeight:800,color:fTotal>=0?C.green:C.red}}>{fTotal>=0?"+":""}${fTotal.toFixed(2)}</div></div><div style={{display:"flex",gap:8}}><button onClick={()=>{navigator.clipboard.writeText(buildReport(ft)).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}} style={{flex:1,padding:12,background:copied?C.green+"20":C.blue+"20",color:copied?C.green:C.blue,border:`1px solid ${copied?C.green+"35":C.blue+"35"}`,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>{copied?"✓ Copied!":"📋 Copy Log"}</button><button onClick={()=>runReview(buildReport(ft))} disabled={loading} style={{flex:1,padding:12,background:C.purp+"20",color:C.purp,border:`1px solid ${C.purp}35`,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>{loading?"Analyzing…":"🤖 AI Critique"}</button></div></div>):(<div style={{textAlign:"center",padding:40,color:C.muted}}><div style={{fontSize:32}}>📭</div><div style={{marginTop:10,fontSize:12}}>No trades in this period</div></div>)}
       </div>)}
       {tab==="paste"&&(<div><div style={{fontSize:12,color:C.muted,marginBottom:12,lineHeight:1.7}}>Paste your trade log or notes for an AI coaching critique.</div><textarea value={paste} onChange={e=>setPaste(e.target.value)} rows={10} placeholder="Paste trade log or notes here…" style={inp({resize:"vertical",lineHeight:1.6,marginBottom:10} as any)}/><button onClick={()=>runReview(paste)} disabled={loading||!paste.trim()} style={{width:"100%",padding:13,background:loading||!paste.trim()?C.bord:C.purp,color:loading||!paste.trim()?C.muted:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700}}>{loading?"Analyzing…":"🤖 Get AI Critique"}</button></div>)}
+      {tab==="patterns"&&(
+        <div>
+          {!trades.length?(<div style={{textAlign:"center",padding:60,color:C.muted}}><div style={{fontSize:40}}>🔍</div><div style={{marginTop:12,fontSize:12}}>No trades to analyze</div></div>):(
+            <div>
+              {patterns.map((p:any,i:number)=>(
+                <div key={i} style={{background:C.surf,border:`1px solid ${p.color}30`,borderLeft:`3px solid ${p.color}`,borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                  <div style={{fontSize:9,color:p.color,letterSpacing:"0.12em",marginBottom:4}}>{p.label.toUpperCase()}</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.6}}>{p.insight}</div>
+                </div>
+              ))}
+              <button onClick={runAiPatternAnalysis} disabled={aiPatternLoading} style={{width:"100%",padding:13,background:aiPatternLoading?C.muted:C.purp,color:"#fff",border:"none",borderRadius:10,cursor:aiPatternLoading?"wait":"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,marginTop:8}}>
+                {aiPatternLoading?"🤖 Analyzing…":"🤖 AI Deep Analysis"}
+              </button>
+              {aiPatternResult&&(
+                <div style={Object.assign({},CS,{marginTop:12,border:`1px solid ${C.purp}25`})}>
+                  <div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:10}}>🤖 AI COACH INSIGHTS</div>
+                  {(aiPatternResult.insights||[]).map((ins:string,i:number)=><div key={i} style={{fontSize:12,color:C.txt,marginBottom:8,lineHeight:1.6}}>· {ins}</div>)}
+                  {aiPatternResult.topPattern&&<div style={{fontSize:11,color:C.green,marginTop:8,fontWeight:600}}>🏆 Top Pattern: {aiPatternResult.topPattern}</div>}
+                  {aiPatternResult.biggestWeakness&&<div style={{fontSize:11,color:C.red,marginTop:6,fontWeight:600}}>⚠ Weakness: {aiPatternResult.biggestWeakness}</div>}
+                  {aiPatternResult.weeklyGoal&&<div style={{fontSize:11,color:C.gold,marginTop:6,fontWeight:600}}>🎯 Goal: {aiPatternResult.weeklyGoal}</div>}
+                  {aiPatternResult.coachNote&&<div style={{fontSize:11,color:C.dim,marginTop:8,fontStyle:"italic"}}>"{aiPatternResult.coachNote}"</div>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {tab==="result"&&(loading?<div style={{textAlign:"center",padding:60,color:C.purp,fontSize:13}}>🤖 Analyzing your trades…</div>:review?<ReviewResult review={review}/>:<div style={{textAlign:"center",padding:60,color:C.muted}}><div style={{fontSize:40}}>🤖</div><div style={{marginTop:12,fontSize:12}}>No review yet</div></div>)}
     </div>
   );
@@ -926,7 +1217,7 @@ export default function App() {
   if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"monospace",fontSize:13}}>Loading…</div>;
   if(!user)return<AuthScreen onAuth={setUser}/>;
 
-  const nav=[{id:"home",icon:"⌂",label:"HOME"},{id:"journal",icon:"≡",label:"JOURNAL"},{id:"calendar",icon:"◻",label:"CALENDAR"},{id:"stats",icon:"◈",label:"STATS"},{id:"review",icon:"◉",label:"REVIEW"},{id:"learn",icon:"🎓",label:"LEARN"},{id:"feedback",icon:"💬",label:"FEEDBACK"}];
+  const nav=[{id:"home",icon:"⌂",label:"HOME"},{id:"journal",icon:"≡",label:"JOURNAL"},{id:"calendar",icon:"◻",label:"CALENDAR"},{id:"stats",icon:"◈",label:"STATS"},{id:"playbook",icon:"📖",label:"PLAYBOOK"},{id:"review",icon:"◉",label:"REVIEW"},{id:"learn",icon:"🎓",label:"LEARN"},{id:"feedback",icon:"💬",label:"FEEDBACK"}];
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'DM Mono','Fira Code','Courier New',monospace",maxWidth:480,margin:"0 auto"}}>
@@ -953,7 +1244,8 @@ export default function App() {
         {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance}/>}
         {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
         {view==="calendar"&&<CalendarView trades={trades}/>}
-        {view==="stats"&&<StatsView trades={trades}/>}
+        {view==="stats"&&<StatsView trades={trades} account={activeAccount}/>}
+        {view==="playbook"&&<PlaybookView trades={trades}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
         {view==="learn"&&<Suspense fallback={<div style={{textAlign:"center",padding:60,color:C.muted}}>Loading…</div>}><EducationCenter userPlan={plan} apiCall={apiCall}/></Suspense>}
         {view==="feedback"&&<FeedbackView user={user}/>}
