@@ -1061,6 +1061,232 @@ function ReviewResult({review:r}: {review:any}){
   </div>);
 }
 
+// ── AI VIEW ──────────────────────────────────────────────────────────────────
+function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
+  const [tab,setTab]=useState("prep");
+  const [prep,setPrep]=useState<any>(null),[prepLoading,setPrepLoading]=useState(false),[prepDate,setPrepDate]=useState("");
+  const [chatMsgs,setChatMsgs]=useState<{role:string,content:string}[]>([]);
+  const [chatInput,setChatInput]=useState(""),[chatLoading,setChatLoading]=useState(false);
+  const chatEndRef=useRef<any>(null);
+  const [patterns,setPatterns]=useState<any[]>([]),[aiPR,setAiPR]=useState<any>(null),[aiPL,setAiPL]=useState(false);
+  const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
+
+  async function generatePrep(){
+    setPrepLoading(true);setPrep(null);
+    const today=new Date();
+    const dayName=today.toLocaleDateString("en-US",{weekday:"long"});
+    const dateStr=today.toISOString().slice(0,10);
+    const recent=trades.slice(0,20);
+    const recentPnl=recent.reduce((s,t)=>s+(t.pnl||0),0);
+    const favSetups=[...new Set(recent.map(t=>t.setup).filter(Boolean))].slice(0,3).join(", ")||"various";
+    const favSessions=[...new Set(recent.map(t=>t.session).filter(Boolean))].slice(0,2).join(", ")||"New York";
+    const favInstruments=[...new Set(recent.map(t=>t.instrument).filter(Boolean))].slice(0,3).join(", ")||"futures";
+    const wr=recent.length?(recent.filter(t=>(t.pnl||0)>0).length/recent.length*100).toFixed(0):0;
+    const prompt=`You are an elite trading coach. Generate a concise morning market prep briefing.\nToday: ${dayName}, ${dateStr}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%\n\nJSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:900});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
+    setPrepLoading(false);
+  }
+
+  async function sendChat(){
+    if(!chatInput.trim())return;
+    const userMsg={role:"user",content:chatInput};
+    const newMsgs=[...chatMsgs,userMsg];
+    setChatMsgs(newMsgs);setChatInput("");setChatLoading(true);
+    try{const data=await apiFn("POST","/api/ai/chat",{messages:newMsgs});setChatMsgs([...newMsgs,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
+    setChatLoading(false);
+    setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
+  }
+
+  function computePatterns(){
+    if(!trades.length)return[];
+    const wr=(ts:any[])=>ts.length?ts.filter(t=>(t.pnl||0)>0).length/ts.length*100:0;
+    const sessions=[...new Set(trades.map(t=>t.session).filter(Boolean))];
+    const sessWR=sessions.map(s=>{const st=trades.filter(t=>t.session===s);return{name:s,wr:wr(st),count:st.length};});
+    const bSess=sessWR.sort((a,b)=>b.wr-a.wr)[0],wSess=[...sessWR].sort((a,b)=>a.wr-b.wr)[0];
+    const moods=[...new Set(trades.map(t=>t.mood).filter(Boolean))];
+    const moodWR=moods.map(m=>{const mt=trades.filter(t=>t.mood===m);return{name:m,wr:wr(mt),count:mt.length};});
+    const bMood=moodWR.sort((a,b)=>b.wr-a.wr)[0],wMood=[...moodWR].sort((a,b)=>a.wr-b.wr)[0];
+    const setups=[...new Set(trades.map(t=>t.setup).filter(Boolean))];
+    const setupWR=setups.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,wr:wr(st),count:st.length};}).filter(s=>s.count>=2);
+    const bSetup=setupWR.sort((a,b)=>b.wr-a.wr)[0];
+    const withRules=trades.filter(t=>(t.rules_followed||[]).length>=3);
+    const noRules=trades.filter(t=>(t.rules_followed||[]).length<2);
+    const avgW=withRules.length?withRules.reduce((s:number,t:any)=>s+(t.pnl||0),0)/withRules.length:0;
+    const avgN=noRules.length?noRules.reduce((s:number,t:any)=>s+(t.pnl||0),0)/noRules.length:0;
+    const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const dowStats=days.map((d,i)=>{const dt=trades.filter(t=>new Date(t.date+"T12:00:00").getDay()===i);return{day:d,wr:wr(dt),count:dt.length};}).filter(d=>d.count>0).sort((a,b)=>b.wr-a.wr);
+    const bDay=dowStats[0],wDay=dowStats[dowStats.length-1];
+    const result:any[]=[];
+    if(bSess)result.push({label:"Best Session",insight:`${bSess.name} has your highest win rate at ${bSess.wr.toFixed(0)}% over ${bSess.count} trades`,color:C.green});
+    if(wSess&&wSess.name!==bSess?.name)result.push({label:"Worst Session",insight:`${wSess.name} is dragging you at ${wSess.wr.toFixed(0)}% win rate — reduce size`,color:C.red});
+    if(bMood)result.push({label:"Best Mood",insight:`You trade best when ${bMood.name} — ${bMood.wr.toFixed(0)}% win rate`,color:C.green});
+    if(wMood&&wMood.name!==bMood?.name)result.push({label:"Worst Mood",insight:`Avoid trading when ${wMood.name} — only ${wMood.wr.toFixed(0)}% win rate`,color:C.red});
+    if(bSetup)result.push({label:"Best Setup",insight:`${bSetup.name} wins ${bSetup.wr.toFixed(0)}% (${bSetup.count} trades) — focus here`,color:C.green});
+    if(withRules.length>0||noRules.length>0)result.push({label:"Rules Discipline",insight:`Avg P&L 3+ rules: $${avgW.toFixed(0)} vs <2 rules: $${avgN.toFixed(0)}`,color:avgW>avgN?C.green:C.gold});
+    if(bDay)result.push({label:"Best Day of Week",insight:`${bDay.day} is your strongest at ${bDay.wr.toFixed(0)}% win rate`,color:C.green});
+    if(wDay&&wDay.day!==bDay?.day)result.push({label:"Worst Day of Week",insight:`${wDay.day} is your weakest — ${wDay.wr.toFixed(0)}% win rate`,color:C.red});
+    return result;
+  }
+
+  async function runAiPatterns(){
+    const pts=computePatterns();if(!pts.length)return;
+    setAiPL(true);setAiPR(null);
+    const summary=pts.map(p=>`${p.label}: ${p.insight}`).join("\n");
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt:`Elite trading coach. Actionable insights from these patterns:\n\n${summary}\n\nJSON: {"insights":[""],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,maxTokens:1200});setAiPR(r);}catch(e){console.error(e);}
+    setAiPL(false);
+  }
+
+  async function runWeeklyReport(){
+    const n=new Date(),d=n.getDay();
+    const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));
+    const e=new Date(s);e.setDate(s.getDate()+6);
+    const sStr=s.toISOString().slice(0,10),eStr=e.toISOString().slice(0,10);
+    const wt=trades.filter(t=>t.date>=sStr&&t.date<=eStr);
+    if(!wt.length)return;
+    const wins=wt.filter(t=>(t.pnl||0)>0),total=wt.reduce((s,t)=>s+(t.pnl||0),0);
+    const lines=["=== WEEKLY REPORT ===",`Period: ${sStr} to ${eStr}`,`Trades:${wt.length} Wins:${wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${wt.length?(wins.length/wt.length*100).toFixed(1):0}%`,""];
+    wt.forEach((t,i)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`P&L:$${(t.pnl||0).toFixed(2)} Setup:${t.setup} Mood:${t.mood}`);lines.push("");});
+    setWeekLoading(true);setWeekReview(null);
+    try{const r=await callAI(`Professional futures trading coach. Analyze this weekly log.\n\n${lines.join("\n")}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setWeekReview(r);}catch(e){console.error(e);}
+    setWeekLoading(false);
+  }
+
+  return(
+    <div style={{padding:"16px 16px 20px"}}>
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:9,color:C.blue,letterSpacing:"0.2em",marginBottom:4}}>INTELLIGENCE</div>
+        <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>AI Assistant</div>
+      </div>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+        {[{id:"prep",l:"📋 Market Prep"},{id:"chat",l:"💬 Chat"},{id:"patterns",l:"🔍 Patterns"},{id:"report",l:"📊 Weekly"}].map(t=>(
+          <Pill key={t.id} active={tab===t.id} color={C.blue} onClick={()=>{setTab(t.id);if(t.id==="patterns"&&!patterns.length)setPatterns(computePatterns());}}>{t.l}</Pill>
+        ))}
+      </div>
+
+      {tab==="prep"&&(
+        <div>
+          <div style={Object.assign({},CS,{marginBottom:12,background:"linear-gradient(145deg,#19243d,#161b27)"})}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div>
+                <div style={{fontSize:9,color:C.blue,letterSpacing:"0.15em",marginBottom:4}}>MORNING BRIEFING</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.txt}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
+              </div>
+              {prep&&prepDate===new Date().toISOString().slice(0,10)&&<Tag color={C.green}>Today</Tag>}
+            </div>
+            <button onClick={generatePrep} disabled={prepLoading} style={{width:"100%",padding:13,background:prepLoading?C.muted:C.blue,color:"#fff",border:"none",borderRadius:10,cursor:prepLoading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700}}>
+              {prepLoading?"🤖 Generating…":"📋 Generate Today's Prep"}
+            </button>
+          </div>
+          {prep&&(
+            <div>
+              <div style={Object.assign({},CS,{marginBottom:10})}>
+                <div style={{fontSize:9,color:C.blue,letterSpacing:"0.12em",marginBottom:8}}>📈 MARKET CONTEXT</div>
+                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{prep.marketContext}</div>
+              </div>
+              {prep.sessionFocus&&<div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.blue}30`})}><div style={{fontSize:9,color:C.blue,letterSpacing:"0.12em",marginBottom:6}}>🎯 SESSION FOCUS</div><div style={{fontSize:12,color:C.txt}}>{prep.sessionFocus}</div></div>}
+              {prep.keyLevels?.length>0&&(
+                <div style={Object.assign({},CS,{marginBottom:10})}>
+                  <div style={{fontSize:9,color:C.gold,letterSpacing:"0.12em",marginBottom:10}}>📊 KEY LEVELS</div>
+                  {prep.keyLevels.map((kl:any,i:number)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"8px 0",borderBottom:i<prep.keyLevels.length-1?`1px solid ${C.bord}`:"none"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:C.gold,fontFamily:"monospace",flexShrink:0}}>{kl.level}</div>
+                      <div style={{fontSize:11,color:C.dim,flex:1}}>{kl.significance}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.green}25`})}>
+                <div style={{fontSize:9,color:C.green,letterSpacing:"0.12em",marginBottom:8}}>✅ TODAY'S PLAN</div>
+                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{prep.tradingPlan}</div>
+              </div>
+              {prep.newsToWatch?.length>0&&(
+                <div style={Object.assign({},CS,{marginBottom:10})}>
+                  <div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>📰 NEWS TO WATCH</div>
+                  {prep.newsToWatch.map((n:string,i:number)=><div key={i} style={{fontSize:12,color:C.txt,marginBottom:6,display:"flex",gap:8}}><span style={{color:C.purp,flexShrink:0}}>•</span>{n}</div>)}
+                </div>
+              )}
+              {prep.riskReminders?.length>0&&(
+                <div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.red}25`})}>
+                  <div style={{fontSize:9,color:C.red,letterSpacing:"0.12em",marginBottom:8}}>⚠️ RISK REMINDERS</div>
+                  {prep.riskReminders.map((r:string,i:number)=><div key={i} style={{fontSize:12,color:C.txt,marginBottom:6,display:"flex",gap:8}}><span style={{color:C.red,flexShrink:0}}>!</span>{r}</div>)}
+                </div>
+              )}
+              {prep.mindset&&<div style={{background:"#0d1020",border:`1px solid ${C.purp}25`,borderRadius:12,padding:16}}><div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>🧠 MINDSET</div><div style={{fontSize:12,color:C.txt,lineHeight:1.8,fontStyle:"italic"}}>"{prep.mindset}"</div></div>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab==="chat"&&(
+        <div>
+          <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:12,padding:12,minHeight:300,maxHeight:460,overflowY:"auto",marginBottom:10,display:"flex",flexDirection:"column",gap:10}}>
+            {chatMsgs.length===0&&(
+              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:C.muted,padding:40,textAlign:"center"}}>
+                <div style={{fontSize:36,marginBottom:12}}>🤖</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.txt}}>AI Trading Coach</div>
+                <div style={{fontSize:11,marginTop:8,lineHeight:1.7}}>Ask about setups, risk management, trade psychology, market structure, strategies…</div>
+              </div>
+            )}
+            {chatMsgs.map((m,i)=>(
+              <div key={i} style={{display:"flex",gap:8,justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                {m.role==="assistant"&&<div style={{width:28,height:28,borderRadius:"50%",background:C.blue+"22",border:`1px solid ${C.blue}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>}
+                <div style={{maxWidth:"80%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px",background:m.role==="user"?C.blue+"22":C.surf2,border:`1px solid ${m.role==="user"?C.blue+"40":C.bord}`,fontSize:12,color:C.txt,lineHeight:1.7}}>{m.content}</div>
+              </div>
+            ))}
+            {chatLoading&&<div style={{display:"flex",gap:8}}><div style={{width:28,height:28,borderRadius:"50%",background:C.blue+"22",border:`1px solid ${C.blue}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🤖</div><div style={{padding:"10px 14px",borderRadius:"12px 12px 12px 4px",background:C.surf2,border:`1px solid ${C.bord}`,fontSize:12,color:C.muted}}>Thinking…</div></div>}
+            <div ref={chatEndRef}/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Ask your trading coach…" style={inp({flex:1,fontSize:14,padding:"12px 14px"} as any)}/>
+            <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{padding:"12px 18px",background:chatLoading||!chatInput.trim()?C.muted:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,flexShrink:0}}>Send</button>
+          </div>
+        </div>
+      )}
+
+      {tab==="patterns"&&(
+        <div>
+          {!trades.length?<div style={{textAlign:"center",padding:60,color:C.muted}}><div style={{fontSize:40}}>🔍</div><div style={{marginTop:12,fontSize:12}}>No trades to analyze</div></div>:(
+            <div>
+              {patterns.map((p:any,i:number)=>(
+                <div key={i} style={{background:C.surf,border:`1px solid ${p.color}30`,borderLeft:`3px solid ${p.color}`,borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+                  <div style={{fontSize:9,color:p.color,letterSpacing:"0.12em",marginBottom:4}}>{p.label.toUpperCase()}</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.6}}>{p.insight}</div>
+                </div>
+              ))}
+              <button onClick={runAiPatterns} disabled={aiPL} style={{width:"100%",padding:13,background:aiPL?C.muted:C.purp,color:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,marginTop:4}}>
+                {aiPL?"🤖 Analyzing…":"🤖 AI Deep Analysis"}
+              </button>
+              {aiPR&&(
+                <div style={Object.assign({},CS,{marginTop:12,border:`1px solid ${C.purp}25`})}>
+                  <div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:10}}>🤖 AI COACH INSIGHTS</div>
+                  {(aiPR.insights||[]).map((ins:string,i:number)=><div key={i} style={{fontSize:12,color:C.txt,marginBottom:8,lineHeight:1.6}}>· {ins}</div>)}
+                  {aiPR.topPattern&&<div style={{fontSize:11,color:C.green,marginTop:8,fontWeight:600}}>🏆 {aiPR.topPattern}</div>}
+                  {aiPR.biggestWeakness&&<div style={{fontSize:11,color:C.red,marginTop:6,fontWeight:600}}>⚠ {aiPR.biggestWeakness}</div>}
+                  {aiPR.weeklyGoal&&<div style={{fontSize:11,color:C.gold,marginTop:6,fontWeight:600}}>🎯 {aiPR.weeklyGoal}</div>}
+                  {aiPR.coachNote&&<div style={{fontSize:11,color:C.dim,marginTop:8,fontStyle:"italic"}}>"{aiPR.coachNote}"</div>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab==="report"&&(
+        <div>
+          <div style={Object.assign({},CS,{marginBottom:14})}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:10}}>📅 WEEKLY AI COACHING REPORT</div>
+            <div style={{fontSize:12,color:C.dim,marginBottom:14,lineHeight:1.6}}>Get a full AI review of your week — grades, patterns, and a personalized action plan.</div>
+            <button onClick={runWeeklyReport} disabled={weekLoading} style={{width:"100%",padding:14,background:weekLoading?C.muted:C.gold,color:"#000",border:"none",borderRadius:10,cursor:weekLoading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800}}>
+              {weekLoading?"🤖 Analyzing…":"🏆 Generate This Week's Report"}
+            </button>
+          </div>
+          {weekReview&&<ReviewResult review={weekReview}/>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── FEEDBACK ──────────────────────────────────────────────────────────────────
 function FeedbackView({user}: {user:any}) {
   const [type,setType]=useState("bug");
@@ -1210,6 +1436,7 @@ export default function App() {
   function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
   const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
   function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
+  const [showMenu,setShowMenu]=useState(false);
 
   // ── AUTH CHECK ──
   useEffect(()=>{
@@ -1302,13 +1529,25 @@ export default function App() {
   if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"monospace",fontSize:13}}>Loading…</div>;
   if(!user)return<AuthScreen onAuth={setUser}/>;
 
-  const nav=[{id:"home",icon:"⌂",label:"HOME"},{id:"journal",icon:"≡",label:"JOURNAL"},{id:"calendar",icon:"◻",label:"CALENDAR"},{id:"stats",icon:"◈",label:"STATS"},{id:"playbook",icon:"📖",label:"PLAYBOOK"},{id:"review",icon:"◉",label:"REVIEW"},{id:"learn",icon:"🎓",label:"LEARN"},{id:"feedback",icon:"💬",label:"FEEDBACK"}];
+  const MENU_ITEMS=[
+    {id:"home",icon:"⌂",label:"Home",desc:"Dashboard & stats"},
+    {id:"journal",icon:"≡",label:"Journal",desc:"Your trade log"},
+    {id:"calendar",icon:"◻",label:"Calendar",desc:"Monthly view"},
+    {id:"stats",icon:"◈",label:"Stats",desc:"Performance analytics"},
+    {id:"playbook",icon:"📖",label:"Playbook",desc:"My setups"},
+    {id:"ai",icon:"🤖",label:"AI",desc:"Coach, prep & insights"},
+    {id:"review",icon:"◉",label:"Review",desc:"AI performance review"},
+    {id:"learn",icon:"🎓",label:"Learn",desc:"Trading education"},
+    {id:"feedback",icon:"💬",label:"Feedback",desc:"Share ideas"},
+  ];
+
+  function navigate(id: string){setView(id);setShowNewTrade(false);setEditingTrade(null);setShowMenu(false);}
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'DM Mono','Fira Code','Courier New',monospace",maxWidth:480,margin:"0 auto"}}>
       {/* HEADER */}
       <div style={{background:C.surf,borderBottom:`1px solid ${C.bord}`,padding:"13px 16px",position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>navigate("home")}>
           <div style={{width:28,height:28,background:C.green,borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
           </div>
@@ -1320,32 +1559,47 @@ export default function App() {
             <span style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{activeAccount?.name||"Account"}</span>
             <span style={{color:C.muted,fontSize:10}}>▾</span>
           </button>
-          <button onClick={signOut} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,padding:"7px 10px",borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>Out</button>
+          <button onClick={()=>setShowMenu(true)} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.txt,padding:"7px 12px",borderRadius:8,cursor:"pointer",fontSize:18,fontFamily:"inherit",lineHeight:1}}>☰</button>
         </div>
       </div>
 
       {/* CONTENT */}
-      <div style={{paddingBottom:100}}>
+      <div style={{paddingBottom:80}}>
         {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance}/>}
         {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades} account={activeAccount}/>}
         {view==="playbook"&&<PlaybookView trades={trades}/>}
+        {view==="ai"&&<AIView trades={trades} apiCall={apiCall}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
         {view==="learn"&&<Suspense fallback={<div style={{textAlign:"center",padding:60,color:C.muted}}>Loading…</div>}><EducationCenter userPlan={plan} apiCall={apiCall}/></Suspense>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
 
-      {/* BOTTOM NAV */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:C.surf,borderTop:`1px solid ${C.bord}`,display:"flex",padding:"8px 0 18px",zIndex:20,overflowX:"auto"}}>
-        {nav.map(n=>(<button key={n.id} onClick={()=>{setView(n.id);setShowNewTrade(false);setEditingTrade(null);}} style={{flex:1,minWidth:50,background:"transparent",border:"none",cursor:"pointer",color:view===n.id?C.blue:C.muted,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"10px 4px"}}>
-          <span style={{fontSize:18,lineHeight:1}}>{n.icon}</span>
-          <span style={{fontSize:9,letterSpacing:"0.06em",fontWeight:view===n.id?700:400}}>{n.label}</span>
-        </button>))}
-        <div style={{position:"absolute",top:-22,left:"50%",transform:"translateX(-50%)"}}>
-          <button onClick={()=>{setView("journal");setEditingTrade(null);setShowNewTrade(s=>!s);}} style={{width:48,height:48,borderRadius:"50%",background:C.blue,border:`3px solid ${C.bg}`,color:"#fff",fontSize:24,cursor:"pointer",boxShadow:`0 4px 20px ${C.blue}55`,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
-        </div>
+      {/* FLOATING + BUTTON */}
+      <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:20}}>
+        <button onClick={()=>{setView("journal");setEditingTrade(null);setShowNewTrade(s=>!s);}} style={{width:56,height:56,borderRadius:"50%",background:C.blue,border:`3px solid ${C.bg}`,color:"#fff",fontSize:28,cursor:"pointer",boxShadow:`0 4px 24px ${C.blue}66`,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
       </div>
+
+      {/* MENU OVERLAY */}
+      {showMenu&&(
+        <div onClick={()=>setShowMenu(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:50,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.surf,borderRadius:"20px 20px 0 0",padding:"24px 16px 44px",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{width:36,height:4,background:C.bord,borderRadius:2,margin:"0 auto 20px"}}/>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.15em",marginBottom:16,textAlign:"center"}}>NAVIGATE</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
+              {MENU_ITEMS.map(n=>(
+                <button key={n.id} onClick={()=>navigate(n.id)} style={{background:view===n.id?C.blue+"22":C.bg,border:`1px solid ${view===n.id?C.blue+"60":C.bord}`,borderRadius:14,padding:"16px 8px",cursor:"pointer",fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"none"}}>
+                  <span style={{fontSize:24,lineHeight:1}}>{n.icon}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:view===n.id?C.blue:C.txt}}>{n.label}</span>
+                  <span style={{fontSize:9,color:C.muted,textAlign:"center",lineHeight:1.3}}>{n.desc}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={signOut} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.red}30`,color:C.red,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>Sign Out</button>
+          </div>
+        </div>
+      )}
 
       {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onDelete={deleteAccount} onUpdateLimit={updateDailyLimit} onClose={()=>setShowModal(false)}/>}
     </div>
