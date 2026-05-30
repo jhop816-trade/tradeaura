@@ -1076,25 +1076,31 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   async function fetchMarketContext(){
     try{
       const ctx=await apiFn("GET","/api/ai/market-context");
-      // Fetch prices directly from browser — avoids cloud IP blocks
-      const finnhubKey=(import.meta as any).env?.VITE_FINNHUB_KEY;
-      if(finnhubKey){
-        const TICKERS=[
-          {sym:"SPY",label:"SPY"},{sym:"QQQ",label:"QQQ"},{sym:"IWM",label:"IWM"},
-          {sym:"BINANCE:BTCUSDT",label:"BTC"},{sym:"OANDA:XAU_USD",label:"Gold"},
-        ];
-        const results=await Promise.all(TICKERS.map(async({sym,label})=>{
-          try{
-            const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${finnhubKey}`);
-            if(!r.ok)return null;
-            const d=await r.json();
-            if(!d.c)return null;
-            return{symbol:label,lastOpen:+d.o.toFixed(2),lastHigh:+d.h.toFixed(2),lastLow:+d.l.toFixed(2),lastClose:+d.c.toFixed(2),prevClose:+d.pc.toFixed(2),changePct:+d.dp.toFixed(2)};
-          }catch{return null;}
-        }));
-        const prices=results.filter(Boolean);
-        if(prices.length){ctx.prices=prices;ctx.hasPrices=true;}
-      }
+      // Fetch prices from browser — Yahoo Finance works from browsers (only blocks server IPs)
+      // CoinGecko for BTC (free, no auth, always works)
+      const prices:any[]=[];
+      try{
+        const syms=encodeURIComponent("SPY,QQQ,IWM,GC=F");
+        const r=await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`);
+        if(r.ok){
+          const data=await r.json();
+          const MAP:any={"SPY":"SPY","QQQ":"QQQ","IWM":"IWM","GC=F":"Gold"};
+          for(const q of data?.quoteResponse?.result||[]){
+            const label=MAP[q.symbol];
+            if(!label||!q.regularMarketPrice)continue;
+            prices.push({symbol:label,lastOpen:+q.regularMarketOpen?.toFixed(2)||0,lastHigh:+q.regularMarketDayHigh?.toFixed(2)||0,lastLow:+q.regularMarketDayLow?.toFixed(2)||0,lastClose:+q.regularMarketPrice?.toFixed(2),prevClose:+q.regularMarketPreviousClose?.toFixed(2)||0,changePct:+q.regularMarketChangePercent?.toFixed(2)||0});
+          }
+        }
+      }catch(_){}
+      try{
+        const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true");
+        if(r.ok){
+          const data=await r.json();
+          const btc=data?.bitcoin;
+          if(btc?.usd)prices.push({symbol:"BTC",lastOpen:0,lastHigh:+(btc.usd_24h_high||btc.usd).toFixed(0),lastLow:+(btc.usd_24h_low||btc.usd).toFixed(0),lastClose:+btc.usd.toFixed(0),prevClose:+(btc.usd/(1+(btc.usd_24h_change||0)/100)).toFixed(0),changePct:+(btc.usd_24h_change||0).toFixed(2)});
+        }
+      }catch(_){}
+      if(prices.length){ctx.prices=prices;ctx.hasPrices=true;}
       setMarketCtx(ctx);return ctx;
     }catch(e){return null;}
   }
