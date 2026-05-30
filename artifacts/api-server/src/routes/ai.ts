@@ -146,54 +146,75 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Fetch real OHLCV price data from Yahoo Finance for key tickers
+  // Fetch real price data from Yahoo Finance v7/quote (batch, more reliable from cloud)
   interface TickerPrice {
     symbol: string;
-    name: string;
+    lastOpen: number;
+    lastHigh: number;
+    lastLow: number;
+    lastClose: number;
     prevClose: number;
-    prevOpen: number;
-    prevHigh: number;
-    prevLow: number;
-    currClose: number;
     changePct: number;
   }
-  const TICKERS = [
-    { yf: "SPY", label: "SPY" },
-    { yf: "QQQ", label: "QQQ" },
-    { yf: "IWM", label: "IWM" },
-    { yf: "BTC-USD", label: "BTC" },
-    { yf: "GC=F", label: "Gold" },
-  ];
   const prices: TickerPrice[] = [];
+  const YF_SYMBOLS = "SPY,QQQ,IWM,BTC-USD,GC%3DF";
+  const LABEL_MAP: Record<string, string> = { "SPY":"SPY","QQQ":"QQQ","IWM":"IWM","BTC-USD":"BTC","GC=F":"Gold" };
+  const YF_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+    "Referer": "https://finance.yahoo.com/",
+  };
 
-  await Promise.all(TICKERS.map(async ({ yf, label }) => {
+  try {
+    const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${YF_SYMBOLS}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
+    const qr = await fetch(quoteUrl, { headers: YF_HEADERS }) as unknown as FetchResponse;
+    if (qr.ok) {
+      const qd = await qr.json() as unknown as { quoteResponse: { result: { symbol: string; regularMarketPrice: number; regularMarketOpen: number; regularMarketDayHigh: number; regularMarketDayLow: number; regularMarketPreviousClose: number; regularMarketChangePercent: number }[] } };
+      for (const q of qd?.quoteResponse?.result || []) {
+        const label = LABEL_MAP[q.symbol];
+        if (!label || !q.regularMarketPrice) continue;
+        prices.push({
+          symbol: label,
+          lastOpen: Number((q.regularMarketOpen || 0).toFixed(2)),
+          lastHigh: Number((q.regularMarketDayHigh || 0).toFixed(2)),
+          lastLow: Number((q.regularMarketDayLow || 0).toFixed(2)),
+          lastClose: Number((q.regularMarketPrice || 0).toFixed(2)),
+          prevClose: Number((q.regularMarketPreviousClose || 0).toFixed(2)),
+          changePct: Number((q.regularMarketChangePercent || 0).toFixed(2)),
+        });
+      }
+    } else {
+      req.log.warn({ status: qr.status }, "Yahoo Finance v7 quote returned non-OK");
+    }
+  } catch (e) {
+    req.log.warn(e, "Yahoo Finance price fetch failed");
+  }
+
+  // Fallback: try query2 endpoint if query1 returned nothing
+  if (!prices.length) {
     try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yf)}?interval=1d&range=5d`;
-      const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } }) as unknown as FetchResponse;
-      if (!r.ok) return;
-      const data = await r.json() as unknown as { chart: { result: { timestamp: number[]; indicators: { quote: { open: number[]; high: number[]; low: number[]; close: number[] }[] } }[] } };
-      const result = data?.chart?.result?.[0];
-      if (!result) return;
-      const q = result.indicators?.quote?.[0];
-      const ts = result.timestamp;
-      if (!q || !ts || ts.length < 2) return;
-      const pi = ts.length - 2; // previous trading day
-      const ci = ts.length - 1; // most recent day
-      const prevClose = Number(q.close[pi]?.toFixed(2));
-      const currClose = Number(q.close[ci]?.toFixed(2));
-      if (!prevClose || !currClose) return;
-      prices.push({
-        symbol: label,
-        name: yf,
-        prevOpen: Number(q.open[pi]?.toFixed(2)),
-        prevHigh: Number(q.high[pi]?.toFixed(2)),
-        prevLow: Number(q.low[pi]?.toFixed(2)),
-        prevClose,
-        currClose,
-        changePct: Number(((currClose - prevClose) / prevClose * 100).toFixed(2)),
-      });
-    } catch (_) { /* skip ticker on error */ }
-  }));
+      const quoteUrl2 = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${YF_SYMBOLS}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
+      const qr2 = await fetch(quoteUrl2, { headers: YF_HEADERS }) as unknown as FetchResponse;
+      if (qr2.ok) {
+        const qd2 = await qr2.json() as unknown as { quoteResponse: { result: { symbol: string; regularMarketPrice: number; regularMarketOpen: number; regularMarketDayHigh: number; regularMarketDayLow: number; regularMarketPreviousClose: number; regularMarketChangePercent: number }[] } };
+        for (const q of qd2?.quoteResponse?.result || []) {
+          const label = LABEL_MAP[q.symbol];
+          if (!label || !q.regularMarketPrice) continue;
+          prices.push({
+            symbol: label,
+            lastOpen: Number((q.regularMarketOpen || 0).toFixed(2)),
+            lastHigh: Number((q.regularMarketDayHigh || 0).toFixed(2)),
+            lastLow: Number((q.regularMarketDayLow || 0).toFixed(2)),
+            lastClose: Number((q.regularMarketPrice || 0).toFixed(2)),
+            prevClose: Number((q.regularMarketPreviousClose || 0).toFixed(2)),
+            changePct: Number((q.regularMarketChangePercent || 0).toFixed(2)),
+          });
+        }
+      }
+    } catch (e) {
+      req.log.warn(e, "Yahoo Finance query2 fallback also failed");
+    }
+  }
 
   res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });

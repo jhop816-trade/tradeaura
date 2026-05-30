@@ -1091,7 +1091,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const favInstruments=[...new Set(recent.map(t=>t.instrument).filter(Boolean))].slice(0,3).join(", ")||"futures";
     const wr=recent.length?(recent.filter(t=>(t.pnl||0)>0).length/recent.length*100).toFixed(0):0;
     const priceBlock=ctx?.hasPrices&&ctx.prices?.length
-      ?`\n\nLIVE PRICE DATA (prev day OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
+      ?`\n\nLIVE PRICE DATA (last trading day OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: O=${p.lastOpen} H=${p.lastHigh} L=${p.lastLow} last=${p.lastClose} prevClose=${p.prevClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
       :"";
     const newsBlock=ctx?.hasNews
       ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
@@ -1113,8 +1113,8 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       let dateHeader=`Today is ${ctx?.dayName||""}, ${ctx?.date||""} at ${ctx?.timeET||""} ET.`;
       parts.push(dateHeader);
       if(ctx?.hasPrices&&ctx.prices?.length){
-        const priceLines=ctx.prices.map((p:any)=>`${p.symbol}: prev day O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`);
-        parts.push(`LIVE PRICE DATA (previous & current day OHLC):\n${priceLines.join("\n")}`);
+        const priceLines=ctx.prices.map((p:any)=>`${p.symbol}: O=${p.lastOpen} H=${p.lastHigh} L=${p.lastLow} last=${p.lastClose} prevClose=${p.prevClose} (${p.changePct>0?"+":""}${p.changePct}%)`);
+        parts.push(`LIVE PRICE DATA (last trading session OHLC):\n${priceLines.join("\n")}`);
       }
       if(ctx?.hasNews){
         parts.push(`LIVE MARKET HEADLINES:\n${ctx.headlines.slice(0,8).map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`);
@@ -1182,7 +1182,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const dayName=ctx?.dayName||today.toLocaleDateString("en-US",{weekday:"long"});
     const dateStr=ctx?.date||today.toISOString().slice(0,10);
     const priceBlock=ctx?.hasPrices&&ctx.prices?.length
-      ?`\n\nLIVE PRICE DATA (prev day OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: prev O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
+      ?`\n\nLIVE PRICE DATA (last trading session OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: O=${p.lastOpen} H=${p.lastHigh} L=${p.lastLow} last=${p.lastClose} prevClose=${p.prevClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
       :"";
     const newsBlock=ctx?.hasNews
       ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
