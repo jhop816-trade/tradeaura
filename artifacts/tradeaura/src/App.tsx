@@ -1069,6 +1069,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   const [chatMsgs,setChatMsgs]=useState<{role:string,content:string}[]>([]);
   const [chatInput,setChatInput]=useState(""),[chatLoading,setChatLoading]=useState(false);
   const chatEndRef=useRef<any>(null);
+  const systemCtxRef=useRef<{role:string,content:string}[]>([]);
   const [patterns,setPatterns]=useState<any[]>([]),[aiPR,setAiPR]=useState<any>(null),[aiPL,setAiPL]=useState(false);
   const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
 
@@ -1100,21 +1101,36 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   async function sendChat(){
     if(!chatInput.trim())return;
     const userMsg={role:"user",content:chatInput};
-    // Inject live news context as first system-like message if we have it and this is a news/market question
-    const isMarketQ=/news|today|week|predict|forecast|market|price|level|iwm|spy|qqq|btc|eth|gold|oil|fed|cpi|jobs|nfp/i.test(chatInput);
-    let msgs=[...chatMsgs];
-    if(isMarketQ&&!marketCtx){await fetchMarketContext();}
-    const ctx=marketCtx;
-    if(isMarketQ&&ctx?.hasNews&&msgs.length===0){
-      const newsContext=`[Current market context: Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET. Live headlines: ${ctx.headlines.slice(0,6).map((h:any)=>h.title).join(" | ")}]`;
-      msgs=[{role:"user",content:newsContext},{role:"assistant",content:"Got it — I have today's live market context. What would you like to know?"},...msgs];
+    // Ensure market context is loaded
+    let ctx=marketCtx;
+    if(!ctx){ctx=await fetchMarketContext();}
+    // Build system context once per conversation (news + prep if available)
+    if(!systemCtxRef.current.length){
+      const parts:string[]=[];
+      if(ctx?.hasNews){
+        parts.push(`Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET.\nLive market headlines:\n${ctx.headlines.slice(0,8).map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`);
+      } else if(ctx?.date){
+        parts.push(`Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET.`);
+      }
+      if(prep){
+        parts.push(`Today's Market Prep:\nMarket Context: ${prep.marketContext||""}\nTrading Plan: ${prep.tradingPlan||""}\nKey Levels: ${(prep.keyLevels||[]).map((l:any)=>`${l.level} (${l.significance})`).join(", ")}\nRisk Reminders: ${(prep.riskReminders||[]).join("; ")}\nNews to Watch: ${(prep.newsToWatch||[]).join(", ")}\nMindset: ${prep.mindset||""}`);
+      }
+      if(parts.length>0){
+        const prepNote=prep?" and your morning market prep":"";
+        systemCtxRef.current=[
+          {role:"user",content:`[MARKET CONTEXT]\n${parts.join("\n\n")}`},
+          {role:"assistant",content:`Got it — I have today's live market context${prepNote} loaded. Ask me anything about today's markets, your trading plan, or setups!`}
+        ];
+      }
     }
-    const newMsgs=[...msgs,userMsg];
+    const apiMsgs=[...systemCtxRef.current,...chatMsgs,userMsg];
     setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
-    try{const data=await apiFn("POST","/api/ai/chat",{messages:newMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
+    try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
     setChatLoading(false);
     setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
   }
+
+  function clearChat(){setChatMsgs([]);systemCtxRef.current=[];}
 
   function computePatterns(){
     if(!trades.length)return[];
@@ -1243,6 +1259,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
                 </div>
               )}
               {prep.mindset&&<div style={{background:"#0d1020",border:`1px solid ${C.purp}25`,borderRadius:12,padding:16}}><div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>🧠 MINDSET</div><div style={{fontSize:12,color:C.txt,lineHeight:1.8,fontStyle:"italic"}}>"{prep.mindset}"</div></div>}
+              <button onClick={()=>{systemCtxRef.current=[];setTab("chat");}} style={{width:"100%",marginTop:12,padding:12,background:"#1a2035",color:C.blue,border:`1px solid ${C.blue}40`,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700}}>💬 Ask questions about this prep →</button>
             </div>
           )}
         </div>
@@ -1268,9 +1285,10 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
             <div ref={chatEndRef}/>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Ask your trading coach…" style={inp({flex:1,fontSize:14,padding:"12px 14px"} as any)}/>
+            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Ask about today's market, your prep, setups…" style={inp({flex:1,fontSize:14,padding:"12px 14px"} as any)}/>
             <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{padding:"12px 18px",background:chatLoading||!chatInput.trim()?C.muted:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,flexShrink:0}}>Send</button>
           </div>
+          {chatMsgs.length>0&&<button onClick={clearChat} style={{marginTop:8,width:"100%",padding:8,background:"transparent",color:C.muted,border:`1px solid ${C.bord}`,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:11}}>Clear conversation</button>}
         </div>
       )}
 
