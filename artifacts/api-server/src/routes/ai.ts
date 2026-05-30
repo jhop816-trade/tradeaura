@@ -146,8 +146,38 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Prices are fetched client-side directly from Finnhub to avoid cloud IP blocks
-  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
+  // Fetch prices server-side: EODHD demo for stocks, CoinGecko for BTC
+  interface TickerPrice { symbol:string; lastOpen:number; lastHigh:number; lastLow:number; lastClose:number; prevClose:number; changePct:number; }
+  const prices: TickerPrice[] = [];
+
+  // US Stocks + Gold ETF via EODHD (demo token, free public access)
+  const STOCKS = [
+    { sym: "SPY.US", label: "SPY" },
+    { sym: "QQQ.US", label: "QQQ" },
+    { sym: "IWM.US", label: "IWM" },
+    { sym: "GLD.US", label: "Gold" },
+  ];
+  await Promise.all(STOCKS.map(async ({ sym, label }) => {
+    try {
+      const r = await fetch(`https://eodhd.com/api/real-time/${sym}?api_token=demo&fmt=json`) as unknown as FetchResponse;
+      if (!r.ok) return;
+      const d = await r.json() as unknown as { open:number; high:number; low:number; close:number; previousClose:number; change_p:number };
+      if (!d.close) return;
+      prices.push({ symbol:label, lastOpen:+d.open.toFixed(2), lastHigh:+d.high.toFixed(2), lastLow:+d.low.toFixed(2), lastClose:+d.close.toFixed(2), prevClose:+(d.previousClose||0).toFixed(2), changePct:+(d.change_p||0).toFixed(2) });
+    } catch (_) {}
+  }));
+
+  // BTC via CoinGecko (free, no auth, no IP blocking)
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true") as unknown as FetchResponse;
+    if (r.ok) {
+      const d = await r.json() as unknown as { bitcoin: { usd:number; usd_24h_change:number; usd_24h_high:number; usd_24h_low:number } };
+      const b = d?.bitcoin;
+      if (b?.usd) prices.push({ symbol:"BTC", lastOpen:0, lastHigh:+b.usd_24h_high.toFixed(0), lastLow:+b.usd_24h_low.toFixed(0), lastClose:+b.usd.toFixed(0), prevClose:+(b.usd/(1+(b.usd_24h_change||0)/100)).toFixed(0), changePct:+(b.usd_24h_change||0).toFixed(2) });
+    }
+  } catch (_) {}
+
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });
 
 export default router;

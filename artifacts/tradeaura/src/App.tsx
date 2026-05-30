@@ -1074,35 +1074,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
 
   async function fetchMarketContext(){
-    try{
-      const ctx=await apiFn("GET","/api/ai/market-context");
-      // Fetch prices from browser — Yahoo Finance works from browsers (only blocks server IPs)
-      // CoinGecko for BTC (free, no auth, always works)
-      const prices:any[]=[];
-      try{
-        const yf=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent("SPY,QQQ,IWM,GC=F")}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
-        const r=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(yf)}`);
-        if(r.ok){
-          const data=await r.json();
-          const MAP:any={"SPY":"SPY","QQQ":"QQQ","IWM":"IWM","GC=F":"Gold"};
-          for(const q of data?.quoteResponse?.result||[]){
-            const label=MAP[q.symbol];
-            if(!label||!q.regularMarketPrice)continue;
-            prices.push({symbol:label,lastOpen:+q.regularMarketOpen?.toFixed(2)||0,lastHigh:+q.regularMarketDayHigh?.toFixed(2)||0,lastLow:+q.regularMarketDayLow?.toFixed(2)||0,lastClose:+q.regularMarketPrice?.toFixed(2),prevClose:+q.regularMarketPreviousClose?.toFixed(2)||0,changePct:+q.regularMarketChangePercent?.toFixed(2)||0});
-          }
-        }
-      }catch(_){}
-      try{
-        const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true");
-        if(r.ok){
-          const data=await r.json();
-          const btc=data?.bitcoin;
-          if(btc?.usd)prices.push({symbol:"BTC",lastOpen:0,lastHigh:+(btc.usd_24h_high||btc.usd).toFixed(0),lastLow:+(btc.usd_24h_low||btc.usd).toFixed(0),lastClose:+btc.usd.toFixed(0),prevClose:+(btc.usd/(1+(btc.usd_24h_change||0)/100)).toFixed(0),changePct:+(btc.usd_24h_change||0).toFixed(2)});
-        }
-      }catch(_){}
-      if(prices.length){ctx.prices=prices;ctx.hasPrices=true;}
-      setMarketCtx(ctx);return ctx;
-    }catch(e){return null;}
+    try{const ctx=await apiFn("GET","/api/ai/market-context");setMarketCtx(ctx);return ctx;}catch(e){return null;}
   }
 
   async function generatePrep(){
