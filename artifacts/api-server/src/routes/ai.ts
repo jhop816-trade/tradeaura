@@ -192,3 +192,20 @@ router.get("/ai/market-context", async (req, res) => {
 });
 
 export default router;
+
+// ── DEBUG (temporary) ─────────────────────────────────────────────────────────
+router.get("/ai/debug-prices", async (req, res) => {
+  const finnhubKey = process.env.FINNHUB_KEY;
+  if (!finnhubKey) {
+    res.json({ error: "FINNHUB_KEY not set", env: Object.keys(process.env).filter(k => k.startsWith("FINNHUB") || k.startsWith("NEWS")) });
+    return;
+  }
+  try {
+    const url = `https://finnhub.io/api/v1/quote?symbol=SPY&token=${finnhubKey}`;
+    const r = await fetch(url) as unknown as FetchResponse;
+    const body = await r.text();
+    res.json({ status: r.status, ok: r.ok, keyLength: finnhubKey.length, body });
+  } catch (e: unknown) {
+    res.json({ error: String(e) });
+  }
+});
