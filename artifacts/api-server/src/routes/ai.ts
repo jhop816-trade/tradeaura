@@ -146,28 +146,33 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Fetch prices server-side: EODHD demo for stocks, CoinGecko for BTC
+  // Fetch prices server-side: Stooq for stocks, CoinGecko for BTC (both free, no auth)
   interface TickerPrice { symbol:string; lastOpen:number; lastHigh:number; lastLow:number; lastClose:number; prevClose:number; changePct:number; }
   const prices: TickerPrice[] = [];
 
-  // US Stocks + Gold ETF via EODHD (demo token, free public access)
-  const STOCKS = [
-    { sym: "SPY.US", label: "SPY" },
-    { sym: "QQQ.US", label: "QQQ" },
-    { sym: "IWM.US", label: "IWM" },
-    { sym: "GLD.US", label: "Gold" },
+  // US Stocks + Gold ETF via Stooq (free, no API key, CSV format)
+  const STOOQ = [
+    { sym: "spy.us",  label: "SPY"  },
+    { sym: "qqq.us",  label: "QQQ"  },
+    { sym: "iwm.us",  label: "IWM"  },
+    { sym: "gld.us",  label: "Gold" },
   ];
-  await Promise.all(STOCKS.map(async ({ sym, label }) => {
+  await Promise.all(STOOQ.map(async ({ sym, label }) => {
     try {
-      const r = await fetch(`https://eodhd.com/api/real-time/${sym}?api_token=demo&fmt=json`) as unknown as FetchResponse;
+      const r = await fetch(`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`, { headers: { "User-Agent": "Mozilla/5.0" } }) as unknown as FetchResponse;
       if (!r.ok) return;
-      const d = await r.json() as unknown as { open:number; high:number; low:number; close:number; previousClose:number; change_p:number };
-      if (!d.close) return;
-      prices.push({ symbol:label, lastOpen:+d.open.toFixed(2), lastHigh:+d.high.toFixed(2), lastLow:+d.low.toFixed(2), lastClose:+d.close.toFixed(2), prevClose:+(d.previousClose||0).toFixed(2), changePct:+(d.change_p||0).toFixed(2) });
+      const text = await r.text();
+      const rows = text.trim().split("\n");
+      if (rows.length < 2) return;
+      // CSV: Symbol,Date,Time,Open,High,Low,Close,Volume
+      const cols = rows[1].split(",");
+      const [o, h, l, c] = [+cols[3], +cols[4], +cols[5], +cols[6]];
+      if (!c || c === 0) return;
+      prices.push({ symbol:label, lastOpen:o, lastHigh:h, lastLow:l, lastClose:c, prevClose:0, changePct:0 });
     } catch (_) {}
   }));
 
-  // BTC via CoinGecko (free, no auth, no IP blocking)
+  // BTC via CoinGecko (free, no auth, reliable)
   try {
     const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true") as unknown as FetchResponse;
     if (r.ok) {
