@@ -118,8 +118,9 @@ router.post("/ai/grade", async (req, res) => {
 });
 
 // ── MARKET CONTEXT ────────────────────────────────────────────────────────────
-// Returns live news headlines + current date/time to inject into AI prompts.
+// Returns live news headlines + current date/time + real price data for key tickers.
 // Requires NEWS_API_KEY env var (free at newsapi.org — 100 req/day developer plan).
+// Price data fetched from Yahoo Finance (no API key required).
 router.get("/ai/market-context", async (req, res) => {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
@@ -145,7 +146,56 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
+  // Fetch real OHLCV price data from Yahoo Finance for key tickers
+  interface TickerPrice {
+    symbol: string;
+    name: string;
+    prevClose: number;
+    prevOpen: number;
+    prevHigh: number;
+    prevLow: number;
+    currClose: number;
+    changePct: number;
+  }
+  const TICKERS = [
+    { yf: "SPY", label: "SPY" },
+    { yf: "QQQ", label: "QQQ" },
+    { yf: "IWM", label: "IWM" },
+    { yf: "BTC-USD", label: "BTC" },
+    { yf: "GC=F", label: "Gold" },
+  ];
+  const prices: TickerPrice[] = [];
+
+  await Promise.all(TICKERS.map(async ({ yf, label }) => {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yf)}?interval=1d&range=5d`;
+      const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } }) as unknown as FetchResponse;
+      if (!r.ok) return;
+      const data = await r.json() as unknown as { chart: { result: { timestamp: number[]; indicators: { quote: { open: number[]; high: number[]; low: number[]; close: number[] }[] } }[] } };
+      const result = data?.chart?.result?.[0];
+      if (!result) return;
+      const q = result.indicators?.quote?.[0];
+      const ts = result.timestamp;
+      if (!q || !ts || ts.length < 2) return;
+      const pi = ts.length - 2; // previous trading day
+      const ci = ts.length - 1; // most recent day
+      const prevClose = Number(q.close[pi]?.toFixed(2));
+      const currClose = Number(q.close[ci]?.toFixed(2));
+      if (!prevClose || !currClose) return;
+      prices.push({
+        symbol: label,
+        name: yf,
+        prevOpen: Number(q.open[pi]?.toFixed(2)),
+        prevHigh: Number(q.high[pi]?.toFixed(2)),
+        prevLow: Number(q.low[pi]?.toFixed(2)),
+        prevClose,
+        currClose,
+        changePct: Number(((currClose - prevClose) / prevClose * 100).toFixed(2)),
+      });
+    } catch (_) { /* skip ticker on error */ }
+  }));
+
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });
 
 export default router;

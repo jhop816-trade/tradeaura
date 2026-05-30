@@ -1090,10 +1090,13 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const favSessions=[...new Set(recent.map(t=>t.session).filter(Boolean))].slice(0,2).join(", ")||"New York";
     const favInstruments=[...new Set(recent.map(t=>t.instrument).filter(Boolean))].slice(0,3).join(", ")||"futures";
     const wr=recent.length?(recent.filter(t=>(t.pnl||0)>0).length/recent.length*100).toFixed(0):0;
-    const newsBlock=ctx?.hasNews
-      ?`\n\nLIVE NEWS HEADLINES (${dateStr}):\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
+    const priceBlock=ctx?.hasPrices&&ctx.prices?.length
+      ?`\n\nLIVE PRICE DATA (prev day OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
       :"";
-    const prompt=`You are an elite trading coach with access to today's live market news. Generate a morning market prep briefing.\nToday: ${dayName}, ${dateStr}${timeET?` at ${timeET} ET`:""}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%${newsBlock}\n\nUse the live news headlines above to inform the briefing where relevant. JSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
+    const newsBlock=ctx?.hasNews
+      ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
+      :"";
+    const prompt=`You are an elite trading coach with access to today's live market data. Generate a morning market prep briefing.\nToday: ${dayName}, ${dateStr}${timeET?` at ${timeET} ET`:""}${priceBlock}${newsBlock}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%\n\nUse the live price data and headlines above. Reference actual price levels in your key levels section. JSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
     try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
     setPrepLoading(false);
   }
@@ -1104,24 +1107,26 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     // Ensure market context is loaded
     let ctx=marketCtx;
     if(!ctx){ctx=await fetchMarketContext();}
-    // Build system context once per conversation (news + prep if available)
+    // Build system context once per conversation (news + prices + prep if available)
     if(!systemCtxRef.current.length){
       const parts:string[]=[];
+      let dateHeader=`Today is ${ctx?.dayName||""}, ${ctx?.date||""} at ${ctx?.timeET||""} ET.`;
+      parts.push(dateHeader);
+      if(ctx?.hasPrices&&ctx.prices?.length){
+        const priceLines=ctx.prices.map((p:any)=>`${p.symbol}: prev day O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`);
+        parts.push(`LIVE PRICE DATA (previous & current day OHLC):\n${priceLines.join("\n")}`);
+      }
       if(ctx?.hasNews){
-        parts.push(`Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET.\nLive market headlines:\n${ctx.headlines.slice(0,8).map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`);
-      } else if(ctx?.date){
-        parts.push(`Today is ${ctx.dayName}, ${ctx.date} at ${ctx.timeET} ET.`);
+        parts.push(`LIVE MARKET HEADLINES:\n${ctx.headlines.slice(0,8).map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`);
       }
       if(prep){
-        parts.push(`Today's Market Prep:\nMarket Context: ${prep.marketContext||""}\nTrading Plan: ${prep.tradingPlan||""}\nKey Levels: ${(prep.keyLevels||[]).map((l:any)=>`${l.level} (${l.significance})`).join(", ")}\nRisk Reminders: ${(prep.riskReminders||[]).join("; ")}\nNews to Watch: ${(prep.newsToWatch||[]).join(", ")}\nMindset: ${prep.mindset||""}`);
+        parts.push(`TODAY'S MARKET PREP:\nContext: ${prep.marketContext||""}\nPlan: ${prep.tradingPlan||""}\nKey Levels: ${(prep.keyLevels||[]).map((l:any)=>`${l.level} (${l.significance})`).join(", ")}\nRisk: ${(prep.riskReminders||[]).join("; ")}\nNews to Watch: ${(prep.newsToWatch||[]).join(", ")}`);
       }
-      if(parts.length>0){
-        const prepNote=prep?" and your morning market prep":"";
-        systemCtxRef.current=[
-          {role:"user",content:`[MARKET CONTEXT]\n${parts.join("\n\n")}`},
-          {role:"assistant",content:`Got it — I have today's live market context${prepNote} loaded. Ask me anything about today's markets, your trading plan, or setups!`}
-        ];
-      }
+      const prepNote=prep?" and your morning prep":"";
+      systemCtxRef.current=[
+        {role:"user",content:`[MARKET CONTEXT]\n${parts.join("\n\n")}`},
+        {role:"assistant",content:`Got it — I have today's live price data${prepNote} loaded. I can answer questions about specific levels, previous day highs/lows, and current market conditions. What do you want to know?`}
+      ];
     }
     const apiMsgs=[...systemCtxRef.current,...chatMsgs,userMsg];
     setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
@@ -1176,10 +1181,13 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const today=new Date();
     const dayName=ctx?.dayName||today.toLocaleDateString("en-US",{weekday:"long"});
     const dateStr=ctx?.date||today.toISOString().slice(0,10);
+    const priceBlock=ctx?.hasPrices&&ctx.prices?.length
+      ?`\n\nLIVE PRICE DATA (prev day OHLC):\n${ctx.prices.map((p:any)=>`${p.symbol}: prev O=${p.prevOpen} H=${p.prevHigh} L=${p.prevLow} C=${p.prevClose} | today: ${p.currClose} (${p.changePct>0?"+":""}${p.changePct}%)`).join("\n")}`
+      :"";
     const newsBlock=ctx?.hasNews
       ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
       :"";
-    const prompt=`You are an elite market analyst. Today is ${dayName}, ${dateStr}.${newsBlock}\n\nProvide a direct, opinionated market outlook for key indexes. Be specific about levels and how you'd trade them. JSON only:\n{"weekSummary":"2-3 sentence overall market sentiment","markets":[{"symbol":"SPY","name":"S&P 500","bias":"bullish|bearish|neutral","analysis":"2-3 sentence structure analysis referencing news if relevant","playbook":"Exactly how you'd trade this right now","watchLevel":"Key price level"},{"symbol":"QQQ","name":"Nasdaq 100","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"BTC","name":"Bitcoin","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"GC","name":"Gold","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."}],"macro":"Key macro theme driving markets","topOpportunity":"Single best trade setup you see right now","riskWarning":"Biggest risk to watch"}`;
+    const prompt=`You are an elite market analyst. Today is ${dayName}, ${dateStr}.${priceBlock}${newsBlock}\n\nUsing the real price data above, provide a direct opinionated market outlook. Reference actual price levels from the data. Be specific — give exact levels for entries, targets, stops. JSON only:\n{"weekSummary":"2-3 sentence overall market sentiment with specific price context","markets":[{"symbol":"SPY","name":"S&P 500","bias":"bullish|bearish|neutral","analysis":"2-3 sentences referencing actual price levels from the data","playbook":"Specific entry/target/stop levels based on real data","watchLevel":"Exact price level"},{"symbol":"QQQ","name":"Nasdaq 100","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"BTC","name":"Bitcoin","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"GC","name":"Gold","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."}],"macro":"Key macro theme with price context","topOpportunity":"Specific trade with levels","riskWarning":"Biggest risk with key level to watch"}`;
     setWeekLoading(true);setWeekReview(null);
     try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e){console.error(e);}
     setWeekLoading(false);
@@ -1194,7 +1202,8 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
           <div style={{fontSize:9,color:C.blue,letterSpacing:"0.2em",marginBottom:4}}>INTELLIGENCE</div>
           <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>AI Assistant</div>
         </div>
-        {marketCtx?.hasNews&&<Tag color={C.green}>🔴 Live News</Tag>}
+        {marketCtx?.hasPrices&&<Tag color={C.green}>📈 Live Prices</Tag>}
+        {marketCtx?.hasNews&&<Tag color={C.blue}>🔴 Live News</Tag>}
       </div>
       <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
         {[{id:"prep",l:"📋 Market Prep"},{id:"chat",l:"💬 Chat"},{id:"patterns",l:"🔍 Patterns"},{id:"report",l:"📊 Weekly"}].map(t=>(
