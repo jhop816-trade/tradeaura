@@ -1074,7 +1074,29 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
 
   async function fetchMarketContext(){
-    try{const ctx=await apiFn("GET","/api/ai/market-context");setMarketCtx(ctx);return ctx;}catch(e){return null;}
+    try{
+      const ctx=await apiFn("GET","/api/ai/market-context");
+      // Fetch prices directly from browser — avoids cloud IP blocks
+      const finnhubKey=(import.meta as any).env?.VITE_FINNHUB_KEY;
+      if(finnhubKey){
+        const TICKERS=[
+          {sym:"SPY",label:"SPY"},{sym:"QQQ",label:"QQQ"},{sym:"IWM",label:"IWM"},
+          {sym:"BINANCE:BTCUSDT",label:"BTC"},{sym:"OANDA:XAU_USD",label:"Gold"},
+        ];
+        const results=await Promise.all(TICKERS.map(async({sym,label})=>{
+          try{
+            const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${finnhubKey}`);
+            if(!r.ok)return null;
+            const d=await r.json();
+            if(!d.c)return null;
+            return{symbol:label,lastOpen:+d.o.toFixed(2),lastHigh:+d.h.toFixed(2),lastLow:+d.l.toFixed(2),lastClose:+d.c.toFixed(2),prevClose:+d.pc.toFixed(2),changePct:+d.dp.toFixed(2)};
+          }catch{return null;}
+        }));
+        const prices=results.filter(Boolean);
+        if(prices.length){ctx.prices=prices;ctx.hasPrices=true;}
+      }
+      setMarketCtx(ctx);return ctx;
+    }catch(e){return null;}
   }
 
   async function generatePrep(){

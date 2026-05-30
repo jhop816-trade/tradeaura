@@ -146,66 +146,8 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Fetch real price data via Finnhub (requires FINNHUB_KEY env var — free at finnhub.io)
-  interface TickerPrice {
-    symbol: string;
-    lastOpen: number;
-    lastHigh: number;
-    lastLow: number;
-    lastClose: number;
-    prevClose: number;
-    changePct: number;
-  }
-  const prices: TickerPrice[] = [];
-  const finnhubKey = process.env.FINNHUB_KEY;
-
-  if (finnhubKey) {
-    const TICKERS = [
-      { fh: "SPY",               label: "SPY"  },
-      { fh: "QQQ",               label: "QQQ"  },
-      { fh: "IWM",               label: "IWM"  },
-      { fh: "BINANCE:BTCUSDT",   label: "BTC"  },
-      { fh: "OANDA:XAU_USD",     label: "Gold" },
-    ];
-
-    await Promise.all(TICKERS.map(async ({ fh, label }) => {
-      try {
-        const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fh)}&token=${finnhubKey}`;
-        const r = await fetch(url) as unknown as FetchResponse;
-        if (!r.ok) return;
-        const d = await r.json() as unknown as { c: number; d: number; dp: number; h: number; l: number; o: number; pc: number };
-        if (!d.c) return;
-        prices.push({
-          symbol: label,
-          lastOpen:  Number(d.o.toFixed(2)),
-          lastHigh:  Number(d.h.toFixed(2)),
-          lastLow:   Number(d.l.toFixed(2)),
-          lastClose: Number(d.c.toFixed(2)),
-          prevClose: Number(d.pc.toFixed(2)),
-          changePct: Number(d.dp.toFixed(2)),
-        });
-      } catch (_) { /* skip on error */ }
-    }));
-  }
-
-  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
+  // Prices are fetched client-side directly from Finnhub to avoid cloud IP blocks
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
 });
 
 export default router;
-
-// ── DEBUG (temporary) ─────────────────────────────────────────────────────────
-router.get("/ai/debug-prices", async (req, res) => {
-  const finnhubKey = process.env.FINNHUB_KEY;
-  if (!finnhubKey) {
-    res.json({ error: "FINNHUB_KEY not set", env: Object.keys(process.env).filter(k => k.startsWith("FINNHUB") || k.startsWith("NEWS")) });
-    return;
-  }
-  try {
-    const url = `https://finnhub.io/api/v1/quote?symbol=SPY&token=${finnhubKey}`;
-    const r = await fetch(url) as unknown as FetchResponse;
-    const body = await r.text();
-    res.json({ status: r.status, ok: r.ok, keyLength: finnhubKey.length, body });
-  } catch (e: unknown) {
-    res.json({ error: String(e) });
-  }
-});
