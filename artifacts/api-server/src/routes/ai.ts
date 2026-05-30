@@ -146,7 +146,7 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Fetch real price data from Yahoo Finance v7/quote (batch, more reliable from cloud)
+  // Fetch real price data via Finnhub (requires FINNHUB_KEY env var — free at finnhub.io)
   interface TickerPrice {
     symbol: string;
     lastOpen: number;
@@ -157,63 +157,35 @@ router.get("/ai/market-context", async (req, res) => {
     changePct: number;
   }
   const prices: TickerPrice[] = [];
-  const YF_SYMBOLS = "SPY,QQQ,IWM,BTC-USD,GC%3DF";
-  const LABEL_MAP: Record<string, string> = { "SPY":"SPY","QQQ":"QQQ","IWM":"IWM","BTC-USD":"BTC","GC=F":"Gold" };
-  const YF_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "application/json",
-    "Referer": "https://finance.yahoo.com/",
-  };
+  const finnhubKey = process.env.FINNHUB_KEY;
 
-  try {
-    const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${YF_SYMBOLS}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
-    const qr = await fetch(quoteUrl, { headers: YF_HEADERS }) as unknown as FetchResponse;
-    if (qr.ok) {
-      const qd = await qr.json() as unknown as { quoteResponse: { result: { symbol: string; regularMarketPrice: number; regularMarketOpen: number; regularMarketDayHigh: number; regularMarketDayLow: number; regularMarketPreviousClose: number; regularMarketChangePercent: number }[] } };
-      for (const q of qd?.quoteResponse?.result || []) {
-        const label = LABEL_MAP[q.symbol];
-        if (!label || !q.regularMarketPrice) continue;
+  if (finnhubKey) {
+    const TICKERS = [
+      { fh: "SPY",               label: "SPY"  },
+      { fh: "QQQ",               label: "QQQ"  },
+      { fh: "IWM",               label: "IWM"  },
+      { fh: "BINANCE:BTCUSDT",   label: "BTC"  },
+      { fh: "OANDA:XAU_USD",     label: "Gold" },
+    ];
+
+    await Promise.all(TICKERS.map(async ({ fh, label }) => {
+      try {
+        const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fh)}&token=${finnhubKey}`;
+        const r = await fetch(url) as unknown as FetchResponse;
+        if (!r.ok) return;
+        const d = await r.json() as unknown as { c: number; d: number; dp: number; h: number; l: number; o: number; pc: number };
+        if (!d.c) return;
         prices.push({
           symbol: label,
-          lastOpen: Number((q.regularMarketOpen || 0).toFixed(2)),
-          lastHigh: Number((q.regularMarketDayHigh || 0).toFixed(2)),
-          lastLow: Number((q.regularMarketDayLow || 0).toFixed(2)),
-          lastClose: Number((q.regularMarketPrice || 0).toFixed(2)),
-          prevClose: Number((q.regularMarketPreviousClose || 0).toFixed(2)),
-          changePct: Number((q.regularMarketChangePercent || 0).toFixed(2)),
+          lastOpen:  Number(d.o.toFixed(2)),
+          lastHigh:  Number(d.h.toFixed(2)),
+          lastLow:   Number(d.l.toFixed(2)),
+          lastClose: Number(d.c.toFixed(2)),
+          prevClose: Number(d.pc.toFixed(2)),
+          changePct: Number(d.dp.toFixed(2)),
         });
-      }
-    } else {
-      req.log.warn({ status: qr.status }, "Yahoo Finance v7 quote returned non-OK");
-    }
-  } catch (e) {
-    req.log.warn(e, "Yahoo Finance price fetch failed");
-  }
-
-  // Fallback: try query2 endpoint if query1 returned nothing
-  if (!prices.length) {
-    try {
-      const quoteUrl2 = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${YF_SYMBOLS}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
-      const qr2 = await fetch(quoteUrl2, { headers: YF_HEADERS }) as unknown as FetchResponse;
-      if (qr2.ok) {
-        const qd2 = await qr2.json() as unknown as { quoteResponse: { result: { symbol: string; regularMarketPrice: number; regularMarketOpen: number; regularMarketDayHigh: number; regularMarketDayLow: number; regularMarketPreviousClose: number; regularMarketChangePercent: number }[] } };
-        for (const q of qd2?.quoteResponse?.result || []) {
-          const label = LABEL_MAP[q.symbol];
-          if (!label || !q.regularMarketPrice) continue;
-          prices.push({
-            symbol: label,
-            lastOpen: Number((q.regularMarketOpen || 0).toFixed(2)),
-            lastHigh: Number((q.regularMarketDayHigh || 0).toFixed(2)),
-            lastLow: Number((q.regularMarketDayLow || 0).toFixed(2)),
-            lastClose: Number((q.regularMarketPrice || 0).toFixed(2)),
-            prevClose: Number((q.regularMarketPreviousClose || 0).toFixed(2)),
-            changePct: Number((q.regularMarketChangePercent || 0).toFixed(2)),
-          });
-        }
-      }
-    } catch (e) {
-      req.log.warn(e, "Yahoo Finance query2 fallback also failed");
-    }
+      } catch (_) { /* skip on error */ }
+    }));
   }
 
   res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
