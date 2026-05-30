@@ -1080,8 +1080,8 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       // CoinGecko for BTC (free, no auth, always works)
       const prices:any[]=[];
       try{
-        const syms=encodeURIComponent("SPY,QQQ,IWM,GC=F");
-        const r=await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`);
+        const yf=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent("SPY,QQQ,IWM,GC=F")}&fields=symbol,regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,regularMarketChangePercent`;
+        const r=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(yf)}`);
         if(r.ok){
           const data=await r.json();
           const MAP:any={"SPY":"SPY","QQQ":"QQQ","IWM":"IWM","GC=F":"Gold"};
