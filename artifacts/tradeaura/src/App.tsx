@@ -1172,17 +1172,16 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   }
 
   async function runWeeklyReport(){
-    const n=new Date(),d=n.getDay();
-    const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));
-    const e=new Date(s);e.setDate(s.getDate()+6);
-    const sStr=s.toISOString().slice(0,10),eStr=e.toISOString().slice(0,10);
-    const wt=trades.filter(t=>t.date>=sStr&&t.date<=eStr);
-    if(!wt.length)return;
-    const wins=wt.filter(t=>(t.pnl||0)>0),total=wt.reduce((s,t)=>s+(t.pnl||0),0);
-    const lines=["=== WEEKLY REPORT ===",`Period: ${sStr} to ${eStr}`,`Trades:${wt.length} Wins:${wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${wt.length?(wins.length/wt.length*100).toFixed(1):0}%`,""];
-    wt.forEach((t,i)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`P&L:$${(t.pnl||0).toFixed(2)} Setup:${t.setup} Mood:${t.mood}`);lines.push("");});
+    const ctx=marketCtx||await fetchMarketContext();
+    const today=new Date();
+    const dayName=ctx?.dayName||today.toLocaleDateString("en-US",{weekday:"long"});
+    const dateStr=ctx?.date||today.toISOString().slice(0,10);
+    const newsBlock=ctx?.hasNews
+      ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
+      :"";
+    const prompt=`You are an elite market analyst. Today is ${dayName}, ${dateStr}.${newsBlock}\n\nProvide a direct, opinionated market outlook for key indexes. Be specific about levels and how you'd trade them. JSON only:\n{"weekSummary":"2-3 sentence overall market sentiment","markets":[{"symbol":"SPY","name":"S&P 500","bias":"bullish|bearish|neutral","analysis":"2-3 sentence structure analysis referencing news if relevant","playbook":"Exactly how you'd trade this right now","watchLevel":"Key price level"},{"symbol":"QQQ","name":"Nasdaq 100","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"BTC","name":"Bitcoin","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"GC","name":"Gold","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."}],"macro":"Key macro theme driving markets","topOpportunity":"Single best trade setup you see right now","riskWarning":"Biggest risk to watch"}`;
     setWeekLoading(true);setWeekReview(null);
-    try{const r=await callAI(`Professional futures trading coach. Analyze this weekly log.\n\n${lines.join("\n")}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setWeekReview(r);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e){console.error(e);}
     setWeekLoading(false);
   }
 
@@ -1322,14 +1321,57 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
 
       {tab==="report"&&(
         <div>
-          <div style={Object.assign({},CS,{marginBottom:14})}>
-            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:10}}>📅 WEEKLY AI COACHING REPORT</div>
-            <div style={{fontSize:12,color:C.dim,marginBottom:14,lineHeight:1.6}}>Get a full AI review of your week — grades, patterns, and a personalized action plan.</div>
+          <div style={Object.assign({},CS,{marginBottom:14,background:"linear-gradient(145deg,#1a1f2e,#161b27)"})}>
+            <div style={{fontSize:9,color:C.gold,letterSpacing:"0.15em",marginBottom:6}}>📊 MARKET INTELLIGENCE</div>
+            <div style={{fontSize:16,fontWeight:800,color:"#fff",marginBottom:4}}>Market Outlook</div>
+            <div style={{fontSize:11,color:C.dim,marginBottom:10,lineHeight:1.6}}>AI analysis on key indexes — what's happening and how to play it.</div>
+            {marketCtx?.hasNews&&<div style={{fontSize:10,color:C.green,marginBottom:10}}>🔴 Powered by live market news</div>}
             <button onClick={runWeeklyReport} disabled={weekLoading} style={{width:"100%",padding:14,background:weekLoading?C.muted:C.gold,color:"#000",border:"none",borderRadius:10,cursor:weekLoading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:800}}>
-              {weekLoading?"🤖 Analyzing…":"🏆 Generate This Week's Report"}
+              {weekLoading?"🤖 Analyzing markets…":"📊 Generate Market Outlook"}
             </button>
           </div>
-          {weekReview&&<ReviewResult review={weekReview}/>}
+          {weekReview&&(
+            <div>
+              {weekReview.weekSummary&&(
+                <div style={Object.assign({},CS,{marginBottom:12,border:`1px solid ${C.gold}25`})}>
+                  <div style={{fontSize:9,color:C.gold,letterSpacing:"0.12em",marginBottom:8}}>🌍 MARKET OVERVIEW</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{weekReview.weekSummary}</div>
+                </div>
+              )}
+              {(weekReview.markets||[]).map((m:any,i:number)=>(
+                <div key={i} style={Object.assign({},CS,{marginBottom:12,borderLeft:`3px solid ${m.bias==="bullish"?C.green:m.bias==="bearish"?C.red:C.gold}`})}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div>
+                      <div style={{fontSize:18,fontWeight:800,color:"#fff",fontFamily:"monospace"}}>{m.symbol}</div>
+                      <div style={{fontSize:10,color:C.muted}}>{m.name}</div>
+                    </div>
+                    <div style={{padding:"4px 12px",borderRadius:20,background:m.bias==="bullish"?C.green+"25":m.bias==="bearish"?C.red+"25":C.gold+"25",color:m.bias==="bullish"?C.green:m.bias==="bearish"?C.red:C.gold,fontSize:10,fontWeight:700,textTransform:"uppercase"}}>{m.bias||"neutral"}</div>
+                  </div>
+                  <div style={{fontSize:12,color:C.dim,lineHeight:1.7,marginBottom:10}}>{m.analysis}</div>
+                  {m.playbook&&<div style={{background:"#0d1020",borderRadius:8,padding:"10px 12px",marginBottom:8}}><div style={{fontSize:9,color:C.blue,letterSpacing:"0.1em",marginBottom:5}}>📋 HOW TO PLAY IT</div><div style={{fontSize:12,color:C.txt,lineHeight:1.6}}>{m.playbook}</div></div>}
+                  {m.watchLevel&&<div style={{fontSize:11,color:C.gold,fontWeight:600}}>👁 Watch: {m.watchLevel}</div>}
+                </div>
+              ))}
+              {weekReview.macro&&(
+                <div style={Object.assign({},CS,{marginBottom:12,border:`1px solid ${C.purp}25`})}>
+                  <div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>🔮 MACRO THEME</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{weekReview.macro}</div>
+                </div>
+              )}
+              {weekReview.topOpportunity&&(
+                <div style={Object.assign({},CS,{marginBottom:12,background:"linear-gradient(145deg,#152015,#161b27)",border:`1px solid ${C.green}30`})}>
+                  <div style={{fontSize:9,color:C.green,letterSpacing:"0.12em",marginBottom:8}}>🏆 TOP OPPORTUNITY</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{weekReview.topOpportunity}</div>
+                </div>
+              )}
+              {weekReview.riskWarning&&(
+                <div style={{background:C.red+"15",border:`1px solid ${C.red}30`,borderRadius:12,padding:"14px 16px"}}>
+                  <div style={{fontSize:9,color:C.red,letterSpacing:"0.12em",marginBottom:6}}>⚠️ RISK WARNING</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{weekReview.riskWarning}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
