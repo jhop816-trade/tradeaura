@@ -191,3 +191,13 @@ router.get("/ai/market-context", async (req, res) => {
 });
 
 export default router;
+
+router.get("/ai/debug-prices", async (req, res) => {
+  const tdKey = process.env.TWELVE_DATA_KEY;
+  if (!tdKey) { res.json({ error: "TWELVE_DATA_KEY not set" }); return; }
+  try {
+    const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY,IWM&apikey=${tdKey}`) as unknown as FetchResponse;
+    const body = await r.text();
+    res.json({ status: r.status, ok: r.ok, keyLength: tdKey.length, body });
+  } catch (e: unknown) { res.json({ error: String(e) }); }
+});
