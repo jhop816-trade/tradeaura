@@ -146,41 +146,47 @@ router.get("/ai/market-context", async (req, res) => {
     }
   }
 
-  // Fetch prices server-side: Stooq for stocks, CoinGecko for BTC (both free, no auth)
+  // Fetch prices: Twelve Data for stocks (requires TWELVE_DATA_KEY), CoinGecko for BTC
   interface TickerPrice { symbol:string; lastOpen:number; lastHigh:number; lastLow:number; lastClose:number; prevClose:number; changePct:number; }
   const prices: TickerPrice[] = [];
 
-  // US Stocks + Gold ETF via Stooq (free, no API key, CSV format)
-  const STOOQ = [
-    { sym: "spy.us",  label: "SPY"  },
-    { sym: "qqq.us",  label: "QQQ"  },
-    { sym: "iwm.us",  label: "IWM"  },
-    { sym: "gld.us",  label: "Gold" },
-  ];
-  await Promise.all(STOOQ.map(async ({ sym, label }) => {
+  const tdKey = process.env.TWELVE_DATA_KEY;
+  if (tdKey) {
     try {
-      const r = await fetch(`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`, { headers: { "User-Agent": "Mozilla/5.0" } }) as unknown as FetchResponse;
-      if (!r.ok) return;
-      const text = await r.text();
-      const rows = text.trim().split("\n");
-      if (rows.length < 2) return;
-      // CSV: Symbol,Date,Time,Open,High,Low,Close,Volume
-      const cols = rows[1].split(",");
-      const [o, h, l, c] = [+cols[3], +cols[4], +cols[5], +cols[6]];
-      if (!c || c === 0) return;
-      prices.push({ symbol:label, lastOpen:o, lastHigh:h, lastLow:l, lastClose:c, prevClose:0, changePct:0 });
-    } catch (_) {}
-  }));
+      // Batch request — all 5 tickers in one call
+      const symbols = encodeURIComponent("SPY,QQQ,IWM,GLD,BTC/USD");
+      const r = await fetch(`https://api.twelvedata.com/quote?symbol=${symbols}&apikey=${tdKey}`) as unknown as FetchResponse;
+      if (r.ok) {
+        const data = await r.json() as unknown as Record<string, { open:string; high:string; low:string; close:string; previous_close:string; percent_change:string; symbol:string }>;
+        const LABEL: Record<string,string> = { SPY:"SPY", QQQ:"QQQ", IWM:"IWM", GLD:"Gold", "BTC/USD":"BTC" };
+        for (const [key, q] of Object.entries(data)) {
+          const label = LABEL[key];
+          if (!label || !q.close || (q as any).status === "error") continue;
+          prices.push({
+            symbol: label,
+            lastOpen:  +parseFloat(q.open).toFixed(2),
+            lastHigh:  +parseFloat(q.high).toFixed(2),
+            lastLow:   +parseFloat(q.low).toFixed(2),
+            lastClose: +parseFloat(q.close).toFixed(2),
+            prevClose: +parseFloat(q.previous_close).toFixed(2),
+            changePct: +parseFloat(q.percent_change).toFixed(2),
+          });
+        }
+      }
+    } catch (e) { req.log.warn(e, "Twelve Data fetch failed"); }
+  }
 
-  // BTC via CoinGecko (free, no auth, reliable)
-  try {
-    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true") as unknown as FetchResponse;
-    if (r.ok) {
-      const d = await r.json() as unknown as { bitcoin: { usd:number; usd_24h_change:number; usd_24h_high:number; usd_24h_low:number } };
-      const b = d?.bitcoin;
-      if (b?.usd) prices.push({ symbol:"BTC", lastOpen:0, lastHigh:+b.usd_24h_high.toFixed(0), lastLow:+b.usd_24h_low.toFixed(0), lastClose:+b.usd.toFixed(0), prevClose:+(b.usd/(1+(b.usd_24h_change||0)/100)).toFixed(0), changePct:+(b.usd_24h_change||0).toFixed(2) });
-    }
-  } catch (_) {}
+  // BTC fallback via CoinGecko if Twelve Data didn't get it
+  if (!prices.find(p => p.symbol === "BTC")) {
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true") as unknown as FetchResponse;
+      if (r.ok) {
+        const d = await r.json() as unknown as { bitcoin: { usd:number; usd_24h_change:number; usd_24h_high:number; usd_24h_low:number } };
+        const b = d?.bitcoin;
+        if (b?.usd) prices.push({ symbol:"BTC", lastOpen:0, lastHigh:+b.usd_24h_high.toFixed(0), lastLow:+b.usd_24h_low.toFixed(0), lastClose:+b.usd.toFixed(0), prevClose:+(b.usd/(1+(b.usd_24h_change||0)/100)).toFixed(0), changePct:+(b.usd_24h_change||0).toFixed(2) });
+      }
+    } catch (_) {}
+  }
 
   res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });
