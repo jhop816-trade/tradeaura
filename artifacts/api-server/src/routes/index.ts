@@ -10,7 +10,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 
 // Unprotected debug endpoint (no auth required — remove after diagnosis)
-router.get("/api/debug-prices", async (req: any, res) => {
+router.get("/debug-prices", async (req: any, res) => {
   const tdKey = process.env.TWELVE_DATA_KEY;
   if (!tdKey) { res.json({ error: "TWELVE_DATA_KEY not set" }); return; }
   try {
