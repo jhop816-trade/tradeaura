@@ -69446,14 +69446,17 @@ var instruments_default = router3;
 // src/routes/ai.ts
 var import_express4 = __toESM(require_express2());
 var router4 = (0, import_express4.Router)();
-var TUTOR_SYSTEM = `You are an elite trading coach and educator inside TradeAura, a professional trading journal app. Your sole purpose is to help traders learn and improve.
+var TUTOR_SYSTEM = `You are an elite trading coach and market analyst inside TradeAura, a professional trading journal app.
+
+CRITICAL \u2014 LIVE DATA ACCESS: When the conversation contains a [MARKET CONTEXT] message with today's date/time and news headlines, that IS your live real-time market data feed. You MUST use it. Never say you lack real-time data or can't access current market information \u2014 you have been given today's live headlines. Analyze them directly, reference specific headlines by name, and give confident market opinions based on them.
 
 Rules you MUST follow:
 1. ONLY answer questions about trading, markets, investing, technical/fundamental analysis, risk management, trading psychology, order flow, market structure, futures, stocks, options, forex, crypto, or related financial topics.
 2. If the user asks about ANYTHING unrelated to trading or finance, politely decline and redirect them: "I'm your trading tutor \u2014 I can only help with trading and market questions. Ask me anything about charts, strategies, risk, or markets!"
-3. Be concise, clear, and practical. Give real examples when useful.
+3. Be concise, clear, and practical. Give real examples and specific price levels when useful.
 4. Format responses for mobile readability \u2014 short paragraphs, use bullet points for lists.
-5. Speak like a knowledgeable trading mentor, not a textbook.`;
+5. Speak like a knowledgeable, opinionated trading mentor. Be direct \u2014 say bullish or bearish, not "it could go either way."
+6. When you have live news context, reference specific headlines and explain exactly how they impact the instruments the user is asking about.`;
 router4.post("/ai/chat", async (req, res) => {
   const { messages } = req.body;
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -69557,9 +69560,60 @@ router4.get("/ai/market-context", async (req, res) => {
       req.log.warn(e, "NewsAPI fetch failed");
     }
   }
-  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0 });
+  const prices = [];
+  const tdKey = process.env.TWELVE_DATA_KEY;
+  if (tdKey) {
+    try {
+      const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY,QQQ,IWM,GLD,BTC/USD&apikey=${tdKey}`);
+      if (r.ok) {
+        const data = await r.json();
+        const LABEL = { SPY: "SPY", QQQ: "QQQ", IWM: "IWM", GLD: "Gold", "BTC/USD": "BTC" };
+        for (const [key, q] of Object.entries(data)) {
+          const label = LABEL[key];
+          if (!label || !q.close || q.status === "error") continue;
+          prices.push({
+            symbol: label,
+            lastOpen: +parseFloat(q.open).toFixed(2),
+            lastHigh: +parseFloat(q.high).toFixed(2),
+            lastLow: +parseFloat(q.low).toFixed(2),
+            lastClose: +parseFloat(q.close).toFixed(2),
+            prevClose: +parseFloat(q.previous_close).toFixed(2),
+            changePct: +parseFloat(q.percent_change).toFixed(2)
+          });
+        }
+      }
+    } catch (e) {
+      req.log.warn(e, "Twelve Data fetch failed");
+    }
+  }
+  if (!prices.find((p) => p.symbol === "BTC")) {
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_high=true&include_24hr_low=true");
+      if (r.ok) {
+        const d = await r.json();
+        const b = d?.bitcoin;
+        if (b?.usd) prices.push({ symbol: "BTC", lastOpen: 0, lastHigh: +b.usd_24h_high.toFixed(0), lastLow: +b.usd_24h_low.toFixed(0), lastClose: +b.usd.toFixed(0), prevClose: +(b.usd / (1 + (b.usd_24h_change || 0) / 100)).toFixed(0), changePct: +(b.usd_24h_change || 0).toFixed(2) });
+      }
+    } catch (_) {
+    }
+  }
+  res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });
 var ai_default = router4;
+router4.get("/ai/debug-prices", async (req, res) => {
+  const tdKey = process.env.TWELVE_DATA_KEY;
+  if (!tdKey) {
+    res.json({ error: "TWELVE_DATA_KEY not set" });
+    return;
+  }
+  try {
+    const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY,IWM&apikey=${tdKey}`);
+    const body = await r.text();
+    res.json({ status: r.status, ok: r.ok, keyLength: tdKey.length, body });
+  } catch (e) {
+    res.json({ error: String(e) });
+  }
+});
 
 // ../../node_modules/.pnpm/@supabase+supabase-js@2.105.4/node_modules/@supabase/supabase-js/dist/index.mjs
 var dist_exports = {};
@@ -78287,6 +78341,20 @@ async function requireAuth(req, res, next) {
 // src/routes/index.ts
 var router5 = (0, import_express5.Router)();
 router5.use(health_default);
+router5.get("/debug-prices", async (req, res) => {
+  const tdKey = process.env.TWELVE_DATA_KEY;
+  if (!tdKey) {
+    res.json({ error: "TWELVE_DATA_KEY not set" });
+    return;
+  }
+  try {
+    const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY&apikey=${tdKey}`);
+    const body = await r.text();
+    res.json({ status: r.status, keyLength: tdKey.length, body });
+  } catch (e) {
+    res.json({ error: String(e) });
+  }
+});
 router5.use(requireAuth);
 router5.use(trades_default);
 router5.use(instruments_default);
