@@ -153,9 +153,8 @@ router.get("/ai/market-context", async (req, res) => {
   const tdKey = process.env.TWELVE_DATA_KEY;
   if (tdKey) {
     try {
-      // Batch request — all 5 tickers in one call
-      const symbols = encodeURIComponent("SPY,QQQ,IWM,GLD,BTC/USD");
-      const r = await fetch(`https://api.twelvedata.com/quote?symbol=${symbols}&apikey=${tdKey}`) as unknown as FetchResponse;
+      // Batch request — all 5 tickers in one call (commas must NOT be encoded)
+      const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY,QQQ,IWM,GLD,BTC/USD&apikey=${tdKey}`) as unknown as FetchResponse;
       if (r.ok) {
         const data = await r.json() as unknown as Record<string, { open:string; high:string; low:string; close:string; previous_close:string; percent_change:string; symbol:string }>;
         const LABEL: Record<string,string> = { SPY:"SPY", QQQ:"QQQ", IWM:"IWM", GLD:"Gold", "BTC/USD":"BTC" };
