@@ -99,6 +99,7 @@ function toApiPayload(trade: any, accountId: string | null) {
     accountType: (trade.account_type || "live").toLowerCase(),
     aiGrade: trade.ai_grade || null,
     aiFeedback: trade.ai_feedback || null,
+    tags: trade.option_type ? JSON.stringify({ optionType: trade.option_type, strike: trade.strike || "", expiry: trade.option_expiry || "" }) : null,
   };
 }
 
@@ -126,6 +127,7 @@ function fromApiTrade(t: any) {
     account_type: t.accountType ? capFirst(t.accountType) : "Live",
     ai_grade: t.aiGrade ?? null,
     ai_feedback: t.aiFeedback ?? null,
+    ...(() => { try { const o=t.tags?JSON.parse(t.tags):{};return{option_type:o.optionType||"",strike:o.strike||"",option_expiry:o.expiry||""};}catch{return{option_type:"",strike:"",option_expiry:""};} })(),
   };
 }
 
@@ -342,7 +344,7 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 
 // ── TRADE FORM ────────────────────────────────────────────────────────────────
 function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChange}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
-  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:""});
+  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:"",option_type:"",strike:"",option_expiry:""});
   const [loading,setLoading]=useState(false);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
@@ -392,7 +394,8 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
     let pnl=calcPnl({...form,manualPnl:form.manual_pnl}); if(pnl===null)pnl=0;
     setLoading(true); let grade=null;
     try {
-      grade=await callAI(`Expert futures trading coach. Analyze this trade briefly. ${form.instrument} ${form.direction} | ${form.setup} | ${form.session} Entry:${form.entry} Exit:${form.exit} Contracts:${form.contracts} P&L:$${pnl.toFixed(2)} Stop:${form.stop_loss||"None"} Mood:${form.mood} Rules:${(form.rules_followed||[]).join(",")||"None"} Notes:${form.notes||"None"} JSON only: {"grade":"A/B/C/D/F","score":0,"strengths":[""],"weaknesses":[""],"lesson":"","verdict":""}`);
+      const optStr=form.option_type?` | ${form.option_type} option${form.strike?` $${form.strike} strike`:""}${form.option_expiry?` exp ${form.option_expiry}`:""}`:"";
+      grade=await callAI(`Expert trading coach. Analyze this trade briefly. ${form.instrument} ${form.direction}${optStr} | ${form.setup} | ${form.session} Entry:${form.entry} Exit:${form.exit} Contracts:${form.contracts} P&L:$${pnl.toFixed(2)} Stop:${form.stop_loss||"None"} Mood:${form.mood} Rules:${(form.rules_followed||[]).join(",")||"None"} Notes:${form.notes||"None"} JSON only: {"grade":"A/B/C/D/F","score":0,"strengths":[""],"weaknesses":[""],"lesson":"","verdict":""}`);
     } catch(e){console.error("AI grade failed:",e);}
     setLoading(false);
     onSave({...form,id:form.id||makeId(),pnl,ai_grade:grade?.grade||null,ai_feedback:grade});
@@ -427,6 +430,23 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
         <div style={{display:"flex",gap:8}}>
           {["Long","Short"].map(d=>{const active=form.direction===d,col=d==="Long"?C.green:C.red;return(<button key={d} onClick={()=>set("direction",d)} style={{flex:1,padding:11,borderRadius:8,fontFamily:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",background:active?col+"20":"transparent",color:active?col:C.muted,border:`1px solid ${active?col+"50":C.bord}`}}>{d==="Long"?"▲ Long":"▼ Short"}</button>);})}
         </div>
+      </div>
+
+      <div style={{marginBottom:10}}>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>OPTION TYPE <span style={{fontSize:10,fontWeight:400,textTransform:"none"}}>(leave blank for futures/stocks)</span></div>
+        <div style={{display:"flex",gap:8}}>
+          {(["","Call","Put"] as const).map(o=>{
+            const active=form.option_type===o;
+            const col=o==="Call"?C.green:o==="Put"?C.red:C.muted;
+            return(<button key={o||"none"} onClick={()=>set("option_type",o)} style={{flex:1,padding:10,borderRadius:8,fontFamily:"inherit",fontSize:13,fontWeight:700,cursor:"pointer",background:active&&o?col+"20":"transparent",color:active?o?col:C.txt:C.muted,border:`1px solid ${active&&o?col+"60":C.bord}`}}>{o||"None"}</button>);
+          })}
+        </div>
+        {form.option_type&&(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:10}}>
+            <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>STRIKE</div><input type="number" value={form.strike} onChange={e=>set("strike",e.target.value)} placeholder="500" style={inp()}/></div>
+            <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EXPIRY</div><input type="date" value={form.option_expiry} onChange={e=>set("option_expiry",e.target.value)} style={inp()}/></div>
+          </div>
+        )}
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
@@ -635,6 +655,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
                 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                   <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>{trade.instrument}</span>
                   <Tag color={trade.direction==="Long"?C.green:C.red}>{trade.direction}</Tag>
+                  {trade.option_type&&<Tag color={trade.option_type==="Call"?C.green:C.red}>{trade.option_type}{trade.strike?` $${trade.strike}`:""}</Tag>}
                   {trade.account_type&&<Tag color={typeColor(trade.account_type)}>{trade.account_type}</Tag>}
                   {trade.ai_grade&&<Tag color={gradeColor(trade.ai_grade)}>{trade.ai_grade}</Tag>}
                 </div>
@@ -645,7 +666,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
             {exp&&(
               <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.bord}`}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12,marginBottom:10}}>
-                  {[["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length} ✓`]].map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
+                  {([["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length} ✓`],...(trade.option_type?[["Strike",trade.strike?`$${trade.strike}`:"—"],["Expiry",trade.option_expiry||"—"]]:[])] as [string,string][]).map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
                 </div>
                 {trade.notes&&<div style={{fontSize:12,color:C.dim,fontStyle:"italic",padding:"10px 12px",background:C.bg,borderRadius:8,marginBottom:10}}>"{trade.notes}"</div>}
                 {trade.screenshot&&<img src={trade.screenshot} alt="chart" style={{width:"100%",borderRadius:8,marginBottom:10,border:`1px solid ${C.bord}`}}/>}
