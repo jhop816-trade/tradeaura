@@ -1066,15 +1066,35 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   const [tab,setTab]=useState("prep");
   const [prep,setPrep]=useState<any>(null),[prepLoading,setPrepLoading]=useState(false),[prepDate,setPrepDate]=useState("");
   const [marketCtx,setMarketCtx]=useState<any>(null);
-  const [chatMsgs,setChatMsgs]=useState<{role:string,content:string}[]>([]);
+  const [chatMsgs,setChatMsgs]=useState<{role:string,content:any,imgUrl?:string}[]>([]);
   const [chatInput,setChatInput]=useState(""),[chatLoading,setChatLoading]=useState(false);
+  const [pendingImg,setPendingImg]=useState<{data:string,mimeType:string}|null>(null);
   const chatEndRef=useRef<any>(null);
-  const systemCtxRef=useRef<{role:string,content:string}[]>([]);
+  const fileInputRef=useRef<HTMLInputElement>(null);
+  const systemCtxRef=useRef<{role:string,content:any}[]>([]);
   const [patterns,setPatterns]=useState<any[]>([]),[aiPR,setAiPR]=useState<any>(null),[aiPL,setAiPL]=useState(false);
   const [weekReview,setWeekReview]=useState<any>(null),[weekLoading,setWeekLoading]=useState(false);
 
   async function fetchMarketContext(){
     try{const ctx=await apiFn("GET","/api/ai/market-context");setMarketCtx(ctx);return ctx;}catch(e){return null;}
+  }
+
+  function resizeImage(file:File):Promise<{data:string,mimeType:string}>{
+    return new Promise(resolve=>{
+      const img=new Image();
+      const url=URL.createObjectURL(file);
+      img.onload=()=>{
+        URL.revokeObjectURL(url);
+        const MAX=1024;
+        let {width,height}=img;
+        if(width>MAX||height>MAX){if(width>height){height=Math.round(height*MAX/width);width=MAX;}else{width=Math.round(width*MAX/height);height=MAX;}}
+        const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+        const ctx2=canvas.getContext("2d")!;ctx2.drawImage(img,0,0,width,height);
+        const dataUrl=canvas.toDataURL("image/jpeg",0.85);
+        resolve({data:dataUrl.split(",")[1],mimeType:"image/jpeg"});
+      };
+      img.src=url;
+    });
   }
 
   async function generatePrep(){
@@ -1102,15 +1122,20 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
   }
 
   async function sendChat(){
-    if(!chatInput.trim())return;
-    const userMsg={role:"user",content:chatInput};
+    if(!chatInput.trim()&&!pendingImg)return;
+    const imgUrl=pendingImg?`data:${pendingImg.mimeType};base64,${pendingImg.data}`:undefined;
+    const msgContent=pendingImg
+      ?[{type:"image",source:{type:"base64",media_type:pendingImg.mimeType,data:pendingImg.data}},{type:"text",text:chatInput||"Analyze this chart"}]
+      :chatInput;
+    const userMsg:{role:string,content:any,imgUrl?:string}={role:"user",content:msgContent,imgUrl};
+    setPendingImg(null);
     // Ensure market context is loaded
     let ctx=marketCtx;
     if(!ctx){ctx=await fetchMarketContext();}
     // Build system context once per conversation (news + prices + prep if available)
     if(!systemCtxRef.current.length){
       const parts:string[]=[];
-      let dateHeader=`Today is ${ctx?.dayName||""}, ${ctx?.date||""} at ${ctx?.timeET||""} ET.`;
+      const dateHeader=`Today is ${ctx?.dayName||""}, ${ctx?.date||""} at ${ctx?.timeET||""} ET.`;
       parts.push(dateHeader);
       if(ctx?.hasPrices&&ctx.prices?.length){
         const priceLines=ctx.prices.map((p:any)=>`${p.symbol}: O=${p.lastOpen} H=${p.lastHigh} L=${p.lastLow} last=${p.lastClose} prevClose=${p.prevClose} (${p.changePct>0?"+":""}${p.changePct}%)`);
@@ -1128,7 +1153,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
         {role:"assistant",content:`Got it — I have today's live price data${prepNote} loaded. I can answer questions about specific levels, previous day highs/lows, and current market conditions. What do you want to know?`}
       ];
     }
-    const apiMsgs=[...systemCtxRef.current,...chatMsgs,userMsg];
+    const apiMsgs=[...systemCtxRef.current,...chatMsgs.map(({role,content})=>({role,content})),{role:userMsg.role,content:userMsg.content}];
     setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
     try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
     setChatLoading(false);
@@ -1283,18 +1308,32 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
                 <div style={{fontSize:11,marginTop:8,lineHeight:1.7}}>Ask about setups, risk management, trade psychology, market structure, strategies…</div>
               </div>
             )}
-            {chatMsgs.map((m,i)=>(
+            {chatMsgs.map((m,i)=>{
+              const textContent=typeof m.content==="string"?m.content:Array.isArray(m.content)?((m.content as any[]).find((b:any)=>b.type==="text")?.text||""):"";
+              return(
               <div key={i} style={{display:"flex",gap:8,justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
                 {m.role==="assistant"&&<div style={{width:28,height:28,borderRadius:"50%",background:C.blue+"22",border:`1px solid ${C.blue}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>}
-                <div style={{maxWidth:"80%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px",background:m.role==="user"?C.blue+"22":C.surf2,border:`1px solid ${m.role==="user"?C.blue+"40":C.bord}`,fontSize:12,color:C.txt,lineHeight:1.7}}>{m.content}</div>
+                <div style={{maxWidth:"80%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 4px 12px":"12px 12px 12px 4px",background:m.role==="user"?C.blue+"22":C.surf2,border:`1px solid ${m.role==="user"?C.blue+"40":C.bord}`,fontSize:12,color:C.txt,lineHeight:1.7}}>
+                  {m.imgUrl&&<img src={m.imgUrl} alt="chart" style={{maxWidth:"100%",borderRadius:6,marginBottom:6,display:"block"}}/>}
+                  {textContent}
+                </div>
               </div>
-            ))}
+              );
+            })}
             {chatLoading&&<div style={{display:"flex",gap:8}}><div style={{width:28,height:28,borderRadius:"50%",background:C.blue+"22",border:`1px solid ${C.blue}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🤖</div><div style={{padding:"10px 14px",borderRadius:"12px 12px 12px 4px",background:C.surf2,border:`1px solid ${C.bord}`,fontSize:12,color:C.muted}}>Thinking…</div></div>}
             <div ref={chatEndRef}/>
           </div>
+          {pendingImg&&(
+            <div style={{position:"relative",display:"inline-block",marginBottom:8}}>
+              <img src={`data:${pendingImg.mimeType};base64,${pendingImg.data}`} alt="preview" style={{maxHeight:100,maxWidth:"100%",borderRadius:8,border:`1px solid ${C.bord}`,display:"block"}}/>
+              <button onClick={()=>setPendingImg(null)} style={{position:"absolute",top:-8,right:-8,width:22,height:22,borderRadius:"50%",background:"#e53e3e",border:"none",color:"#fff",cursor:"pointer",fontSize:14,lineHeight:"22px",textAlign:"center",padding:0}}>×</button>
+            </div>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{const f=e.target.files?.[0];if(!f)return;const r=await resizeImage(f);setPendingImg(r);e.target.value="";}}/>
           <div style={{display:"flex",gap:8}}>
-            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Ask about today's market, your prep, setups…" style={inp({flex:1,fontSize:14,padding:"12px 14px"} as any)}/>
-            <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{padding:"12px 18px",background:chatLoading||!chatInput.trim()?C.muted:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,flexShrink:0}}>Send</button>
+            <button onClick={()=>fileInputRef.current?.click()} style={{padding:"12px 14px",background:pendingImg?C.blue+"33":C.surf2,color:pendingImg?C.blue:C.muted,border:`1px solid ${pendingImg?C.blue+"60":C.bord}`,borderRadius:8,cursor:"pointer",fontSize:16,flexShrink:0}}>📷</button>
+            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(chatInput.trim()||pendingImg)&&sendChat()} placeholder="Ask about today's market, your prep, setups…" style={inp({flex:1,fontSize:14,padding:"12px 14px"} as any)}/>
+            <button onClick={sendChat} disabled={chatLoading||(!chatInput.trim()&&!pendingImg)} style={{padding:"12px 18px",background:chatLoading||(!chatInput.trim()&&!pendingImg)?C.muted:C.blue,color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:700,flexShrink:0}}>Send</button>
           </div>
           {chatMsgs.length>0&&<button onClick={clearChat} style={{marginTop:8,width:"100%",padding:8,background:"transparent",color:C.muted,border:`1px solid ${C.bord}`,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:11}}>Clear conversation</button>}
         </div>
