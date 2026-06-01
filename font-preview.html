@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeAura Font Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; padding: 20px; }
+
+  .label {
+    font-family: monospace;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    background: #1a2035;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .card {
+    background: #161b27;
+    border: 1px solid #222d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .logo { font-size: 20px; font-weight: 800; color: #fff; }
+  .logo span { color: #4f8ef7; }
+  .badge { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: #1e3a5f; color: #4f8ef7; border: 1px solid #4f8ef744; }
+
+  .balance-label { font-size: 9px; color: #556; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px; }
+  .balance { font-size: 34px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+  .balance-change { font-size: 13px; font-weight: 600; color: #22c55e; margin-top: 4px; }
+
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 16px 0; }
+  .kpi { background: #0d1117; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .kpi-label { font-size: 8px; color: #556; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+  .kpi-val { font-size: 16px; font-weight: 700; }
+
+  .trade { background: #0d1117; border: 1px solid #1e2d45; border-left: 3px solid #22c55e; border-radius: 10px; padding: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .trade-sym { font-size: 15px; font-weight: 700; color: #fff; }
+  .trade-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; margin-left: 6px; }
+  .trade-tag.red { background: #ef444422; color: #ef4444; border-color: #ef444444; }
+  .trade-meta { font-size: 11px; color: #556; margin-top: 3px; }
+  .trade-pnl { font-size: 18px; font-weight: 700; color: #22c55e; }
+  .trade-pnl.neg { color: #ef4444; }
+
+  .section-title { font-size: 9px; color: #556; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- SPACE GROTESK -->
+<div class="label">1 — Space Grotesk</div>
+<div class="card" style="font-family: 'Space Grotesk', sans-serif;">
+  <div class="header">
+    <div class="logo">Trade<span>Aura</span></div>
+    <div class="badge">● WeBull</div>
+  </div>
+  <div class="balance-label">Account Balance</div>
+  <div class="balance">$48,320.50</div>
+  <div class="balance-change">▲ $1,240.00 (2.63%)</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-val" style="color:#22c55e">67.4%</div></div>
+    <div class="kpi"><div class="kpi-label">Profit Factor</div><div class="kpi-val" style="color:#22c55e">2.14</div></div>
+    <div class="kpi"><div class="kpi-label">Streak</div><div class="kpi-val" style="color:#22c55e">4W</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Win</div><div class="kpi-val" style="color:#22c55e">$312</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Loss</div><div class="kpi-val" style="color:#ef4444">$146</div></div>
+    <div class="kpi"><div class="kpi-label">Consistency</div><div class="kpi-val" style="color:#22c55e">84</div></div>
+  </div>
+  <div class="section-title">Recent Trades</div>
+  <div class="trade">
+    <div><div><span class="trade-sym">IWM</span><span class="trade-tag">Long</span><span class="trade-tag">B+</span></div><div class="trade-meta">Jun 1 · New York · BOS + Retest</div></div>
+    <div class="trade-pnl">+$412.50</div>
+  </div>
+  <div class="trade" style="border-left-color:#ef4444">
+    <div><div><span class="trade-sym">ES1!</span><span class="trade-tag red">Short</span></div><div class="trade-meta">May 31 · London · Order Block</div></div>
+    <div class="trade-pnl neg">−$187.50</div>
+  </div>
+</div>
+
+<!-- INTER -->
+<div class="label">2 — Inter</div>
+<div class="card" style="font-family: 'Inter', sans-serif;">
+  <div class="header">
+    <div class="logo">Trade<span>Aura</span></div>
+    <div class="badge">● WeBull</div>
+  </div>
+  <div class="balance-label">Account Balance</div>
+  <div class="balance">$48,320.50</div>
+  <div class="balance-change">▲ $1,240.00 (2.63%)</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-val" style="color:#22c55e">67.4%</div></div>
+    <div class="kpi"><div class="kpi-label">Profit Factor</div><div class="kpi-val" style="color:#22c55e">2.14</div></div>
+    <div class="kpi"><div class="kpi-label">Streak</div><div class="kpi-val" style="color:#22c55e">4W</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Win</div><div class="kpi-val" style="color:#22c55e">$312</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Loss</div><div class="kpi-val" style="color:#ef4444">$146</div></div>
+    <div class="kpi"><div class="kpi-label">Consistency</div><div class="kpi-val" style="color:#22c55e">84</div></div>
+  </div>
+  <div class="section-title">Recent Trades</div>
+  <div class="trade">
+    <div><div><span class="trade-sym">IWM</span><span class="trade-tag">Long</span><span class="trade-tag">B+</span></div><div class="trade-meta">Jun 1 · New York · BOS + Retest</div></div>
+    <div class="trade-pnl">+$412.50</div>
+  </div>
+  <div class="trade" style="border-left-color:#ef4444">
+    <div><div><span class="trade-sym">ES1!</span><span class="trade-tag red">Short</span></div><div class="trade-meta">May 31 · London · Order Block</div></div>
+    <div class="trade-pnl neg">−$187.50</div>
+  </div>
+</div>
+
+<!-- OUTFIT -->
+<div class="label">3 — Outfit</div>
+<div class="card" style="font-family: 'Outfit', sans-serif;">
+  <div class="header">
+    <div class="logo">Trade<span>Aura</span></div>
+    <div class="badge">● WeBull</div>
+  </div>
+  <div class="balance-label">Account Balance</div>
+  <div class="balance">$48,320.50</div>
+  <div class="balance-change">▲ $1,240.00 (2.63%)</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-val" style="color:#22c55e">67.4%</div></div>
+    <div class="kpi"><div class="kpi-label">Profit Factor</div><div class="kpi-val" style="color:#22c55e">2.14</div></div>
+    <div class="kpi"><div class="kpi-label">Streak</div><div class="kpi-val" style="color:#22c55e">4W</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Win</div><div class="kpi-val" style="color:#22c55e">$312</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Loss</div><div class="kpi-val" style="color:#ef4444">$146</div></div>
+    <div class="kpi"><div class="kpi-label">Consistency</div><div class="kpi-val" style="color:#22c55e">84</div></div>
+  </div>
+  <div class="section-title">Recent Trades</div>
+  <div class="trade">
+    <div><div><span class="trade-sym">IWM</span><span class="trade-tag">Long</span><span class="trade-tag">B+</span></div><div class="trade-meta">Jun 1 · New York · BOS + Retest</div></div>
+    <div class="trade-pnl">+$412.50</div>
+  </div>
+  <div class="trade" style="border-left-color:#ef4444">
+    <div><div><span class="trade-sym">ES1!</span><span class="trade-tag red">Short</span></div><div class="trade-meta">May 31 · London · Order Block</div></div>
+    <div class="trade-pnl neg">−$187.50</div>
+  </div>
+</div>
+
+<!-- SORA -->
+<div class="label">4 — Sora</div>
+<div class="card" style="font-family: 'Sora', sans-serif;">
+  <div class="header">
+    <div class="logo">Trade<span>Aura</span></div>
+    <div class="badge">● WeBull</div>
+  </div>
+  <div class="balance-label">Account Balance</div>
+  <div class="balance">$48,320.50</div>
+  <div class="balance-change">▲ $1,240.00 (2.63%)</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-val" style="color:#22c55e">67.4%</div></div>
+    <div class="kpi"><div class="kpi-label">Profit Factor</div><div class="kpi-val" style="color:#22c55e">2.14</div></div>
+    <div class="kpi"><div class="kpi-label">Streak</div><div class="kpi-val" style="color:#22c55e">4W</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Win</div><div class="kpi-val" style="color:#22c55e">$312</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Loss</div><div class="kpi-val" style="color:#ef4444">$146</div></div>
+    <div class="kpi"><div class="kpi-label">Consistency</div><div class="kpi-val" style="color:#22c55e">84</div></div>
+  </div>
+  <div class="section-title">Recent Trades</div>
+  <div class="trade">
+    <div><div><span class="trade-sym">IWM</span><span class="trade-tag">Long</span><span class="trade-tag">B+</span></div><div class="trade-meta">Jun 1 · New York · BOS + Retest</div></div>
+    <div class="trade-pnl">+$412.50</div>
+  </div>
+  <div class="trade" style="border-left-color:#ef4444">
+    <div><div><span class="trade-sym">ES1!</span><span class="trade-tag red">Short</span></div><div class="trade-meta">May 31 · London · Order Block</div></div>
+    <div class="trade-pnl neg">−$187.50</div>
+  </div>
+</div>
+
+</body>
+</html>
