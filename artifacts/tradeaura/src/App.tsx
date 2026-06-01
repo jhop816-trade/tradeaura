@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 const EducationCenter = lazy(() => import("./EducationCenter"));
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
@@ -225,9 +225,32 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
   const chartData=trades.slice().reverse().map((t,i)=>{cum+=t.pnl||0;return{i:i+1,v:parseFloat(cum.toFixed(2))};});
   const tpClr=totalPnl>=0?C.green:C.red;
   const dpClr=dailyPnl>=0?C.green:C.red;
+  const grossWins=wins.reduce((s,t)=>s+(t.pnl||0),0);
+  const grossLosses=Math.abs(losses.reduce((s,t)=>s+(t.pnl||0),0));
+  const profitFactor=grossLosses>0?grossWins/grossLosses:grossWins>0?999:0;
+  const pfDisplay=profitFactor>=999?"∞":profitFactor.toFixed(2);
+  const pfColor=profitFactor>=1.5?C.green:profitFactor>=1?C.gold:C.red;
+  const rulesScore=trades.length?trades.filter(t=>(t.rules_followed||[]).length>0).length/trades.length*100:50;
+  const pfScore=Math.min(profitFactor>=999?100:profitFactor/3*100,100);
+  const consistencyScore=trades.length?Math.round(rulesScore*0.4+parseFloat(winRate as string)*0.35+pfScore*0.25):0;
+  const consColor=consistencyScore>=70?C.green:consistencyScore>=50?C.gold:C.red;
+  const dailyLimit=(account?.starting_balance||0)*0.05;
+  const showDailyWarning=dailyLimit>0&&dailyPnl<0&&Math.abs(dailyPnl)>=dailyLimit*0.8;
+  const hitDailyLimit=dailyLimit>0&&dailyPnl<0&&Math.abs(dailyPnl)>=dailyLimit;
+  let ddPeak=0,ddCum=0;
+  const drawdownData=trades.length>1?trades.slice().reverse().map((t,i)=>{ddCum+=t.pnl||0;ddPeak=Math.max(ddPeak,ddCum);const dd=ddPeak>0?-((ddPeak-ddCum)/ddPeak*100):0;return{i:i+1,dd:parseFloat(dd.toFixed(2))};}):[];
 
   return (
     <div style={{padding:"16px 16px 20px"}}>
+      {(showDailyWarning||hitDailyLimit)&&(
+        <div style={{background:hitDailyLimit?C.red+"22":C.gold+"22",border:`1px solid ${hitDailyLimit?C.red+"60":C.gold+"60"}`,borderRadius:10,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:20}}>{hitDailyLimit?"🚨":"⚠️"}</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:hitDailyLimit?C.red:C.gold}}>{hitDailyLimit?"DAILY LOSS LIMIT HIT":"APPROACHING DAILY LIMIT"}</div>
+            <div style={{fontSize:11,color:C.dim,marginTop:2}}>{hitDailyLimit?"Step away. Come back tomorrow.": `Down $${Math.abs(dailyPnl).toFixed(0)} of your ~$${dailyLimit.toFixed(0)} daily limit (80%+ reached).`}</div>
+          </div>
+        </div>
+      )}
       <div style={{background:"linear-gradient(145deg,#19243d,#161b27)",border:`1px solid ${C.bord}`,borderRadius:12,padding:18,marginBottom:12}}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.15em",marginBottom:8}}>ACCOUNT BALANCE</div>
         {editingBal?(
@@ -264,7 +287,7 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-        {[{l:"WIN RATE",v:`${winRate}%`,c:parseFloat(winRate as string)>=50?C.green:C.red},{l:"STREAK",v:`${streak}${sType?"W":"L"}`,c:sType?C.green:C.red},{l:"TRADES",v:trades.length,c:C.txt},{l:"AVG WIN",v:`$${avgWin.toFixed(0)}`,c:C.green},{l:"AVG LOSS",v:`$${avgLoss.toFixed(0)}`,c:C.red},{l:"NET P&L",v:`${totalPnl>=0?"+":""}$${totalPnl.toFixed(0)}`,c:tpClr}].map(s=>(
+        {[{l:"WIN RATE",v:`${winRate}%`,c:parseFloat(winRate as string)>=50?C.green:C.red},{l:"PROFIT FACTOR",v:pfDisplay,c:pfColor},{l:"STREAK",v:`${streak}${sType?"W":"L"}`,c:sType?C.green:C.red},{l:"TRADES",v:String(trades.length),c:C.txt},{l:"AVG WIN",v:`$${avgWin.toFixed(0)}`,c:C.green},{l:"AVG LOSS",v:`$${avgLoss.toFixed(0)}`,c:C.red},{l:"NET P&L",v:`${totalPnl>=0?"+":""}$${totalPnl.toFixed(0)}`,c:tpClr},{l:"CONSISTENCY",v:`${consistencyScore}`,c:consColor}].map(s=>(
           <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"11px 8px",textAlign:"center"}}>
             <div style={{fontSize:8,color:C.muted,letterSpacing:"0.1em",marginBottom:5}}>{s.l}</div>
             <div style={{fontSize:15,fontWeight:700,color:s.c}}>{s.v}</div>
@@ -274,14 +297,27 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 
       {chartData.length>1&&(
         <div style={CS}>
-          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>CUMULATIVE P&L</div>
-          <ResponsiveContainer width="100%" height={120}>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>EQUITY CURVE</div>
+          <ResponsiveContainer width="100%" height={110}>
             <LineChart data={chartData}>
               <YAxis hide domain={["auto","auto"]}/><XAxis dataKey="i" hide/>
               <Tooltip formatter={(v: any)=>[`$${v}`,"P&L"]} contentStyle={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:8,fontSize:11}}/>
+              <ReferenceLine y={0} stroke={C.bord} strokeDasharray="3 3"/>
               <Line type="monotone" dataKey="v" stroke={totalPnl>=0?C.green:C.red} strokeWidth={2.5} dot={false}/>
             </LineChart>
           </ResponsiveContainer>
+          {drawdownData.length>1&&(
+            <>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",margin:"14px 0 8px"}}>DRAWDOWN %</div>
+              <ResponsiveContainer width="100%" height={70}>
+                <AreaChart data={drawdownData}>
+                  <YAxis hide domain={["auto",0]}/><XAxis dataKey="i" hide/>
+                  <Tooltip formatter={(v: any)=>[`${Math.abs(v).toFixed(2)}%`,"Drawdown"]} contentStyle={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:8,fontSize:11}}/>
+                  <Area type="monotone" dataKey="dd" stroke={C.red} fill={C.red+"33"} strokeWidth={1.5} dot={false}/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </>
+          )}
         </div>
       )}
 
@@ -615,11 +651,26 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
 function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [expandedId,setExpandedId]=useState<any>(null);
   const [editingTrade,setEditingTrade]=useState<any>(null);
+  const [filterSymbol,setFilterSymbol]=useState("");
+  const [filterDir,setFilterDir]=useState("");
+  const [filterSetup,setFilterSetup]=useState("");
+  const [showGallery,setShowGallery]=useState(false);
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
   const today=new Date().toISOString().slice(0,10);
   const todayPnl=trades.filter(t=>t.date===today).reduce((s,t)=>s+(t.pnl||0),0);
   const todayCount=trades.filter(t=>t.date===today).length;
+  let lossStreak=0;for(const t of trades){if((t.pnl||0)<0)lossStreak++;else break;}
+  const filtered=trades.filter(t=>{if(filterSymbol&&!t.instrument.toLowerCase().includes(filterSymbol.toLowerCase()))return false;if(filterDir&&t.direction!==filterDir)return false;if(filterSetup&&t.setup!==filterSetup)return false;return true;});
+  const allSymbols=[...new Set(trades.map(t=>t.instrument).filter(Boolean))];
+  const allSetupNames=[...new Set(trades.map(t=>t.setup).filter(Boolean))];
+  const screenshotTrades=trades.filter(t=>t.screenshot);
+  function exportCSV(){
+    const hdrs=["Date","Symbol","Direction","Option","Strike","Expiry","Entry","Exit","Contracts","Stop","P&L","Setup","Session","Mood","Rules","Notes","AI Grade","Account Type"];
+    const rows=trades.map(t=>[t.date,t.instrument,t.direction,t.option_type||"",t.strike||"",t.option_expiry||"",t.entry,t.exit,t.contracts,t.stop_loss||"",(t.pnl||0).toFixed(2),t.setup||"",t.session||"",t.mood||"",(t.rules_followed||[]).join("; "),(t.notes||"").replace(/"/g,'""'),t.ai_grade||"",t.account_type||""]);
+    const csv=[hdrs,...rows].map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`tradeaura_${today}.csv`;a.click();
+  }
 
   if(!trades.length&&!editingTrade)return(
     <div style={{textAlign:"center",padding:"80px 20px",color:C.muted}}>
@@ -631,6 +682,15 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
 
   return(
     <div style={{padding:"16px 16px 20px"}}>
+      {lossStreak>=3&&(
+        <div style={{background:C.red+"22",border:`1px solid ${C.red}50`,borderRadius:10,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:20}}>🛑</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.red}}>{lossStreak} LOSSES IN A ROW</div>
+            <div style={{fontSize:11,color:C.dim,marginTop:2}}>Step away. Review your last {lossStreak} trades before continuing.</div>
+          </div>
+        </div>
+      )}
       {trades.length>0&&(
         <div style={Object.assign({},CS,{marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"})}>
           <div>
@@ -645,7 +705,40 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
           </div>
         </div>
       )}
-      {trades.map(trade=>{
+      {trades.length>0&&(
+        <div style={{marginBottom:12}}>
+          <div style={{display:"flex",gap:6,marginBottom:6}}>
+            <input value={filterSymbol} onChange={e=>setFilterSymbol(e.target.value)} placeholder="Search symbol…" style={inp({flex:1,fontSize:12,padding:"8px 10px"})}/>
+            <select value={filterDir} onChange={e=>setFilterDir(e.target.value)} style={inp({fontSize:12,padding:"8px 10px"})}>
+              <option value="">All</option><option>Long</option><option>Short</option>
+            </select>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <select value={filterSetup} onChange={e=>setFilterSetup(e.target.value)} style={inp({fontSize:11,padding:"6px 8px",flex:1})}>
+              <option value="">All setups</option>{allSetupNames.map(s=><option key={s}>{s}</option>)}
+            </select>
+            <button onClick={()=>{setFilterSymbol("");setFilterDir("");setFilterSetup("");}} style={{padding:"6px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>Clear</button>
+            {screenshotTrades.length>0&&<button onClick={()=>setShowGallery(s=>!s)} style={{padding:"6px 10px",background:showGallery?C.purp+"22":"transparent",border:`1px solid ${showGallery?C.purp+"60":C.bord}`,color:showGallery?C.purp:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>📸 Gallery</button>}
+            <button onClick={exportCSV} style={{padding:"6px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>⬇ CSV</button>
+          </div>
+        </div>
+      )}
+      {showGallery&&screenshotTrades.length>0&&(
+        <div style={Object.assign({},CS,{marginBottom:12})}>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:10}}>📸 CHART GALLERY ({screenshotTrades.length})</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {screenshotTrades.map(t=>(
+              <div key={t.id} onClick={()=>setExpandedId(t.id)} style={{cursor:"pointer"}}>
+                <img src={t.screenshot} alt="chart" style={{width:"100%",borderRadius:8,border:`1px solid ${C.bord}`,display:"block"}}/>
+                <div style={{fontSize:9,color:C.muted,marginTop:4,textAlign:"center"}}>{t.instrument} · {t.date}</div>
+                <div style={{fontSize:10,fontWeight:700,textAlign:"center",color:(t.pnl||0)>=0?C.green:C.red}}>{(t.pnl||0)>=0?"+":""}${(t.pnl||0).toFixed(0)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {(filterSymbol||filterDir||filterSetup)&&<div style={{fontSize:11,color:C.muted,marginBottom:8}}>{filtered.length} of {trades.length} trades</div>}
+      {filtered.map(trade=>{
         const pnl=trade.pnl||0,exp=expandedId===trade.id;
         if(editingTrade?.id===trade.id)return(<TradeForm key={trade.id} initial={editingTrade} isEdit balance={balance} pnlMode={pnlMode} onPnlModeChange={onPnlModeChange} onSave={t=>{onSave(t);setEditingTrade(null);}} onCancel={()=>setEditingTrade(null)}/>);
         return(
@@ -786,8 +879,12 @@ function CalendarView({trades}: {trades:any[]}) {
 // ── STATS ─────────────────────────────────────────────────────────────────────
 function StatsView({trades,account}: {trades:any[],account?:any}) {
   if(!trades.length)return<div style={{textAlign:"center",padding:"80px 20px",color:C.muted}}><div style={{fontSize:44}}>📊</div><div style={{fontSize:13,fontWeight:600,marginTop:12}}>No data yet</div></div>;
+  function calcRR(t: any){const e=parseFloat(t.entry),x=parseFloat(t.exit),sl=parseFloat(t.stop_loss);if(!e||!x||!sl||isNaN(e)||isNaN(x)||isNaN(sl))return null;const risk=Math.abs(e-sl);if(risk===0)return null;const reward=t.direction==="Long"?x-e:e-x;return reward/risk;}
   const allSetupNames=[...new Set([...SETUPS,...trades.map(t=>t.setup).filter(Boolean)])];
-  const setupStats=allSetupNames.map(s=>{const st=trades.filter(t=>t.setup===s);return{name:s,pnl:st.reduce((a,t)=>a+(t.pnl||0),0),count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
+  const setupStats=allSetupNames.map(s=>{const st=trades.filter(t=>t.setup===s);const rrs=st.map(calcRR).filter((r): r is number=>r!==null);const avgRR=rrs.length?rrs.reduce((a,b)=>a+b,0)/rrs.length:null;return{name:s,pnl:st.reduce((a,t)=>a+(t.pnl||0),0),count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length,avgRR};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
+  const DAYS=["Mon","Tue","Wed","Thu","Fri"];
+  const dayStats=[1,2,3,4,5].map(d=>{const dt=trades.filter(t=>new Date(t.date+"T12:00:00").getDay()===d);const w=dt.filter(t=>(t.pnl||0)>0);return{name:DAYS[d-1],count:dt.length,wins:w.length,pnl:dt.reduce((s,t)=>s+(t.pnl||0),0),wr:dt.length?w.length/dt.length*100:0};}).filter(d=>d.count>0);
+  const maxDayPnl=dayStats.length?Math.max(...dayStats.map(d=>Math.abs(d.pnl))):1;
 
   // Session performance
   const sessionStats=SESSIONS.map(s=>{const st=trades.filter(t=>t.session===s);return{name:s,count:st.length,wins:st.filter(t=>(t.pnl||0)>0).length,pnl:st.reduce((a,t)=>a+(t.pnl||0),0)};}).filter(s=>s.count>0).sort((a,b)=>b.pnl-a.pnl);
@@ -807,7 +904,7 @@ function StatsView({trades,account}: {trades:any[],account?:any}) {
     <div style={{padding:"16px 16px 20px"}}>
       <div style={Object.assign({},CS,{marginBottom:12})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>SETUP PERFORMANCE</div>
-        {setupStats.map(s=>(<div key={s.name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}><div><div style={{fontSize:13,color:C.txt,fontWeight:500}}>{s.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{s.count} trades · {s.count?(s.wins/s.count*100).toFixed(0):0}% win</div></div><div style={{fontSize:15,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(0)}</div></div>))}
+        {setupStats.map(s=>(<div key={s.name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}><div><div style={{fontSize:13,color:C.txt,fontWeight:500}}>{s.name}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{s.count} trades · {s.count?(s.wins/s.count*100).toFixed(0):0}% win{s.avgRR!=null?` · R:R ${s.avgRR>=0?"+":""}${s.avgRR.toFixed(2)}R`:""}</div></div><div style={{fontSize:15,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(0)}</div></div>))}
       </div>
 
       {sessionStats.length>0&&(
@@ -823,6 +920,21 @@ function StatsView({trades,account}: {trades:any[],account?:any}) {
                 <span style={{fontSize:14,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(0)}</span>
               </div>
               <div style={{height:4,background:C.bg,borderRadius:2}}><div style={{height:"100%",width:`${(s.count/maxSessionCount)*100}%`,background:s.pnl>=0?C.green:C.red,borderRadius:2}}/></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {dayStats.length>0&&(
+        <div style={Object.assign({},CS,{marginBottom:12})}>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>P&L BY DAY OF WEEK</div>
+          {dayStats.map(d=>(
+            <div key={d.name} style={{marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <div><span style={{fontSize:13,color:C.txt,fontWeight:600}}>{d.name}</span><span style={{fontSize:10,color:C.muted,marginLeft:8}}>{d.count} trades · {d.wr.toFixed(0)}% win</span></div>
+                <span style={{fontSize:14,fontWeight:700,color:d.pnl>=0?C.green:C.red}}>{d.pnl>=0?"+":""}${d.pnl.toFixed(0)}</span>
+              </div>
+              <div style={{height:5,background:C.bg,borderRadius:3}}><div style={{height:"100%",width:`${Math.abs(d.pnl)/maxDayPnl*100}%`,background:d.pnl>=0?C.green:C.red,borderRadius:3}}/></div>
             </div>
           ))}
         </div>
