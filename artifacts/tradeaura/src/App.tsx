@@ -162,7 +162,7 @@ function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
   }
 
   return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'DM Mono','Courier New',monospace"}}>
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Space Grotesk',sans-serif"}}>
       <div style={{width:"100%",maxWidth:400}}>
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:40}}>
@@ -1798,7 +1798,7 @@ export default function App() {
 
   const activeAccount=accounts.find(a=>a.id===activeAccountId)||accounts[0];
 
-  if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"monospace",fontSize:13}}>Loading…</div>;
+  if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13}}>Loading…</div>;
   if(!user)return<AuthScreen onAuth={setUser}/>;
 
   const MENU_ITEMS=[
@@ -1816,7 +1816,7 @@ export default function App() {
   function navigate(id: string){setView(id);setShowNewTrade(false);setEditingTrade(null);setShowMenu(false);}
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'DM Mono','Fira Code','Courier New',monospace",maxWidth:480,margin:"0 auto"}}>
+    <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'Space Grotesk',sans-serif",maxWidth:480,margin:"0 auto"}}>
       {/* HEADER */}
       <div style={{background:C.surf,borderBottom:`1px solid ${C.bord}`,padding:"13px 16px",position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>navigate("home")}>
