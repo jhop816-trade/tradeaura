@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Plus, Trash2, CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Clock, DollarSign, Edit, CalendarClock } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +66,20 @@ export default function ProviderDashboard() {
             <p className="text-sm text-muted-foreground">Confirmed Revenue</p>
             <p className="text-2xl font-bold">{formatPrice(revenue)}</p>
           </div>
+        </div>
+
+        {/* Quick links */}
+        <div className="flex gap-2 mb-6">
+          <Link href="/dashboard/provider/edit" className="flex-1">
+            <Button variant="outline" size="sm" className="w-full">
+              <Edit className="w-3.5 h-3.5 mr-1.5" /> Edit Profile
+            </Button>
+          </Link>
+          <Link href="/dashboard/provider/hours" className="flex-1">
+            <Button variant="outline" size="sm" className="w-full">
+              <CalendarClock className="w-3.5 h-3.5 mr-1.5" /> Hours
+            </Button>
+          </Link>
         </div>
 
         <Tabs defaultValue="upcoming">

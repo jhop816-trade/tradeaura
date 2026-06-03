@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Link } from "wouter";
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiClient } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { ReviewPrompt } from "@/components/ReviewPrompt";
 import TopBar from "@/components/layout/TopBar";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -18,6 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ClientDashboard() {
   const { apiFetch } = useApiClient();
+  const [reviewingBookingId, setReviewingBookingId] = useState<string | null>(null);
 
   const { data: bookingsData, isLoading } = useQuery({
     queryKey: ["bookings", "client"],
@@ -87,24 +90,43 @@ export default function ClientDashboard() {
             ) : (
               <div className="space-y-3">
                 {past.map(({ booking, service, provider }) => (
-                  <div key={booking.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold">{provider?.displayName}</p>
-                        <p className="text-sm text-muted-foreground">{service?.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(booking.appointmentAt), "MMM d, yyyy")}</p>
+                  <div key={booking.id}>
+                    <div className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-semibold">{provider?.displayName}</p>
+                          <p className="text-sm text-muted-foreground">{service?.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(booking.appointmentAt), "MMM d, yyyy")}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-xs font-medium capitalize block ${STATUS_COLORS[booking.status]}`}>{booking.status}</span>
+                          <span className="text-sm font-semibold">{formatPrice(service?.price ?? 0)}</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`text-xs font-medium capitalize block ${STATUS_COLORS[booking.status]}`}>{booking.status}</span>
-                        <span className="text-sm font-semibold">{formatPrice(service?.price ?? 0)}</span>
+                      <div className="flex gap-2 mt-2">
+                        {provider && (
+                          <Link href={`/book/${provider.username}`} className="flex-1">
+                            <Button size="sm" variant="outline" className="w-full h-8 text-xs">
+                              <RotateCcw className="w-3 h-3 mr-1" /> Rebook
+                            </Button>
+                          </Link>
+                        )}
+                        {booking.status === "completed" && (
+                          <Button size="sm" variant="outline" className="flex-1 h-8 text-xs border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+                            onClick={() => setReviewingBookingId(booking.id)}>
+                            ⭐ Review
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    {provider && (
-                      <Link href={`/book/${provider.username}`}>
-                        <Button size="sm" variant="outline" className="w-full mt-2 h-8 text-xs">
-                          <RotateCcw className="w-3 h-3 mr-1" /> Rebook
-                        </Button>
-                      </Link>
+                    {reviewingBookingId === booking.id && provider && (
+                      <div className="mt-2">
+                        <ReviewPrompt
+                          bookingId={booking.id}
+                          providerName={provider.displayName}
+                          onDone={() => setReviewingBookingId(null)}
+                        />
+                      </div>
                     )}
                   </div>
                 ))}

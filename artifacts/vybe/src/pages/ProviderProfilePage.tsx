@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatPrice, formatDuration } from "@/lib/utils";
 
 interface Service {
@@ -69,13 +70,14 @@ export default function ProviderProfilePage({ username }: { username: string }) 
   return (
     <div className="min-h-screen bg-background pb-28">
       {/* Back button */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 h-14 flex items-center">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 h-14 flex items-center justify-between">
         <Link href="/explore">
           <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
         </Link>
+        {provider && <FavoriteButton providerId={provider.id} />}
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-6">
