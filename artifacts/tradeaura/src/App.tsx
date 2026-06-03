@@ -424,17 +424,18 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const allRules=[...RULES.filter(r=>!hiddenRules.includes(r)),...customRules.filter(r=>!RULES.includes(r))];
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
-  const pnlPreview=calcPnl({...form,manualPnl:form.manual_pnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
+  const resolvedManualPnl=form.manual_pnl!==""&&pnlMode==="%"?String((parseFloat(form.manual_pnl)/100)*acctBal):form.manual_pnl;
+  const pnlPreview=calcPnl({...form,manual_pnl:resolvedManualPnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
   async function submit() {
-    let pnl=calcPnl({...form,manualPnl:form.manual_pnl}); if(pnl===null)pnl=0;
+    let pnl=calcPnl({...form,manual_pnl:resolvedManualPnl}); if(pnl===null)pnl=0;
     setLoading(true); let grade=null;
     try {
       const optStr=form.option_type?` | ${form.option_type} option${form.strike?` $${form.strike} strike`:""}${form.option_expiry?` exp ${form.option_expiry}`:""}`:"";
       grade=await callAI(`Expert trading coach. Analyze this trade briefly. ${form.instrument} ${form.direction}${optStr} | ${form.setup} | ${form.session} Entry:${form.entry} Exit:${form.exit} Contracts:${form.contracts} P&L:$${pnl.toFixed(2)} Stop:${form.stop_loss||"None"} Mood:${form.mood} Rules:${(form.rules_followed||[]).join(",")||"None"} Notes:${form.notes||"None"} JSON only: {"grade":"A/B/C/D/F","score":0,"strengths":[""],"weaknesses":[""],"lesson":"","verdict":""}`);
     } catch(e){console.error("AI grade failed:",e);}
     setLoading(false);
-    onSave({...form,id:form.id||makeId(),pnl,ai_grade:grade?.grade||null,ai_feedback:grade});
+    onSave({...form,manual_pnl:resolvedManualPnl,id:form.id||makeId(),pnl,ai_grade:grade?.grade||null,ai_feedback:grade});
   }
 
   return (
@@ -494,12 +495,12 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
 
       <div style={{marginBottom:10}}>
         <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span>PROFIT / LOSS $ <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
+          <span>PROFIT / LOSS {pnlMode} <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
           <div style={{display:"flex",gap:4}}>
             {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",minHeight:32,background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
           </div>
         </div>
-        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder="Enter exact dollar amount..." style={inp()}/>
+        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder={pnlMode==="%"?"Enter % return (e.g. 300 for +300%)":"Enter exact dollar amount..."} style={inp()}/>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
@@ -635,8 +636,8 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
               {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"inherit",background:pnlMode===m?"#ffffff22":"transparent",color:pnlMode===m?"#fff":C.muted,border:`1px solid ${pnlMode===m?"#ffffff44":C.bord}`}}>{m}</button>)}
             </div>
           </div>
-          <div style={{fontSize:24,fontWeight:800,color:pnlPreview>=0?C.green:C.red}}>{fmtPnl(pnlPreview)}</div>
-          {pnlMode==="%"&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>of ${acctBal.toLocaleString()} account</div>}
+          <div style={{fontSize:24,fontWeight:800,color:pnlPreview>=0?C.green:C.red}}>{pnlMode==="%"&&form.manual_pnl!==""?`${parseFloat(form.manual_pnl)>=0?"+":""}${parseFloat(form.manual_pnl).toFixed(2)}%`:fmtPnl(pnlPreview)}</div>
+          {pnlMode==="%"&&form.manual_pnl===""&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>of ${acctBal.toLocaleString()} account</div>}
         </div>
       )}
 
@@ -1704,8 +1705,8 @@ export default function App() {
   const [showModal,setShowModal]=useState(false);
   const [showNewTrade,setShowNewTrade]=useState(false);
   const [editingTrade,setEditingTrade]=useState<any>(null);
-  const [pnlMode,setPnlMode]=useState<"$"|"%">(()=>(localStorage.getItem("pnl_display_mode") as "$"|"%")||"$");
-  function changePnlMode(m: "$"|"%"){localStorage.setItem("pnl_display_mode",m);setPnlMode(m);}
+  const [pnlMode,setPnlMode]=useState<"$"|"%">("$");
+  function changePnlMode(m: "$"|"%"){if(activeAccountId)localStorage.setItem(`pnl_display_mode_${activeAccountId}`,m);setPnlMode(m);}
   const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
   function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
   const [showMenu,setShowMenu]=useState(false);
@@ -1720,6 +1721,13 @@ export default function App() {
     });
     return()=>subscription.unsubscribe();
   },[]);
+
+  // ── PNL MODE PER ACCOUNT ──
+  useEffect(()=>{
+    if(!activeAccountId)return;
+    const saved=localStorage.getItem(`pnl_display_mode_${activeAccountId}`) as "$"|"%";
+    setPnlMode(saved||"$");
+  },[activeAccountId]);
 
   // ── LOAD ACCOUNTS ──
   useEffect(()=>{
