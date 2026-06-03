@@ -69,7 +69,10 @@ async function apiCall(method: string, path: string, body?: unknown): Promise<an
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error ?? `API error ${res.status}`);
+    const errMsg = err.error != null
+      ? (typeof err.error === "string" ? err.error : JSON.stringify(err.error))
+      : `API error ${res.status}`;
+    throw new Error(errMsg);
   }
   if (res.status === 204) return null;
   return res.json();
@@ -77,7 +80,7 @@ async function apiCall(method: string, path: string, body?: unknown): Promise<an
 
 // Map frontend form shape → API request payload
 function toApiPayload(trade: any, accountId: string | null) {
-  const n = (v: any) => (v === "" || v == null ? null : Number(v));
+  const n = (v: any) => { if (v === "" || v == null) return null; const num = Number(v); return isNaN(num) ? null : num; };
   const dateStr = trade.date || new Date().toISOString().slice(0, 10);
   return {
     accountId: accountId ?? null,
