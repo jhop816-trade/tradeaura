@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Plus, Trash2, CheckCircle, XCircle, Clock, DollarSign, Edit, CalendarClock, Link2, Share2, Star } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Clock, Edit, CalendarClock, Link2, Share2, Upload, ImageIcon } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -126,6 +126,7 @@ export default function ProviderDashboard() {
             </TabsTrigger>
             <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
             <TabsTrigger value="services" className="flex-1">Services</TabsTrigger>
+            <TabsTrigger value="portfolio" className="flex-1">Portfolio</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming">
@@ -202,8 +203,99 @@ export default function ProviderDashboard() {
           <TabsContent value="services">
             <ServicesManager />
           </TabsContent>
+
+          <TabsContent value="portfolio">
+            <PortfolioManager providerId={profile?.id} />
+          </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+interface PortfolioPhoto {
+  id: string;
+  providerId: string;
+  photoUrl: string;
+  caption: string | null;
+  createdAt: string;
+}
+
+function PortfolioManager({ providerId }: { providerId?: string }) {
+  const { apiFetch, uploadFile } = useApiClient();
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const { data: photos, isLoading } = useQuery<PortfolioPhoto[]>({
+    queryKey: ["portfolio", providerId],
+    queryFn: () => fetch(`/api/portfolio/${providerId}`).then((r) => r.json()),
+    enabled: !!providerId,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiFetch("DELETE", `/api/portfolio/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["portfolio", providerId] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
+  });
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { url } = await uploadFile("/api/upload/inspo", file);
+      await apiFetch("POST", "/api/portfolio", { photoUrl: url });
+      qc.invalidateQueries({ queryKey: ["portfolio", providerId] });
+      toast.success("Photo added to portfolio");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm text-muted-foreground">{photos?.length ?? 0} photos</span>
+        <Button size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+          <Upload className="w-4 h-4 mr-1" /> {uploading ? "Uploading..." : "Add Photo"}
+        </Button>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-3 gap-2">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
+        </div>
+      ) : photos?.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-40" />
+          <p className="font-medium">No portfolio photos yet</p>
+          <p className="text-sm mt-1">Add photos to showcase your work</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          {photos?.map((photo) => (
+            <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
+              <img src={photo.photoUrl} alt={photo.caption ?? "Portfolio photo"} className="w-full h-full object-cover" />
+              {photo.caption && (
+                <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white text-xs truncate">{photo.caption}</p>
+                </div>
+              )}
+              <button
+                onClick={() => deleteMutation.mutate(photo.id)}
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+              >
+                <Trash2 className="w-3 h-3 text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

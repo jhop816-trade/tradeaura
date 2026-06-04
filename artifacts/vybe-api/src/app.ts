@@ -19,6 +19,10 @@ app.use(cors({
   origin: process.env.VYBE_FRONTEND_URL ?? true,
   credentials: true,
 }));
+
+// Must be before express.json() so that the raw body is available for Stripe signature verification
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 

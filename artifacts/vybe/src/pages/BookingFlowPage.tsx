@@ -241,6 +241,9 @@ export default function BookingFlowPage({ username }: { username: string }) {
         )}
 
         {/* Step 3: Confirm */}
+        {/* TODO: Payment step — when VITE_STRIPE_PUBLISHABLE_KEY is set, add a step 4 "Payment"
+            here that creates a PaymentIntent via POST /api/payments/intent and collects
+            card details with Stripe Elements before confirming the booking. */}
         {step === 3 && selectedService && (
           <div>
             <h2 className="text-lg font-bold mb-6">Confirm booking</h2>

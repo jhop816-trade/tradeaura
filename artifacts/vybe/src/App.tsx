@@ -1,4 +1,4 @@
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/react";
+import { ClerkProvider, Show, RedirectToSignIn } from "@clerk/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router, Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
@@ -23,8 +23,8 @@ const queryClient = new QueryClient({
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <SignedIn>{children}</SignedIn>
-      <SignedOut><RedirectToSignIn /></SignedOut>
+      <Show when="signed-in">{children}</Show>
+      <Show when="signed-out"><RedirectToSignIn /></Show>
     </>
   );
 }

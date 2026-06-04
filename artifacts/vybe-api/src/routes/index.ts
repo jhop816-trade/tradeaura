@@ -8,6 +8,8 @@ import uploadRouter from "./upload";
 import workingHoursRouter from "./working-hours";
 import favoritesRouter from "./favorites";
 import reviewsRouter from "./reviews";
+import portfolioRouter from "./portfolio";
+import paymentsRouter from "./payments";
 
 const router = Router();
 
@@ -20,5 +22,7 @@ router.use("/upload", uploadRouter);
 router.use("/working-hours", workingHoursRouter);
 router.use("/favorites", favoritesRouter);
 router.use("/reviews", reviewsRouter);
+router.use("/portfolio", portfolioRouter);
+router.use("/payments", paymentsRouter);
 
 export default router;

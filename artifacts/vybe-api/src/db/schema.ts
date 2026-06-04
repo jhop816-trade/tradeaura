@@ -9,6 +9,7 @@ export const usersTable = pgTable("vybe_users", {
   clerkId: text("clerk_id").notNull().unique(),
   email: text("email").notNull(),
   role: userRoleEnum("role").notNull(),
+  phone: text("phone"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -78,5 +79,13 @@ export const favoritesTable = pgTable("vybe_favorites", {
   id: uuid("id").primaryKey().defaultRandom(),
   clientId: uuid("client_id").notNull().references(() => clientsTable.id),
   providerId: uuid("provider_id").notNull().references(() => providersTable.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const portfolioPhotosTable = pgTable("vybe_portfolio_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  providerId: uuid("provider_id").notNull().references(() => providersTable.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
+  caption: text("caption"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

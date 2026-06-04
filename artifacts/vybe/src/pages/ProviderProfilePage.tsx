@@ -8,6 +8,14 @@ import { Separator } from "@/components/ui/separator";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { formatPrice, formatDuration } from "@/lib/utils";
 
+interface PortfolioPhoto {
+  id: string;
+  providerId: string;
+  photoUrl: string;
+  caption: string | null;
+  createdAt: string;
+}
+
 interface Service {
   id: string;
   name: string;
@@ -40,6 +48,12 @@ export default function ProviderProfilePage({ username }: { username: string }) 
       if (!res.ok) throw new Error("Provider not found");
       return res.json();
     },
+  });
+
+  const { data: portfolio } = useQuery<PortfolioPhoto[]>({
+    queryKey: ["portfolio", provider?.id],
+    queryFn: () => fetch(`/api/portfolio/${provider!.id}`).then((r) => r.json()),
+    enabled: !!provider?.id,
   });
 
   if (isLoading) {
@@ -127,6 +141,26 @@ export default function ProviderProfilePage({ username }: { username: string }) 
 
         {provider.bio && (
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{provider.bio}</p>
+        )}
+
+        {/* Portfolio */}
+        {portfolio && portfolio.length > 0 && (
+          <>
+            <Separator className="mb-6" />
+            <h2 className="font-semibold mb-4">Portfolio</h2>
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {portfolio.map((photo) => (
+                <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden bg-muted">
+                  <img src={photo.photoUrl} alt={photo.caption ?? "Portfolio photo"} className="w-full h-full object-cover" />
+                  {photo.caption && (
+                    <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white text-xs truncate">{photo.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         <Separator className="mb-6" />

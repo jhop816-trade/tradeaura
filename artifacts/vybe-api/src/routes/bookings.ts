@@ -2,6 +2,7 @@ import { Router } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, bookingsTable, providersTable, clientsTable, usersTable, servicesTable } from "../db";
 import { requireAuth } from "../middlewares/auth";
+import { SMS } from "../lib/sms";
 
 const router = Router();
 
@@ -74,6 +75,21 @@ router.post("/", requireAuth, async (req, res) => {
     notes: notes ?? null,
   }).returning();
 
+  // Best-effort SMS notification to provider
+  try {
+    const [providerUser] = await db
+      .select({ phone: usersTable.phone, displayName: providersTable.displayName })
+      .from(providersTable)
+      .innerJoin(usersTable, eq(providersTable.userId, usersTable.id))
+      .where(eq(providersTable.id, providerId))
+      .limit(1);
+    const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, serviceId)).limit(1);
+    if (providerUser?.phone && service) {
+      const dateStr = new Date(appointmentAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      SMS.newBooking(providerUser.phone, client.displayName, service.name, dateStr).catch(() => {});
+    }
+  } catch { /* best-effort */ }
+
   res.status(201).json(booking);
 });
 
@@ -121,6 +137,28 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
 
   const [updated] = await db.update(bookingsTable).set({ status })
     .where(eq(bookingsTable.id, bookingId)).returning();
+
+  // Best-effort SMS notification to client
+  try {
+    if (status === "confirmed" || status === "declined") {
+      const [clientUser] = await db
+        .select({ phone: usersTable.phone })
+        .from(clientsTable)
+        .innerJoin(usersTable, eq(clientsTable.userId, usersTable.id))
+        .where(eq(clientsTable.id, booking.clientId))
+        .limit(1);
+      const [service] = await db.select().from(servicesTable).where(eq(servicesTable.id, booking.serviceId)).limit(1);
+      if (clientUser?.phone && service) {
+        const dateStr = new Date(booking.appointmentAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        if (status === "confirmed") {
+          SMS.bookingConfirmed(clientUser.phone, provider.displayName, service.name, dateStr).catch(() => {});
+        } else {
+          SMS.bookingDeclined(clientUser.phone, provider.displayName).catch(() => {});
+        }
+      }
+    }
+  } catch { /* best-effort */ }
+
   res.json(updated);
 });
 
