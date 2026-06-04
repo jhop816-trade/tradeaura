@@ -5,7 +5,7 @@ import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
-// Public: list providers with optional filters
+// Public: list providers with optional filters (includes avg rating)
 router.get("/", async (req, res) => {
   const { category, search } = req.query as Record<string, string>;
   const conditions = [];
@@ -18,7 +18,16 @@ router.get("/", async (req, res) => {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .limit(50);
 
-  res.json(providers);
+  // Attach review stats to each provider
+  const withRatings = await Promise.all(providers.map(async (p) => {
+    const reviews = await db.select().from(reviewsTable).where(eq(reviewsTable.providerId, p.id));
+    const avgRating = reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+    return { ...p, reviewCount: reviews.length, avgRating };
+  }));
+
+  res.json(withRatings);
 });
 
 // Auth required: get my provider profile — MUST be before /:username

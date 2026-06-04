@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { format, addDays } from "date-fns";
@@ -10,11 +10,27 @@ import { formatPrice, formatDuration, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Service { id: string; name: string; price: number; durationMinutes: number; description: string | null; }
-interface ProviderProfile { id: string; username: string; displayName: string; avatarUrl: string | null; services: Service[]; }
+interface WorkingHour { dayOfWeek: number; openTime: string | null; closeTime: string | null; isClosed: boolean; }
+interface ProviderProfile { id: string; username: string; displayName: string; avatarUrl: string | null; services: Service[]; workingHours: WorkingHour[]; }
 
-const TIME_SLOTS = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+const ALL_TIME_SLOTS = ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
   "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
-  "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM"];
+  "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM",
+  "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM"];
+
+function timeToMinutes(t: string): number {
+  const [time, period] = t.split(" ");
+  const [h, m] = time.split(":").map(Number);
+  let hour = h;
+  if (period === "PM" && h !== 12) hour += 12;
+  if (period === "AM" && h === 12) hour = 0;
+  return hour * 60 + m;
+}
+
+function hhmm24ToMinutes(s: string): number {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + m;
+}
 
 function parseTimeSlot(dateStr: string, timeSlot: string): Date {
   const [time, period] = timeSlot.split(" ");
@@ -69,10 +85,30 @@ export default function BookingFlowPage({ username }: { username: string }) {
 
   const selectedService = provider?.services.find((s) => s.id === selectedServiceId);
 
-  const dates = Array.from({ length: 14 }, (_, i) => {
+  const dates = useMemo(() => Array.from({ length: 14 }, (_, i) => {
     const d = addDays(new Date(), i + 1);
-    return { value: format(d, "yyyy-MM-dd"), label: format(d, "EEE"), day: format(d, "d") };
-  });
+    const dayOfWeek = d.getDay();
+    const wh = provider?.workingHours?.find((h) => h.dayOfWeek === dayOfWeek);
+    return {
+      value: format(d, "yyyy-MM-dd"),
+      label: format(d, "EEE"),
+      day: format(d, "d"),
+      isClosed: wh ? wh.isClosed : false,
+    };
+  }), [provider]);
+
+  const availableSlots = useMemo(() => {
+    if (!selectedDate || !provider?.workingHours?.length) return ALL_TIME_SLOTS;
+    const dayOfWeek = new Date(selectedDate + "T12:00:00").getDay();
+    const wh = provider.workingHours.find((h) => h.dayOfWeek === dayOfWeek);
+    if (!wh || wh.isClosed || !wh.openTime || !wh.closeTime) return [];
+    const openMin = hhmm24ToMinutes(wh.openTime);
+    const closeMin = hhmm24ToMinutes(wh.closeTime);
+    return ALL_TIME_SLOTS.filter((slot) => {
+      const slotMin = timeToMinutes(slot);
+      return slotMin >= openMin && slotMin + 30 <= closeMin;
+    });
+  }, [selectedDate, provider]);
 
   if (isLoading) return (
     <div className="min-h-screen bg-background p-4 pt-8 space-y-4 max-w-lg mx-auto">
@@ -138,25 +174,36 @@ export default function BookingFlowPage({ username }: { username: string }) {
             <h2 className="text-lg font-bold mb-4">Pick a date & time</h2>
             <div className="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4 mb-6">
               {dates.map((d) => (
-                <button key={d.value} onClick={() => { setSelectedDate(d.value); setSelectedTime(null); }}
+                <button key={d.value}
+                  disabled={d.isClosed}
+                  onClick={() => { setSelectedDate(d.value); setSelectedTime(null); }}
                   className={cn("shrink-0 flex flex-col items-center rounded-xl border px-4 py-3 min-w-[60px] transition-colors",
+                    d.isClosed ? "border-border bg-card opacity-40 cursor-not-allowed" :
                     selectedDate === d.value ? "border-primary bg-primary/5" : "border-border bg-card"
                   )}>
                   <span className="text-xs text-muted-foreground">{d.label}</span>
                   <span className="font-bold text-lg">{d.day}</span>
+                  {d.isClosed && <span className="text-[9px] text-muted-foreground">closed</span>}
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map((t) => (
-                <button key={t} onClick={() => setSelectedTime(t)}
-                  className={cn("rounded-xl border px-3 py-2.5 text-sm transition-colors",
-                    selectedTime === t ? "border-primary bg-primary/5 font-medium" : "border-border bg-card"
-                  )}>
-                  {t}
-                </button>
-              ))}
-            </div>
+            {availableSlots.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="font-medium">No available times</p>
+                <p className="text-sm mt-1">This provider is closed on the selected day.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {availableSlots.map((t) => (
+                  <button key={t} onClick={() => setSelectedTime(t)}
+                    className={cn("rounded-xl border px-3 py-2.5 text-sm transition-colors",
+                      selectedTime === t ? "border-primary bg-primary/5 font-medium" : "border-border bg-card"
+                    )}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -233,7 +280,7 @@ export default function BookingFlowPage({ username }: { username: string }) {
         <div className="max-w-lg mx-auto">
           {step < 3 ? (
             <Button className="w-full h-12 text-base"
-              disabled={(step === 0 && !selectedServiceId) || (step === 1 && (!selectedDate || !selectedTime))}
+              disabled={(step === 0 && !selectedServiceId) || (step === 1 && (!selectedDate || !selectedTime || availableSlots.length === 0))}
               onClick={() => setStep(s => s + 1)}>
               Continue <ArrowRight className="ml-2 w-4 h-4" />
             </Button>

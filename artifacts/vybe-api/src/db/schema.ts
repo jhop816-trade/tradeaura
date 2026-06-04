@@ -2,7 +2,7 @@ import { pgTable, uuid, text, integer, boolean, timestamp, pgEnum } from "drizzl
 
 export const userRoleEnum = pgEnum("vybe_user_role", ["provider", "client"]);
 export const providerPlanEnum = pgEnum("vybe_provider_plan", ["free", "pro", "elite"]);
-export const bookingStatusEnum = pgEnum("vybe_booking_status", ["pending", "confirmed", "declined", "completed"]);
+export const bookingStatusEnum = pgEnum("vybe_booking_status", ["pending", "confirmed", "declined", "completed", "cancelled"]);
 
 export const usersTable = pgTable("vybe_users", {
   id: uuid("id").primaryKey().defaultRandom(),

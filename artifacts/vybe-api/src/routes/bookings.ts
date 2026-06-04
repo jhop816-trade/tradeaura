@@ -77,6 +77,29 @@ router.post("/", requireAuth, async (req, res) => {
   res.status(201).json(booking);
 });
 
+// Auth required: cancel booking (client only, pending/confirmed bookings)
+router.patch("/:id/cancel", requireAuth, async (req, res) => {
+  const user = await db.select().from(usersTable).where(eq(usersTable.clerkId, req.userId)).limit(1);
+  if (!user[0]) { res.status(404).json({ error: "User not found" }); return; }
+
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, user[0].id)).limit(1);
+  if (!client) { res.status(404).json({ error: "Client not found" }); return; }
+
+  const bookingId = req.params.id as string;
+  const [booking] = await db.select().from(bookingsTable)
+    .where(and(eq(bookingsTable.id, bookingId), eq(bookingsTable.clientId, client.id))).limit(1);
+  if (!booking) { res.status(404).json({ error: "Booking not found" }); return; }
+
+  if (!["pending", "confirmed"].includes(booking.status)) {
+    res.status(400).json({ error: "Only pending or confirmed bookings can be cancelled" });
+    return;
+  }
+
+  const [updated] = await db.update(bookingsTable).set({ status: "cancelled" })
+    .where(eq(bookingsTable.id, bookingId)).returning();
+  res.json(updated);
+});
+
 // Auth required: update booking status (provider accepts/declines)
 router.patch("/:id/status", requireAuth, async (req, res) => {
   const user = await db.select().from(usersTable).where(eq(usersTable.clerkId, req.userId)).limit(1);

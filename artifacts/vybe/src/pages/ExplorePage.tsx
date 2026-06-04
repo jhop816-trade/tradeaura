@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import TopBar from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,8 @@ interface Provider {
   bio: string | null;
   avatarUrl: string | null;
   plan: string;
+  avgRating: number | null;
+  reviewCount: number;
 }
 
 function ProviderCard({ provider }: { provider: Provider }) {
@@ -52,7 +54,16 @@ function ProviderCard({ provider }: { provider: Provider }) {
         </div>
         <div className="p-3">
           <p className="font-semibold truncate">{provider.displayName}</p>
-          <p className="text-xs text-muted-foreground capitalize mt-0.5">{provider.category}</p>
+          <div className="flex items-center justify-between mt-0.5">
+            <p className="text-xs text-muted-foreground capitalize">{provider.category}</p>
+            {provider.avgRating !== null && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                {provider.avgRating.toFixed(1)}
+                {provider.reviewCount > 0 && <span className="ml-0.5">({provider.reviewCount})</span>}
+              </span>
+            )}
+          </div>
           {provider.bio && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{provider.bio}</p>
           )}

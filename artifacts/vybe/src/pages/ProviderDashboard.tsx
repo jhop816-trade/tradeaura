@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Plus, Trash2, CheckCircle, XCircle, Clock, DollarSign, Edit, CalendarClock } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Clock, DollarSign, Edit, CalendarClock, Link2, Share2, Star } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,10 +40,24 @@ export default function ProviderDashboard() {
   });
 
   const upcoming = bookingsData?.filter((b) => ["pending", "confirmed"].includes(b.booking.status)) ?? [];
-  const history = bookingsData?.filter((b) => ["completed", "declined"].includes(b.booking.status)) ?? [];
+  const history = bookingsData?.filter((b) => ["completed", "declined", "cancelled"].includes(b.booking.status)) ?? [];
+  const pendingCount = upcoming.filter((b) => b.booking.status === "pending").length;
   const revenue = bookingsData
     ?.filter((b) => ["confirmed", "completed"].includes(b.booking.status))
     .reduce((sum, b) => sum + (b.service?.price ?? 0), 0) ?? 0;
+
+  const completedCount = bookingsData?.filter((b) => b.booking.status === "completed").length ?? 0;
+  const reviews = bookingsData?.flatMap((b) => b.booking.reviewCount ?? []) ?? [];
+
+  function copyBookingLink() {
+    const link = `${window.location.origin}/@${profile?.username}`;
+    const nav = navigator as any;
+    if (nav.share) {
+      nav.share({ title: "Book with me on VYBE", url: link }).catch(() => {});
+    } else {
+      nav.clipboard.writeText(link).then(() => toast.success("Booking link copied!"));
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -57,16 +71,39 @@ export default function ProviderDashboard() {
           )}
         </div>
 
-        {/* Revenue card */}
-        <div className="rounded-xl border border-border bg-card p-5 mb-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <DollarSign className="w-6 h-6 text-primary" />
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground mb-1">Revenue</p>
+            <p className="text-xl font-bold">{formatPrice(revenue)}</p>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Confirmed Revenue</p>
-            <p className="text-2xl font-bold">{formatPrice(revenue)}</p>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-xs text-muted-foreground mb-1">Completed</p>
+            <p className="text-xl font-bold">{completedCount}</p>
+          </div>
+          <div className={`rounded-xl border bg-card p-4 ${pendingCount > 0 ? "border-yellow-500/40" : "border-border"}`}>
+            <p className="text-xs text-muted-foreground mb-1">Pending</p>
+            <p className={`text-xl font-bold ${pendingCount > 0 ? "text-yellow-400" : ""}`}>{pendingCount}</p>
           </div>
         </div>
+
+        {/* Share booking link */}
+        {profile && (
+          <button onClick={copyBookingLink}
+            className="w-full mb-6 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-center justify-between hover:bg-primary/10 transition-colors">
+            <div className="text-left">
+              <p className="text-sm font-medium">Your booking link</p>
+              <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {"share" in navigator ? (
+                <Share2 className="w-4 h-4 text-primary" />
+              ) : (
+                <Link2 className="w-4 h-4 text-primary" />
+              )}
+            </div>
+          </button>
+        )}
 
         {/* Quick links */}
         <div className="flex gap-2 mb-6">
@@ -85,7 +122,7 @@ export default function ProviderDashboard() {
         <Tabs defaultValue="upcoming">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="upcoming" className="flex-1">
-              Upcoming {upcoming.length > 0 && <span className="ml-1.5 text-xs bg-primary text-primary-foreground rounded-full px-1.5">{upcoming.length}</span>}
+              Upcoming {pendingCount > 0 && <span className="ml-1.5 text-xs bg-yellow-500 text-black rounded-full px-1.5">{pendingCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
             <TabsTrigger value="services" className="flex-1">Services</TabsTrigger>
