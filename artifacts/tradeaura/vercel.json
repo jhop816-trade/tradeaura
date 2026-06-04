@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "buildCommand": "npx vite build --config vite.config.ts",
   "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://tradeaura-api-server.vercel.app/api/:path*" },
