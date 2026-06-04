@@ -69600,20 +69600,6 @@ router4.get("/ai/market-context", async (req, res) => {
   res.json({ date: dateStr, dayName, timeET, headlines, hasNews: headlines.length > 0, prices, hasPrices: prices.length > 0 });
 });
 var ai_default = router4;
-router4.get("/ai/debug-prices", async (req, res) => {
-  const tdKey = process.env.TWELVE_DATA_KEY;
-  if (!tdKey) {
-    res.json({ error: "TWELVE_DATA_KEY not set" });
-    return;
-  }
-  try {
-    const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY,IWM&apikey=${tdKey}`);
-    const body = await r.text();
-    res.json({ status: r.status, ok: r.ok, keyLength: tdKey.length, body });
-  } catch (e) {
-    res.json({ error: String(e) });
-  }
-});
 
 // ../../node_modules/.pnpm/@supabase+supabase-js@2.105.4/node_modules/@supabase/supabase-js/dist/index.mjs
 var dist_exports = {};
@@ -78341,20 +78327,6 @@ async function requireAuth(req, res, next) {
 // src/routes/index.ts
 var router5 = (0, import_express5.Router)();
 router5.use(health_default);
-router5.get("/debug-prices", async (req, res) => {
-  const tdKey = process.env.TWELVE_DATA_KEY;
-  if (!tdKey) {
-    res.json({ error: "TWELVE_DATA_KEY not set" });
-    return;
-  }
-  try {
-    const r = await fetch(`https://api.twelvedata.com/quote?symbol=SPY&apikey=${tdKey}`);
-    const body = await r.text();
-    res.json({ status: r.status, keyLength: tdKey.length, body });
-  } catch (e) {
-    res.json({ error: String(e) });
-  }
-});
 router5.use(requireAuth);
 router5.use(trades_default);
 router5.use(instruments_default);
