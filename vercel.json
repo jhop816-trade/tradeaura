@@ -1,6 +1,5 @@
 {
-  "installCommand": "cd artifacts/tradeaura && npm install",
-  "buildCommand": "cd artifacts/tradeaura && npx vite build --config vite.config.ts",
+  "buildCommand": "pnpm --filter @workspace/tradeaura run build",
   "outputDirectory": "artifacts/tradeaura/dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://tradeaura-api-server.vercel.app/api/:path*" },
