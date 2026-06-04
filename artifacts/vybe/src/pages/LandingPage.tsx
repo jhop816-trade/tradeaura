@@ -42,7 +42,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-4 text-center overflow-hidden">
-        {/* Subtle gradient glow */}
         <div className="pointer-events-none absolute inset-0 flex items-start justify-center">
           <div className="w-[600px] h-[400px] rounded-full bg-primary/10 blur-[100px] -translate-y-1/4" />
         </div>
@@ -92,7 +91,7 @@ export default function LandingPage() {
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">How it works</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           {HOW_IT_WORKS.map(({ step, title, desc }) => (
-            <div key={step} className="relative rounded-2xl border border-border bg-card p-6">
+            <div key={step} className="rounded-2xl border border-border bg-card p-6">
               <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
                 <span className="font-bold text-primary text-sm">{step}</span>
               </div>
