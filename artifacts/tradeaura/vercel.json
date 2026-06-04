@@ -1,6 +1,5 @@
 {
-  "buildCommand": "echo 'using pre-built dist'",
-  "installCommand": "echo 'no install needed'",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://tradeaura-api-server.vercel.app/api/:path*" },

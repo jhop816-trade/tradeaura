@@ -6,12 +6,11 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const rawPort = process.env.PORT;
 const port = rawPort ? Number(rawPort) : 3000;
+const isProductionBuild = process.env.NODE_ENV === "production";
 
-if (Number.isNaN(port) || port <= 0) {
+if (!isProductionBuild && (Number.isNaN(port) || port <= 0)) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
-
-const isProductionBuild = process.env.NODE_ENV === "production";
 
 export default defineConfig({
   plugins: [
