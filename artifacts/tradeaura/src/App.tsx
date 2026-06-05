@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 const EducationCenter = lazy(() => import("./EducationCenter"));
+const SoftwareEngineeringGuide = lazy(() => import("./SoftwareEngineeringGuide"));
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -1821,6 +1822,7 @@ export default function App() {
     {id:"ai",icon:"🤖",label:"AI",desc:"Coach, prep & insights"},
     {id:"review",icon:"◉",label:"Review",desc:"AI performance review"},
     {id:"learn",icon:"🎓",label:"Learn",desc:"Trading education"},
+    {id:"swe",icon:"💻",label:"SE Guide",desc:"Software engineering"},
     {id:"feedback",icon:"💬",label:"Feedback",desc:"Share ideas"},
   ];
 
@@ -1856,6 +1858,7 @@ export default function App() {
         {view==="ai"&&<AIView trades={trades} apiCall={apiCall}/>}
         {view==="review"&&<ReviewView trades={trades}/>}
         {view==="learn"&&<Suspense fallback={<div style={{textAlign:"center",padding:60,color:C.muted}}>Loading…</div>}><EducationCenter userPlan={plan} apiCall={apiCall}/></Suspense>}
+        {view==="swe"&&<Suspense fallback={<div style={{textAlign:"center",padding:60,color:C.muted}}>Loading…</div>}><SoftwareEngineeringGuide/></Suspense>}
         {view==="feedback"&&<FeedbackView user={user}/>}
       </div>
 
