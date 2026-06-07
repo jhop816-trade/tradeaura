@@ -185,6 +185,53 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
     </div>
   );
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (showAuth) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let animId: number;
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.addEventListener("resize", resize);
+    const bgStars = Array.from({length:130},()=>({x:Math.random()*100,y:Math.random()*100,r:Math.random()*1.1+0.2,o:Math.random()*0.45+0.08}));
+    interface Shooter{x:number;y:number;vx:number;vy:number;trail:number;life:number;maxLife:number;color:string}
+    const shooters: Shooter[] = [];
+    function spawn(){
+      const angle=(Math.random()*22+18)*Math.PI/180;
+      const speed=Math.random()*4+3.5;
+      shooters.push({x:Math.random()*canvas.width*1.3-canvas.width*0.15,y:Math.random()*canvas.height*0.45-60,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,trail:Math.random()*110+70,life:0,maxLife:Math.random()*85+65,color:Math.random()>0.5?"52,211,153":"79,142,247"});
+    }
+    [0,500,1100].forEach(d=>setTimeout(spawn,d));
+    let frame=0;
+    function draw(){
+      animId=requestAnimationFrame(draw);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      bgStars.forEach(s=>{ctx.beginPath();ctx.arc(s.x/100*canvas.width,s.y/100*canvas.height,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.o})`;ctx.fill();});
+      frame++;
+      if(frame%55===0&&shooters.length<7)spawn();
+      for(let i=shooters.length-1;i>=0;i--){
+        const s=shooters[i];s.life++;s.x+=s.vx;s.y+=s.vy;
+        let op=1;
+        if(s.life<15)op=s.life/15;
+        else if(s.life>s.maxLife-20)op=(s.maxLife-s.life)/20;
+        if(s.life>=s.maxLife){shooters.splice(i,1);continue;}
+        const mag=Math.hypot(s.vx,s.vy);
+        const tx=s.x-s.vx/mag*s.trail,ty=s.y-s.vy/mag*s.trail;
+        const g=ctx.createLinearGradient(tx,ty,s.x,s.y);
+        g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(0.6,`rgba(${s.color},${op*0.25})`);g.addColorStop(1,`rgba(${s.color},${op*0.85})`);
+        ctx.beginPath();ctx.strokeStyle=g;ctx.lineWidth=1.8;ctx.moveTo(tx,ty);ctx.lineTo(s.x,s.y);ctx.stroke();
+        const rg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,6);
+        rg.addColorStop(0,`rgba(255,255,255,${op})`);rg.addColorStop(0.4,`rgba(${s.color},${op*0.5})`);rg.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.beginPath();ctx.fillStyle=rg;ctx.arc(s.x,s.y,6,0,Math.PI*2);ctx.fill();
+      }
+    }
+    draw();
+    return()=>{cancelAnimationFrame(animId);window.removeEventListener("resize",resize);};
+  },[showAuth]);
+
   const css = `
     @keyframes ta-pulse{0%,100%{opacity:.65}50%{opacity:1}}
     @keyframes ta-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
@@ -241,6 +288,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",color:C.txt,overflowX:"hidden"}}>
       <style>{css}</style>
+      <canvas ref={canvasRef} style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}/>
 
       {/* NAV */}
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",borderBottom:`1px solid ${C.bord}`,position:"sticky",top:0,background:`${C.bg}dd`,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",zIndex:10}}>
@@ -251,7 +299,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </nav>
 
       {/* HERO */}
-      <div style={{position:"relative",padding:"60px 24px 52px",textAlign:"center",maxWidth:520,margin:"0 auto",overflow:"hidden"}}>
+      <div style={{position:"relative",padding:"60px 24px 52px",textAlign:"center",maxWidth:520,margin:"0 auto",overflow:"hidden",zIndex:1}}>
         {/* glow orbs */}
         <div style={{position:"absolute",top:-40,left:"50%",transform:"translateX(-120px)",width:280,height:280,background:`radial-gradient(circle, ${C.green}22 0%, transparent 70%)`,borderRadius:"50%",pointerEvents:"none",animation:"ta-orb1 6s ease-in-out infinite"}}/>
         <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(20px)",width:220,height:220,background:`radial-gradient(circle, ${C.blue}1a 0%, transparent 70%)`,borderRadius:"50%",pointerEvents:"none",animation:"ta-orb2 7s ease-in-out infinite"}}/>
@@ -306,7 +354,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* PILLARS BAR */}
-      <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:56}}>
+      <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:56,position:"relative",zIndex:1}}>
         {([["📊","Track Every Trade"],["🤖","AI Coaching"],["📡","Live Market Data"],["📱","Mobile First"]] as const).map(([icon,label],i,arr)=>(
           <div key={label} style={{flex:1,textAlign:"center",padding:"14px 4px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
             <div style={{fontSize:16,marginBottom:3}}>{icon}</div>
@@ -316,7 +364,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FEATURES */}
-      <div style={{padding:"0 16px 60px",maxWidth:520,margin:"0 auto"}}>
+      <div style={{padding:"0 16px 60px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Everything you need to grow as a trader</div>
           <div style={{fontSize:13,color:C.muted,marginTop:8}}>Built by traders, for traders.</div>
@@ -335,7 +383,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FINAL CTA */}
-      <div style={{margin:"0 16px 52px",borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}44,${C.blue}33,${C.purp}22)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
+      <div style={{margin:"0 16px 52px",position:"relative",zIndex:1,borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}44,${C.blue}33,${C.purp}22)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
         <div style={{background:C.surf,borderRadius:18,padding:"40px 24px",textAlign:"center"}}>
           <div style={{fontSize:28,fontWeight:900,letterSpacing:"-0.02em",marginBottom:10,background:`linear-gradient(120deg,${C.txt} 60%,${C.green})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Ready to level up?</div>
           <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.55}}>Join traders who use TradeAura to track performance, sharpen their edge, and grow their accounts.</div>
@@ -346,7 +394,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FOOTER */}
-      <div style={{borderTop:`1px solid ${C.bord}`,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:C.muted}}>
+      <div style={{borderTop:`1px solid ${C.bord}`,padding:"20px 24px",display:"flex",justifyContent:"space-between",position:"relative",zIndex:1,alignItems:"center",fontSize:11,color:C.muted}}>
         <span>© 2025 TradeAura</span>
         <span>tradeauraapp.com</span>
       </div>
