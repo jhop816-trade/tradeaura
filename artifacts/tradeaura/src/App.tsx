@@ -166,6 +166,109 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   }
 
   function openAuth(m: "login"|"signup") { setMode(m); setError(""); setSuccess(""); setShowAuth(true); }
+  const [activeFeature, setActiveFeature] = useState<number|null>(null);
+
+  const FEATURE_PREVIEWS = [
+    // Trade Journal
+    <div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14,marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+          <div><div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}><span style={{fontSize:13,fontWeight:800,color:C.txt}}>NQ FUTURES</span><span style={{fontSize:10,fontWeight:700,color:C.green,background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:5,padding:"2px 6px"}}>LONG</span></div><div style={{fontSize:11,color:C.muted}}>Trend Follow · Jun 7</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontSize:18,fontWeight:900,color:C.green}}>+$2,187</div><div style={{fontSize:10,color:C.muted}}>3.2R</div></div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{flex:1,height:4,background:C.bord,borderRadius:2,overflow:"hidden"}}><div style={{width:"78%",height:"100%",background:`linear-gradient(90deg,${C.green},${C.blue})`,borderRadius:2}}/></div><span style={{fontSize:10,color:C.green,fontWeight:700,whiteSpace:"nowrap"}}>✓ Rules followed</span></div>
+      </div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+          <div><div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3}}><span style={{fontSize:13,fontWeight:800,color:C.txt}}>ES FUTURES</span><span style={{fontSize:10,fontWeight:700,color:C.red,background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:5,padding:"2px 6px"}}>SHORT</span></div><div style={{fontSize:11,color:C.muted}}>Order Block · Jun 6</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontSize:18,fontWeight:900,color:C.red}}>-$312</div><div style={{fontSize:10,color:C.muted}}>-0.8R</div></div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{flex:1,height:4,background:C.bord,borderRadius:2,overflow:"hidden"}}><div style={{width:"35%",height:"100%",background:C.red,borderRadius:2}}/></div><span style={{fontSize:10,color:C.red,fontWeight:700,whiteSpace:"nowrap"}}>✗ Broke rules</span></div>
+      </div>
+    </div>,
+    // AI Coach
+    <div>
+      <div style={{background:C.surf2,border:`1px solid ${C.purp}44`,borderRadius:14,padding:14,marginBottom:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><div style={{width:32,height:32,background:C.purp+"22",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🤖</div><div><div style={{fontSize:13,fontWeight:800,color:C.txt}}>AI Grade: <span style={{color:C.green}}>A+</span></div><div style={{fontSize:10,color:C.muted}}>NQ Futures · Jun 7</div></div></div>
+        <div style={{fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10,fontStyle:"italic"}}>"Clean entry on the BOS retest. Stop placement was precise and you respected your risk. Took full 3R — this is textbook execution."</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["✓ Entry timing","✓ Risk management","✓ Exit discipline"].map(s=><span key={s} style={{fontSize:10,color:C.green,background:C.green+"14",border:`1px solid ${C.green}30`,borderRadius:20,padding:"3px 8px",fontWeight:600}}>{s}</span>)}</div>
+      </div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",marginBottom:8}}>WEEKLY REVIEW</div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,color:C.dim}}>Win Rate</span><span style={{fontSize:12,fontWeight:700,color:C.green}}>68%</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,color:C.dim}}>Biggest weakness</span><span style={{fontSize:12,fontWeight:700,color:C.gold}}>Overtrading Fri</span></div>
+        <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:12,color:C.dim}}>Coach note</span><span style={{fontSize:12,fontWeight:700,color:C.blue}}>Cut Fridays</span></div>
+      </div>
+    </div>,
+    // Playbook
+    <div>
+      {[{name:"Trend Follow BOS",pct:74,trades:23,r:"+2.4R",col:C.green},{name:"Order Block Retest",pct:61,trades:16,r:"+1.9R",col:C.blue},{name:"VWAP Reclaim",pct:48,trades:11,r:"+0.7R",col:C.gold}].map(s=>(
+        <div key={s.name} style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14,marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.txt}}>{s.name}</div>
+            <div style={{fontSize:16,fontWeight:900,color:s.col}}>{s.pct}%</div>
+          </div>
+          <div style={{height:5,background:C.bord,borderRadius:3,overflow:"hidden",marginBottom:6}}><div style={{width:`${s.pct}%`,height:"100%",background:`linear-gradient(90deg,${s.col},${s.col}88)`,borderRadius:3}}/></div>
+          <div style={{display:"flex",gap:12}}><span style={{fontSize:10,color:C.muted}}>{s.trades} trades</span><span style={{fontSize:10,color:s.col,fontWeight:700}}>Avg {s.r}</span></div>
+        </div>
+      ))}
+    </div>,
+    // Analytics
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        {[{l:"Win Rate",v:"68.4%",c:C.green},{l:"Avg Win",v:"+$847",c:C.green},{l:"Avg Loss",v:"-$312",c:C.red},{l:"Profit Factor",v:"2.7",c:C.blue}].map(s=>(
+          <div key={s.l} style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:12,padding:12,textAlign:"center"}}>
+            <div style={{fontSize:20,fontWeight:900,color:s.c,letterSpacing:"-0.02em"}}>{s.v}</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:3}}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:700,letterSpacing:"0.08em"}}>P&L CURVE — LAST 10 TRADES</div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:4,height:48}}>
+          {[40,55,45,65,50,70,60,80,72,90].map((h,i)=><div key={i} style={{flex:1,height:`${h}%`,background:h>55?`${C.green}88`:`${C.red}66`,borderRadius:"3px 3px 0 0"}}/>)}
+        </div>
+      </div>
+    </div>,
+    // Calendar View
+    <div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:13,fontWeight:800,color:C.txt,marginBottom:12}}>June 2025</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6,marginBottom:6}}>
+          {["M","T","W","T","F"].map(d=><div key={d} style={{textAlign:"center",fontSize:10,color:C.muted,fontWeight:700}}>{d}</div>)}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+          {[
+            {d:2,p:847,c:C.green},{d:3,p:1240,c:C.green},{d:4,p:-312,c:C.red},{d:5,p:620,c:C.green},{d:6,p:930,c:C.green},
+            {d:9,p:1100,c:C.green},{d:10,p:-180,c:C.red},{d:11,p:760,c:C.green},{d:12,p:2187,c:C.green},{d:13,p:440,c:C.green},
+            {d:16,p:-550,c:C.red},{d:17,p:310,c:C.green},{d:18,p:880,c:C.green},{d:19,p:1350,c:C.green},{d:20,p:-220,c:C.red},
+          ].map(day=>(
+            <div key={day.d} style={{background:day.c+"18",border:`1px solid ${day.c}40`,borderRadius:8,padding:"5px 4px",textAlign:"center"}}>
+              <div style={{fontSize:10,color:C.muted}}>{day.d}</div>
+              <div style={{fontSize:9,fontWeight:700,color:day.c}}>{day.p>0?"+":""}{day.p>0?(day.p/1000).toFixed(1)+"k":"-"}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
+    // Market Prep
+    <div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14,marginBottom:10}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",marginBottom:10}}>TODAY'S LEVELS</div>
+        {[{sym:"SPY",px:"512.40",chg:"+0.82%",c:C.green},{sym:"QQQ",px:"434.12",chg:"+1.14%",c:C.green},{sym:"NQ",px:"19,840",chg:"-0.31%",c:C.red},{sym:"BTC",px:"68,420",chg:"+2.10%",c:C.green}].map(t=>(
+          <div key={t.sym} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.txt,width:40}}>{t.sym}</span>
+            <span style={{fontSize:12,color:C.dim}}>${t.px}</span>
+            <span style={{fontSize:12,fontWeight:700,color:t.c}}>{t.chg}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{background:C.surf2,border:`1px solid ${C.bord}`,borderRadius:14,padding:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",marginBottom:8}}>AI BRIEFING</div>
+        <div style={{fontSize:12,color:C.dim,lineHeight:1.6,fontStyle:"italic"}}>"Fed minutes at 2PM ET. Expect elevated volatility around the release. Bias cautiously bullish above SPY 510. Watch NQ 19,800 as key support."</div>
+      </div>
+    </div>,
+  ];
 
   const FEATURES = [
     { icon:"≡", col:C.blue,  title:"Trade Journal",   desc:"Log every trade with full context — setup, rules, P&L. Never lose a lesson again." },
@@ -233,6 +336,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   },[showAuth]);
 
   const css = `
+    @keyframes ta-sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
     @keyframes ta-pulse{0%,100%{opacity:.65}50%{opacity:1}}
     @keyframes ta-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
     @keyframes ta-orb1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-15px) scale(1.08)}}
@@ -370,16 +474,49 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           <div style={{fontSize:13,color:C.muted,marginTop:8}}>Built by traders, for traders.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          {FEATURES.map(f=>(
-            <div key={f.title} className="ta-feat-card" style={{background:C.surf,border:`1px solid ${C.bord}`,borderTop:`2px solid ${f.col}`,borderRadius:14,padding:16}}>
+          {FEATURES.map((f,i)=>(
+            <div key={f.title} className="ta-feat-card" onClick={()=>setActiveFeature(i)} style={{background:C.surf,border:`1px solid ${C.bord}`,borderTop:`2px solid ${f.col}`,borderRadius:14,padding:16,cursor:"pointer"}}>
               <div style={{width:38,height:38,background:f.col+"1a",border:`1px solid ${f.col}33`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:f.col,marginBottom:10}}>
                 {f.icon}
               </div>
               <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:5}}>{f.title}</div>
               <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>{f.desc}</div>
+              <div style={{fontSize:10,color:f.col,fontWeight:700,marginTop:8}}>See preview →</div>
             </div>
           ))}
         </div>
+
+        {/* FEATURE BOTTOM SHEET */}
+        {activeFeature!==null&&(
+          <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setActiveFeature(null)}>
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)"}}/>
+            <div onClick={e=>e.stopPropagation()} style={{position:"relative",background:C.surf,borderRadius:"20px 20px 0 0",padding:"0 0 40px",maxHeight:"82vh",overflowY:"auto",boxShadow:"0 -8px 48px #00000088"}}>
+              {/* drag handle */}
+              <div style={{display:"flex",justifyContent:"center",padding:"12px 0 4px"}}>
+                <div style={{width:36,height:4,background:C.bord,borderRadius:2}}/>
+              </div>
+              {/* header */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 16px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{width:40,height:40,background:FEATURES[activeFeature].col+"1a",border:`1px solid ${FEATURES[activeFeature].col}44`,borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:FEATURES[activeFeature].col}}>
+                    {FEATURES[activeFeature].icon}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16,fontWeight:800,color:C.txt}}>{FEATURES[activeFeature].title}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{FEATURES[activeFeature].desc}</div>
+                  </div>
+                </div>
+                <button onClick={()=>setActiveFeature(null)} style={{background:C.surf2,border:`1px solid ${C.bord}`,color:C.muted,width:32,height:32,borderRadius:8,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit",flexShrink:0}}>×</button>
+              </div>
+              <div style={{padding:"0 16px 16px"}}>{FEATURE_PREVIEWS[activeFeature]}</div>
+              <div style={{padding:"0 16px"}}>
+                <button onClick={()=>openAuth("signup")} style={{width:"100%",padding:14,background:C.green,color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,boxShadow:`0 0 20px ${C.green}44`}}>
+                  Get Started Free
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* FINAL CTA */}
