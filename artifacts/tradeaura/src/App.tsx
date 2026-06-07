@@ -185,11 +185,26 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
     </div>
   );
 
+  const css = `
+    @keyframes ta-pulse{0%,100%{opacity:.65}50%{opacity:1}}
+    @keyframes ta-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    @keyframes ta-orb1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-15px) scale(1.08)}}
+    @keyframes ta-orb2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,12px) scale(1.05)}}
+    .ta-badge{animation:ta-pulse 2.8s ease-in-out infinite}
+    .ta-cta-primary{transition:box-shadow .2s,transform .15s}
+    .ta-cta-primary:hover{box-shadow:0 0 36px ${C.green}99!important;transform:translateY(-2px)}
+    .ta-cta-secondary:hover{border-color:${C.txt}55!important;background:${C.surf2}!important}
+    .ta-feat-card{transition:transform .2s,border-color .2s}
+    .ta-feat-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.13)!important}
+    .ta-signin-btn:hover{background:${C.surf2}!important;border-color:${C.txt}44!important}
+  `;
+
   if (showAuth) return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Space Grotesk',sans-serif"}}>
+      <style>{css}</style>
       <div style={{width:"100%",maxWidth:400}}>
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:48,height:48,background:C.green,borderRadius:12,marginBottom:12}}>
+          <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:48,height:48,background:C.green,borderRadius:12,marginBottom:12,boxShadow:`0 0 24px ${C.green}66`}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
           </div>
           <div style={{fontSize:22,fontWeight:800,color:"#fff",letterSpacing:"-0.02em"}}>TradeAura</div>
@@ -209,7 +224,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
             <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>PASSWORD</div>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" style={inp()} onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
-          <button onClick={submit} disabled={loading} style={{width:"100%",padding:14,background:loading?C.muted:C.green,color:"#000",border:"none",borderRadius:10,cursor:loading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,marginBottom:16}}>
+          <button onClick={submit} disabled={loading} className="ta-cta-primary" style={{width:"100%",padding:14,background:loading?C.muted:C.green,color:"#000",border:"none",borderRadius:10,cursor:loading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,marginBottom:16,boxShadow:`0 0 20px ${C.green}44`}}>
             {loading?"Loading...":(mode==="login"?"Sign In":"Create Account")}
           </button>
           <div style={{textAlign:"center",fontSize:12,color:C.muted}}>
@@ -225,55 +240,91 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
 
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",color:C.txt,overflowX:"hidden"}}>
+      <style>{css}</style>
 
       {/* NAV */}
-      <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",borderBottom:`1px solid ${C.bord}`,position:"sticky",top:0,background:C.bg,zIndex:10}}>
+      <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",borderBottom:`1px solid ${C.bord}`,position:"sticky",top:0,background:`${C.bg}dd`,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",zIndex:10}}>
         {logoMark}
-        <button onClick={()=>openAuth("login")} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.txt,padding:"8px 18px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>
+        <button onClick={()=>openAuth("login")} className="ta-signin-btn" style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.txt,padding:"8px 18px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,transition:"all .2s"}}>
           Sign In
         </button>
       </nav>
 
       {/* HERO */}
-      <div style={{padding:"56px 24px 48px",textAlign:"center",maxWidth:520,margin:"0 auto"}}>
-        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:20,padding:"5px 14px",fontSize:11,color:C.green,fontWeight:700,letterSpacing:"0.08em",marginBottom:24}}>
+      <div style={{position:"relative",padding:"60px 24px 52px",textAlign:"center",maxWidth:520,margin:"0 auto",overflow:"hidden"}}>
+        {/* glow orbs */}
+        <div style={{position:"absolute",top:-40,left:"50%",transform:"translateX(-120px)",width:280,height:280,background:`radial-gradient(circle, ${C.green}22 0%, transparent 70%)`,borderRadius:"50%",pointerEvents:"none",animation:"ta-orb1 6s ease-in-out infinite"}}/>
+        <div style={{position:"absolute",top:20,left:"50%",transform:"translateX(20px)",width:220,height:220,background:`radial-gradient(circle, ${C.blue}1a 0%, transparent 70%)`,borderRadius:"50%",pointerEvents:"none",animation:"ta-orb2 7s ease-in-out infinite"}}/>
+
+        <div className="ta-badge" style={{display:"inline-flex",alignItems:"center",gap:6,background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:20,padding:"5px 14px",fontSize:11,color:C.green,fontWeight:700,letterSpacing:"0.08em",marginBottom:24,position:"relative"}}>
           ✦ AI-POWERED TRADING JOURNAL
         </div>
-        <h1 style={{fontSize:40,fontWeight:900,lineHeight:1.1,color:C.txt,margin:"0 0 20px",letterSpacing:"-0.03em"}}>
-          Stop guessing.<br/>Start winning.
+
+        <h1 style={{fontSize:42,fontWeight:900,lineHeight:1.08,margin:"0 0 20px",letterSpacing:"-0.03em",position:"relative"}}>
+          <span style={{color:C.txt}}>Stop guessing.<br/></span>
+          <span style={{background:`linear-gradient(120deg, ${C.green} 0%, ${C.blue} 100%)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Start winning.</span>
         </h1>
-        <p style={{fontSize:15,color:C.dim,lineHeight:1.6,margin:"0 auto 36px",maxWidth:420}}>
+
+        <p style={{fontSize:15,color:C.dim,lineHeight:1.65,margin:"0 auto 36px",maxWidth:420,position:"relative"}}>
           The professional trading journal with built-in AI coaching. Track every trade, learn from every loss, and build your edge — systematically.
         </p>
-        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-          <button onClick={()=>openAuth("signup")} style={{background:C.green,color:"#000",border:"none",padding:"14px 28px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,letterSpacing:"-0.01em"}}>
+
+        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative",marginBottom:40}}>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"14px 28px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,letterSpacing:"-0.01em",boxShadow:`0 0 24px ${C.green}55`}}>
             Get Started Free
           </button>
-          <button onClick={()=>openAuth("login")} style={{background:C.surf,color:C.txt,border:`1px solid ${C.bord}`,padding:"14px 24px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:600}}>
+          <button onClick={()=>openAuth("login")} className="ta-cta-secondary" style={{background:C.surf,color:C.txt,border:`1px solid ${C.bord}`,padding:"14px 24px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:600,transition:"all .2s"}}>
             Sign In
           </button>
+        </div>
+
+        {/* Mock trade card */}
+        <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:16,padding:"14px 16px",maxWidth:340,margin:"0 auto",textAlign:"left",position:"relative",boxShadow:`0 8px 32px #00000066`,animation:"ta-float 4.5s ease-in-out infinite"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                <span style={{fontSize:13,fontWeight:800,color:C.txt,letterSpacing:"-0.01em"}}>NQ FUTURES</span>
+                <span style={{fontSize:10,fontWeight:700,color:C.green,background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:6,padding:"2px 7px"}}>LONG</span>
+              </div>
+              <div style={{fontSize:11,color:C.muted}}>Trend Follow · Jun 7, 2025</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:18,fontWeight:900,color:C.green,letterSpacing:"-0.02em"}}>+$2,187.50</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,marginTop:2}}>
+                <span style={{fontSize:10,fontWeight:700,background:C.green+"22",color:C.green,border:`1px solid ${C.green}44`,borderRadius:6,padding:"1px 7px"}}>A+</span>
+                <span style={{fontSize:10,color:C.muted}}>3.2R</span>
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{flex:1,height:4,background:C.bord,borderRadius:2,overflow:"hidden"}}>
+              <div style={{width:"78%",height:"100%",background:`linear-gradient(90deg,${C.green},${C.blue})`,borderRadius:2}}/>
+            </div>
+            <span style={{fontSize:10,color:C.green,fontWeight:700}}>✓ All rules followed</span>
+          </div>
         </div>
       </div>
 
       {/* PILLARS BAR */}
-      <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:52}}>
-        {(["Track Every Trade","AI Coaching","Live Market Data","Mobile First"] as const).map((label,i,arr)=>(
-          <div key={label} style={{flex:1,textAlign:"center",padding:"14px 6px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</div>
+      <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:56}}>
+        {([["📊","Track Every Trade"],["🤖","AI Coaching"],["📡","Live Market Data"],["📱","Mobile First"]] as const).map(([icon,label],i,arr)=>(
+          <div key={label} style={{flex:1,textAlign:"center",padding:"14px 4px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
+            <div style={{fontSize:16,marginBottom:3}}>{icon}</div>
+            <div style={{fontSize:10,fontWeight:700,color:C.dim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:"0.02em"}}>{label}</div>
           </div>
         ))}
       </div>
 
       {/* FEATURES */}
-      <div style={{padding:"0 16px 56px",maxWidth:520,margin:"0 auto"}}>
+      <div style={{padding:"0 16px 60px",maxWidth:520,margin:"0 auto"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Everything you need to grow as a trader</div>
           <div style={{fontSize:13,color:C.muted,marginTop:8}}>Built by traders, for traders.</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           {FEATURES.map(f=>(
-            <div key={f.title} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:14,padding:16}}>
-              <div style={{width:36,height:36,background:f.col+"22",border:`1px solid ${f.col}40`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:f.col,marginBottom:10}}>
+            <div key={f.title} className="ta-feat-card" style={{background:C.surf,border:`1px solid ${C.bord}`,borderTop:`2px solid ${f.col}`,borderRadius:14,padding:16}}>
+              <div style={{width:38,height:38,background:f.col+"1a",border:`1px solid ${f.col}33`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:f.col,marginBottom:10}}>
                 {f.icon}
               </div>
               <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:5}}>{f.title}</div>
@@ -284,12 +335,14 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FINAL CTA */}
-      <div style={{margin:"0 16px 48px",background:C.surf,border:`1px solid ${C.bord}`,borderRadius:20,padding:"40px 24px",textAlign:"center",maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
-        <div style={{fontSize:26,fontWeight:900,color:C.txt,letterSpacing:"-0.02em",marginBottom:10}}>Ready to level up?</div>
-        <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.55}}>Join traders who use TradeAura to track performance, sharpen their edge, and grow their accounts.</div>
-        <button onClick={()=>openAuth("signup")} style={{background:C.green,color:"#000",border:"none",padding:"14px 32px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700}}>
-          Start Free Today
-        </button>
+      <div style={{margin:"0 16px 52px",borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}44,${C.blue}33,${C.purp}22)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
+        <div style={{background:C.surf,borderRadius:18,padding:"40px 24px",textAlign:"center"}}>
+          <div style={{fontSize:28,fontWeight:900,letterSpacing:"-0.02em",marginBottom:10,background:`linear-gradient(120deg,${C.txt} 60%,${C.green})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Ready to level up?</div>
+          <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.55}}>Join traders who use TradeAura to track performance, sharpen their edge, and grow their accounts.</div>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"14px 36px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,boxShadow:`0 0 24px ${C.green}55`}}>
+            Start Free Today
+          </button>
+        </div>
       </div>
 
       {/* FOOTER */}
