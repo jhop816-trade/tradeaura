@@ -138,9 +138,10 @@ async function callAI(prompt: string, maxTokens=600) {
   return apiCall("POST", "/api/ai/grade", { prompt, maxTokens });
 }
 
-// ── AUTH SCREEN ───────────────────────────────────────────────────────────────
-function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
-  const [mode, setMode] = useState("login");
+// ── LANDING PAGE + AUTH ───────────────────────────────────────────────────────
+function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
+  const [showAuth, setShowAuth] = useState(false);
+  const [mode, setMode] = useState<"login"|"signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -157,32 +158,49 @@ function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setSuccess("Account created! Check your email to confirm then log in.");
+        setSuccess("Account created! Check your email to confirm then sign in.");
         setMode("login");
       }
     } catch(e: any) { setError(e.message); }
     setLoading(false);
   }
 
-  return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Space Grotesk',sans-serif"}}>
+  function openAuth(m: "login"|"signup") { setMode(m); setError(""); setSuccess(""); setShowAuth(true); }
+
+  const FEATURES = [
+    { icon:"≡", col:C.blue,  title:"Trade Journal",   desc:"Log every trade with full context — setup, rules, P&L. Never lose a lesson again." },
+    { icon:"✦", col:C.purp,  title:"AI Coach",        desc:"Get AI feedback on every trade and automated weekly performance reviews." },
+    { icon:"▤", col:C.gold,  title:"Playbook",        desc:"Build your personal strategy library. Track which setups print and eliminate the rest." },
+    { icon:"◈", col:C.green, title:"Analytics",       desc:"Win rate, P&L curve, streaks, best sessions. Trade by data, not gut feelings." },
+    { icon:"▦", col:"#38bdf8",title:"Calendar View",  desc:"See your P&L mapped across every day of the month. Spot patterns instantly." },
+    { icon:"◎", col:C.red,   title:"Market Prep",     desc:"AI-generated pre-market briefing with live news and key price levels every morning." },
+  ];
+
+  const logoMark = (
+    <div style={{display:"flex",alignItems:"center",gap:10}}>
+      <div style={{width:34,height:34,background:C.green,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <span style={{fontSize:17,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>TradeAura</span>
+    </div>
+  );
+
+  if (showAuth) return (
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Space Grotesk',sans-serif"}}>
       <div style={{width:"100%",maxWidth:400}}>
-        {/* Logo */}
-        <div style={{textAlign:"center",marginBottom:40}}>
+        <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:48,height:48,background:C.green,borderRadius:12,marginBottom:12}}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
           </div>
           <div style={{fontSize:22,fontWeight:800,color:"#fff",letterSpacing:"-0.02em"}}>TradeAura</div>
           <div style={{fontSize:11,color:C.muted,marginTop:4,letterSpacing:"0.1em"}}>TRADE SMARTER. GROW FASTER.</div>
         </div>
-
+        <button onClick={()=>{setShowAuth(false);setError("");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,fontFamily:"inherit",marginBottom:16,padding:0,display:"flex",alignItems:"center",gap:4}}>← Back</button>
         <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:16,padding:28}}>
-          <div style={{fontSize:16,fontWeight:700,color:C.txt,marginBottom:6}}>{mode==="login"?"Welcome back":"Create account"}</div>
+          <div style={{fontSize:16,fontWeight:700,color:C.txt,marginBottom:6}}>{mode==="login"?"Welcome back":"Create your free account"}</div>
           <div style={{fontSize:12,color:C.muted,marginBottom:24}}>{mode==="login"?"Sign in to your trading journal":"Start tracking your trades today"}</div>
-
-          {error && <div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:16}}>{error}</div>}
-          {success && <div style={{background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.green,marginBottom:16}}>{success}</div>}
-
+          {error&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:16}}>{error}</div>}
+          {success&&<div style={{background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.green,marginBottom:16}}>{success}</div>}
           <div style={{marginBottom:12}}>
             <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EMAIL</div>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" style={inp()} />
@@ -191,11 +209,9 @@ function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
             <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>PASSWORD</div>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" style={inp()} onKeyDown={e=>e.key==="Enter"&&submit()} />
           </div>
-
           <button onClick={submit} disabled={loading} style={{width:"100%",padding:14,background:loading?C.muted:C.green,color:"#000",border:"none",borderRadius:10,cursor:loading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,marginBottom:16}}>
             {loading?"Loading...":(mode==="login"?"Sign In":"Create Account")}
           </button>
-
           <div style={{textAlign:"center",fontSize:12,color:C.muted}}>
             {mode==="login"?"Don't have an account? ":"Already have an account? "}
             <span onClick={()=>{setMode(mode==="login"?"signup":"login");setError("");setSuccess("");}} style={{color:C.green,cursor:"pointer",fontWeight:700}}>
@@ -204,6 +220,84 @@ function AuthScreen({ onAuth }: {onAuth:(u:any)=>void}) {
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",color:C.txt,overflowX:"hidden"}}>
+
+      {/* NAV */}
+      <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",borderBottom:`1px solid ${C.bord}`,position:"sticky",top:0,background:C.bg,zIndex:10}}>
+        {logoMark}
+        <button onClick={()=>openAuth("login")} style={{background:"transparent",border:`1px solid ${C.bord}`,color:C.txt,padding:"8px 18px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>
+          Sign In
+        </button>
+      </nav>
+
+      {/* HERO */}
+      <div style={{padding:"56px 24px 48px",textAlign:"center",maxWidth:520,margin:"0 auto"}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:20,padding:"5px 14px",fontSize:11,color:C.green,fontWeight:700,letterSpacing:"0.08em",marginBottom:24}}>
+          ✦ AI-POWERED TRADING JOURNAL
+        </div>
+        <h1 style={{fontSize:40,fontWeight:900,lineHeight:1.1,color:C.txt,margin:"0 0 20px",letterSpacing:"-0.03em"}}>
+          Stop guessing.<br/>Start winning.
+        </h1>
+        <p style={{fontSize:15,color:C.dim,lineHeight:1.6,margin:"0 auto 36px",maxWidth:420}}>
+          The professional trading journal with built-in AI coaching. Track every trade, learn from every loss, and build your edge — systematically.
+        </p>
+        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={()=>openAuth("signup")} style={{background:C.green,color:"#000",border:"none",padding:"14px 28px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,letterSpacing:"-0.01em"}}>
+            Get Started Free
+          </button>
+          <button onClick={()=>openAuth("login")} style={{background:C.surf,color:C.txt,border:`1px solid ${C.bord}`,padding:"14px 24px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:600}}>
+            Sign In
+          </button>
+        </div>
+      </div>
+
+      {/* PILLARS BAR */}
+      <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:52}}>
+        {(["Track Every Trade","AI Coaching","Live Market Data","Mobile First"] as const).map((label,i,arr)=>(
+          <div key={label} style={{flex:1,textAlign:"center",padding:"14px 6px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* FEATURES */}
+      <div style={{padding:"0 16px 56px",maxWidth:520,margin:"0 auto"}}>
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Everything you need to grow as a trader</div>
+          <div style={{fontSize:13,color:C.muted,marginTop:8}}>Built by traders, for traders.</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {FEATURES.map(f=>(
+            <div key={f.title} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:14,padding:16}}>
+              <div style={{width:36,height:36,background:f.col+"22",border:`1px solid ${f.col}40`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,color:f.col,marginBottom:10}}>
+                {f.icon}
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:5}}>{f.title}</div>
+              <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FINAL CTA */}
+      <div style={{margin:"0 16px 48px",background:C.surf,border:`1px solid ${C.bord}`,borderRadius:20,padding:"40px 24px",textAlign:"center",maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
+        <div style={{fontSize:26,fontWeight:900,color:C.txt,letterSpacing:"-0.02em",marginBottom:10}}>Ready to level up?</div>
+        <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.55}}>Join traders who use TradeAura to track performance, sharpen their edge, and grow their accounts.</div>
+        <button onClick={()=>openAuth("signup")} style={{background:C.green,color:"#000",border:"none",padding:"14px 32px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700}}>
+          Start Free Today
+        </button>
+      </div>
+
+      {/* FOOTER */}
+      <div style={{borderTop:`1px solid ${C.bord}`,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:C.muted}}>
+        <span>© 2025 TradeAura</span>
+        <span>tradeauraapp.com</span>
+      </div>
+
     </div>
   );
 }
@@ -1810,7 +1904,7 @@ export default function App() {
   const activeAccount=accounts.find(a=>a.id===activeAccountId)||accounts[0];
 
   if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13}}>Loading…</div>;
-  if(!user)return<AuthScreen onAuth={setUser}/>;
+  if(!user)return<LandingPage onAuth={setUser}/>;
 
   const MENU_ITEMS=[
     {id:"home",icon:"⌂",label:"Home",desc:"Dashboard & stats"},
