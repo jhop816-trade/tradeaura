@@ -271,12 +271,12 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   ];
 
   const FEATURES = [
-    { icon:"≡", col:C.blue,  title:"Trade Journal",   desc:"Log every trade with full context — setup, rules, P&L. Never lose a lesson again." },
-    { icon:"✦", col:C.purp,  title:"AI Coach",        desc:"Get AI feedback on every trade and automated weekly performance reviews." },
-    { icon:"▤", col:C.gold,  title:"Playbook",        desc:"Build your personal strategy library. Track which setups print and eliminate the rest." },
-    { icon:"◈", col:C.green, title:"Analytics",       desc:"Win rate, P&L curve, streaks, best sessions. Trade by data, not gut feelings." },
-    { icon:"▦", col:"#38bdf8",title:"Calendar View",  desc:"See your P&L mapped across every day of the month. Spot patterns instantly." },
-    { icon:"◎", col:C.red,   title:"Market Prep",     desc:"AI-generated pre-market briefing with live news and key price levels every morning." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>, col:C.blue,  title:"Trade Journal",   desc:"Log every trade with full context — setup, rules, P&L. Never lose a lesson again." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>, col:C.purp,  title:"AI Coach",        desc:"Get AI feedback on every trade and automated weekly performance reviews." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, col:C.gold,  title:"Playbook",        desc:"Build your personal strategy library. Track which setups print and eliminate the rest." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>, col:C.green, title:"Analytics",       desc:"Win rate, P&L curve, streaks, best sessions. Trade by data, not gut feelings." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, col:"#38bdf8",title:"Calendar View",  desc:"See your P&L mapped across every day of the month. Spot patterns instantly." },
+    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>, col:C.red,   title:"Market Prep",     desc:"AI-generated pre-market briefing with live news and key price levels every morning." },
   ];
 
   const logoMark = (
@@ -460,13 +460,13 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       {/* PILLARS BAR */}
       <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:56,position:"relative",zIndex:1}}>
         {([
-          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="12" width="5" height="10" rx="1"/><rect x="9.5" y="7" width="5" height="15" rx="1"/><rect x="16" y="3" width="5" height="19" rx="1"/></svg>,label:"Track Every Trade"},
-          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>,label:"AI Coaching"},
-          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="2 12 6 12 8 4 10 20 12 12 14 16 16 12 22 12"/></svg>,label:"Live Market Data"},
-          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>,label:"Mobile First"},
-        ]).map(({icon,label},i,arr)=>(
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="12" width="5" height="10" rx="1"/><rect x="9.5" y="7" width="5" height="15" rx="1"/><rect x="16" y="3" width="5" height="19" rx="1"/></svg>,label:"Track Every Trade",col:C.green},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>,label:"AI Coaching",col:C.purp},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="2 12 6 12 8 4 10 20 12 12 14 16 16 12 22 12"/></svg>,label:"Live Market Data",col:C.blue},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>,label:"Mobile First",col:"#38bdf8"},
+        ]).map(({icon,label,col},i,arr)=>(
           <div key={label} style={{flex:1,textAlign:"center",padding:"14px 4px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:18,marginBottom:4,color:C.dim}}>{icon}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:18,marginBottom:4,color:col}}>{icon}</div>
             <div style={{fontSize:10,fontWeight:700,color:C.dim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:"0.02em"}}>{label}</div>
           </div>
         ))}
@@ -547,6 +547,11 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
             </div>
           </div>
         ))}
+        <div style={{marginTop:32,textAlign:"center"}}>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"13px 32px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,boxShadow:`0 0 20px ${C.green}44`}}>
+            Start for free →
+          </button>
+        </div>
       </div>
 
       {/* COMPARISON */}
