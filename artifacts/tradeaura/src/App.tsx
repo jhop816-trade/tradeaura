@@ -519,6 +519,67 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
         )}
       </div>
 
+      {/* HOW IT WORKS */}
+      <div style={{padding:"0 16px 64px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>How It Works</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Three steps to a sharper edge</div>
+        </div>
+        {([
+          {n:"01",col:C.green,icon:"📝",title:"Log your trade",body:"Enter your trade in seconds — ticker, direction, P&L, and which rules you followed. Manual entry or paste from your broker."},
+          {n:"02",col:C.blue,icon:"🤖",title:"AI reviews it instantly",body:"Your AI coach analyzes every trade, scores your discipline, and calls out exactly what you did right and what to fix."},
+          {n:"03",col:C.purp,icon:"📈",title:"Your patterns surface",body:"Over time your Playbook builds itself — your best setups, worst habits, and the rules that actually make you money."},
+        ] as const).map((step,i)=>(
+          <div key={step.n} style={{display:"flex",gap:16,marginBottom:i<2?28:0}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
+              <div style={{width:44,height:44,borderRadius:12,background:step.col+"1a",border:`1.5px solid ${step.col}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{step.icon}</div>
+              {i<2&&<div style={{width:2,flex:1,marginTop:8,background:`linear-gradient(${step.col}44,transparent)`,minHeight:20}}/>}
+            </div>
+            <div style={{paddingTop:8}}>
+              <div style={{fontSize:10,fontWeight:700,color:step.col,letterSpacing:"0.1em",marginBottom:4}}>STEP {step.n}</div>
+              <div style={{fontSize:15,fontWeight:700,color:C.txt,marginBottom:5}}>{step.title}</div>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{step.body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* COMPARISON */}
+      <div style={{padding:"0 16px 64px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.purp,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Why TradeAura</div>
+          <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em",marginBottom:10}}>Other tools show you data.</div>
+          <div style={{fontSize:22,fontWeight:800,letterSpacing:"-0.02em",background:`linear-gradient(120deg,${C.green},${C.blue})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>TradeAura goes over it with you.</div>
+        </div>
+        <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:16,overflow:"hidden"}}>
+          {/* header row */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:`1px solid ${C.bord}`}}>
+            <div style={{padding:"12px 14px",fontSize:11,fontWeight:700,color:C.muted}}></div>
+            <div style={{padding:"12px 10px",textAlign:"center",borderLeft:`1px solid ${C.bord}`,fontSize:11,fontWeight:700,color:C.muted}}>Others</div>
+            <div style={{padding:"12px 10px",textAlign:"center",borderLeft:`1px solid ${C.bord}`,fontSize:11,fontWeight:700,color:C.green,background:C.green+"0d"}}>TradeAura</div>
+          </div>
+          {([
+            ["Track trades & P&L","✓","✓"],
+            ["Win rate & stats","✓","✓"],
+            ["Rule tracking","Limited","✓"],
+            ["AI trade review","✗","✓"],
+            ["Personal Playbook","✗","✓"],
+            ["Pattern recognition","✗","✓"],
+            ["Tells you WHY you're losing","✗","✓"],
+          ] as const).map((row,i)=>(
+            <div key={row[0]} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:i<6?`1px solid ${C.bord}33`:"none",background:i%2===0?"transparent":C.surf2+"66"}}>
+              <div style={{padding:"11px 14px",fontSize:12,color:C.dim,fontWeight:500}}>{row[0]}</div>
+              <div style={{padding:"11px 10px",textAlign:"center",borderLeft:`1px solid ${C.bord}33`,fontSize:12,color:row[1]==="✗"?C.red:row[1]==="✓"?C.dim:C.gold,fontWeight:row[1]==="✗"||row[1]==="✓"?700:600}}>{row[1]}</div>
+              <div style={{padding:"11px 10px",textAlign:"center",borderLeft:`1px solid ${C.bord}33`,fontSize:12,color:row[2]==="✓"?C.green:C.dim,fontWeight:700,background:C.green+"08"}}>{row[2]}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:16,padding:"14px 16px",background:C.surf,border:`1px solid ${C.bord}`,borderRadius:12,display:"flex",gap:12,alignItems:"flex-start"}}>
+          <span style={{fontSize:20,flexShrink:0}}>💡</span>
+          <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}><span style={{color:C.txt,fontWeight:700}}>The real difference:</span> Tradezilla, spreadsheets, and most journals are rearview mirrors. TradeAura is the coach in your corner telling you what to do differently next time.</div>
+        </div>
+      </div>
+
       {/* FINAL CTA */}
       <div style={{margin:"0 16px 52px",position:"relative",zIndex:1,borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}44,${C.blue}33,${C.purp}22)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
         <div style={{background:C.surf,borderRadius:18,padding:"40px 24px",textAlign:"center"}}>
