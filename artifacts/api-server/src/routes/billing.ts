@@ -163,3 +163,28 @@ billingRouter.post("/billing/portal", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to create portal session" });
   }
 });
+
+billingRouter.post("/billing/redeem", requireAuth, async (req, res) => {
+  try {
+    const { code } = req.body as { code?: string };
+    if (!code) { res.status(400).json({ error: "No code provided" }); return; }
+
+    const normalize = (s: string) => s.replace(/[\s\-_]/g, "").toLowerCase();
+    const validCodes = (process.env.BETA_CODES || "").split(",").map(normalize).filter(Boolean);
+    if (!validCodes.includes(normalize(code))) {
+      res.status(400).json({ error: "Invalid code" }); return;
+    }
+
+    const db = supabaseAdmin();
+    const { data: { user } } = await db.auth.admin.getUserById(req.userId);
+    if (!user) { res.status(404).json({ error: "User not found" }); return; }
+
+    await db.auth.admin.updateUserById(req.userId, {
+      user_metadata: { ...user.user_metadata, subscription_status: "active", beta_access: true },
+    });
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Failed to redeem code" });
+  }
+});

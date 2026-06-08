@@ -2030,6 +2030,67 @@ function AccountModal({accounts,activeId,onSelect,onAdd,onDelete,onUpdateLimit,o
   );
 }
 
+// ── PAYWALL SCREEN ────────────────────────────────────────────────────────────
+function PaywallScreen({onCheckout,onSignOut,onActivate,apiCall}: {onCheckout:()=>void,onSignOut:()=>void,onActivate:()=>void,apiCall:(m:string,u:string,b?:any)=>Promise<any>}){
+  const [showCode,setShowCode]=useState(false);
+  const [code,setCode]=useState("");
+  const [codeError,setCodeError]=useState<string|null>(null);
+  const [codeLoading,setCodeLoading]=useState(false);
+
+  async function redeemCode(){
+    if(!code.trim())return;
+    setCodeLoading(true);setCodeError(null);
+    try{
+      await apiCall("POST","/api/billing/redeem",{code:code.trim()});
+      onActivate();
+    }catch(e:any){setCodeError(e.message||"Invalid code");}
+    setCodeLoading(false);
+  }
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{maxWidth:400,width:"100%",textAlign:"center"}}>
+        <div style={{width:60,height:60,background:C.green,borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",marginBottom:12}}>YOUR TRIAL HAS ENDED</div>
+        <div style={{fontSize:32,fontWeight:900,color:C.txt,letterSpacing:"-0.03em",lineHeight:1.1,marginBottom:16}}>Keep your edge.<br/>Go Pro.</div>
+        <div style={{fontSize:15,color:C.muted,lineHeight:1.6,marginBottom:32}}>Unlimited trades, AI coaching, playbook builder, and full analytics. Everything you used during your trial — plus more.</div>
+        <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:16,padding:20,marginBottom:24}}>
+          {[["📓","Unlimited trade journal"],["🤖","AI coaching after every session"],["📊","Full analytics + playbook builder"],["📅","P&L calendar & best-day insights"]].map(([icon,label])=>(
+            <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontSize:14,fontWeight:600,color:C.txt}}>{label}</span>
+              <span style={{marginLeft:"auto",color:C.green,fontSize:16}}>✓</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onCheckout} style={{width:"100%",padding:"18px",background:C.green,color:"#000",border:"none",borderRadius:14,fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-0.01em",boxShadow:`0 0 32px ${C.green}44`,marginBottom:12}}>
+          Start Pro — $25/month
+        </button>
+        <div style={{fontSize:13,color:C.muted,marginBottom:20}}>Cancel anytime · No hidden fees</div>
+
+        {/* BETA CODE */}
+        {!showCode?(
+          <button onClick={()=>setShowCode(true)} style={{background:"none",border:"none",color:C.muted,fontSize:12,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"}}>Have a beta code?</button>
+        ):(
+          <div style={{marginTop:4}}>
+            <div style={{display:"flex",gap:8}}>
+              <input value={code} onChange={e=>setCode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&redeemCode()} placeholder="Enter code…" style={{...inp(),flex:1,fontSize:14}} autoFocus/>
+              <button onClick={redeemCode} disabled={codeLoading} style={{padding:"11px 18px",background:C.blue,color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0,opacity:codeLoading?0.6:1}}>
+                {codeLoading?"…":"Activate"}
+              </button>
+            </div>
+            {codeError&&<div style={{fontSize:12,color:C.red,marginTop:8}}>{codeError}</div>}
+          </div>
+        )}
+
+        <button onClick={onSignOut} style={{display:"block",marginTop:20,background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Sign out</button>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [user,setUser]=useState<any>(null);
@@ -2180,31 +2241,10 @@ export default function App() {
   if(!user)return<LandingPage onAuth={setUser}/>;
 
   if(subStatus==="expired"||subStatus==="canceled"){return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{maxWidth:400,width:"100%",textAlign:"center"}}>
-        <div style={{width:60,height:60,background:C.green,borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-        </div>
-        <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",marginBottom:12}}>YOUR TRIAL HAS ENDED</div>
-        <div style={{fontSize:32,fontWeight:900,color:C.txt,letterSpacing:"-0.03em",lineHeight:1.1,marginBottom:16}}>Keep your edge.<br/>Go Pro.</div>
-        <div style={{fontSize:15,color:C.muted,lineHeight:1.6,marginBottom:32}}>Unlimited trades, AI coaching, playbook builder, and full analytics. Everything you used during your trial — plus more.</div>
-        <div style={{background:C.card,border:`1px solid ${C.bord}`,borderRadius:16,padding:20,marginBottom:24}}>
-          {[["📓","Unlimited trade journal"],["🤖","AI coaching after every session"],["📊","Full analytics + playbook builder"],["📅","P&L calendar & best-day insights"]].map(([icon,label])=>(
-            <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}>
-              <span style={{fontSize:18}}>{icon}</span>
-              <span style={{fontSize:14,fontWeight:600,color:C.txt}}>{label}</span>
-              <span style={{marginLeft:"auto",color:C.green,fontSize:16}}>✓</span>
-            </div>
-          ))}
-        </div>
-        <button onClick={goToCheckout} style={{width:"100%",padding:"18px",background:C.green,color:"#000",border:"none",borderRadius:14,fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-0.01em",boxShadow:`0 0 32px ${C.green}44`,marginBottom:12}}>
-          Start Pro — $25/month
-        </button>
-        <div style={{fontSize:13,color:C.muted}}>Cancel anytime · No hidden fees</div>
-        <button onClick={()=>supabase.auth.signOut().then(()=>{setUser(null);setAccounts([]);setTrades([])})} style={{marginTop:20,background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Sign out</button>
-      </div>
-    </div>
+    <PaywallScreen onCheckout={goToCheckout} onSignOut={()=>supabase.auth.signOut().then(()=>{setUser(null);setAccounts([]);setTrades([])})} onActivate={()=>setSubStatus("active")} apiCall={apiCall}/>
   );}
+
+
 
   const MENU_ITEMS=[
     {id:"home",icon:"⌂",label:"Home",desc:"Dashboard & stats"},
