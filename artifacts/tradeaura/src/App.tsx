@@ -2045,6 +2045,8 @@ export default function App() {
   const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
   function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
   const [showMenu,setShowMenu]=useState(false);
+  const [subStatus,setSubStatus]=useState<"trial"|"active"|"past_due"|"expired"|"canceled"|null>(null);
+  const [trialDaysLeft,setTrialDaysLeft]=useState(0);
 
   // ── AUTH CHECK ──
   useEffect(()=>{
@@ -2056,6 +2058,33 @@ export default function App() {
     });
     return()=>subscription.unsubscribe();
   },[]);
+
+  // ── BILLING STATUS ──
+  useEffect(()=>{
+    if(!user)return;
+    async function loadBillingStatus(){
+      try{
+        const data=await apiCall("GET","/api/billing/status");
+        setSubStatus(data.status);
+        if(data.daysLeft)setTrialDaysLeft(data.daysLeft);
+      }catch{setSubStatus("trial");}
+    }
+    loadBillingStatus();
+    // Check for ?subscribed=true on return from Stripe
+    if(window.location.search.includes("subscribed=true")){
+      window.history.replaceState({},"",window.location.pathname);
+      loadBillingStatus();
+    }
+  },[user]);
+
+  async function goToCheckout(){
+    try{const{url}=await apiCall("POST","/api/billing/checkout");window.location.href=url;}
+    catch(e:any){alert(e.message);}
+  }
+  async function goToPortal(){
+    try{const{url}=await apiCall("POST","/api/billing/portal");window.location.href=url;}
+    catch(e:any){alert(e.message);}
+  }
 
   // ── PNL MODE PER ACCOUNT ──
   useEffect(()=>{
@@ -2144,6 +2173,33 @@ export default function App() {
   if(loading)return<div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13}}>Loading…</div>;
   if(!user)return<LandingPage onAuth={setUser}/>;
 
+  if(subStatus==="expired"||subStatus==="canceled"){return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Space Grotesk',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{maxWidth:400,width:"100%",textAlign:"center"}}>
+        <div style={{width:60,height:60,background:C.green,borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",marginBottom:12}}>YOUR TRIAL HAS ENDED</div>
+        <div style={{fontSize:32,fontWeight:900,color:C.txt,letterSpacing:"-0.03em",lineHeight:1.1,marginBottom:16}}>Keep your edge.<br/>Go Pro.</div>
+        <div style={{fontSize:15,color:C.muted,lineHeight:1.6,marginBottom:32}}>Unlimited trades, AI coaching, playbook builder, and full analytics. Everything you used during your trial — plus more.</div>
+        <div style={{background:C.card,border:`1px solid ${C.bord}`,borderRadius:16,padding:20,marginBottom:24}}>
+          {[["📓","Unlimited trade journal"],["🤖","AI coaching after every session"],["📊","Full analytics + playbook builder"],["📅","P&L calendar & best-day insights"]].map(([icon,label])=>(
+            <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:`1px solid ${C.bord}`}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontSize:14,fontWeight:600,color:C.txt}}>{label}</span>
+              <span style={{marginLeft:"auto",color:C.green,fontSize:16}}>✓</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={goToCheckout} style={{width:"100%",padding:"18px",background:C.green,color:"#000",border:"none",borderRadius:14,fontSize:18,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-0.01em",boxShadow:`0 0 32px ${C.green}44`,marginBottom:12}}>
+          Start Pro — $25/month
+        </button>
+        <div style={{fontSize:13,color:C.muted}}>Cancel anytime · No hidden fees</div>
+        <button onClick={()=>supabase.auth.signOut().then(()=>{setUser(null);setAccounts([]);setTrades([])})} style={{marginTop:20,background:"none",border:"none",color:C.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Sign out</button>
+      </div>
+    </div>
+  );}
+
   const MENU_ITEMS=[
     {id:"home",icon:"⌂",label:"Home",desc:"Dashboard & stats"},
     {id:"journal",icon:"≡",label:"Journal",desc:"Your trade log"},
@@ -2160,6 +2216,20 @@ export default function App() {
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'Space Grotesk',sans-serif",maxWidth:480,margin:"0 auto"}}>
+      {/* TRIAL BANNER */}
+      {subStatus==="trial"&&(
+        <div style={{background:`linear-gradient(90deg,${C.green}18,${C.blue}18)`,borderBottom:`1px solid ${C.green}30`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.txt}}>🎉 {trialDaysLeft} day{trialDaysLeft!==1?"s":""} left in your free trial</div>
+          <button onClick={goToCheckout} style={{background:C.green,color:"#000",border:"none",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Upgrade</button>
+        </div>
+      )}
+      {/* PAST DUE BANNER */}
+      {subStatus==="past_due"&&(
+        <div style={{background:`${C.red}18`,borderBottom:`1px solid ${C.red}30`,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.red}}>⚠️ Payment failed — update billing info</div>
+          <button onClick={goToPortal} style={{background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>Fix</button>
+        </div>
+      )}
       {/* HEADER */}
       <div style={{background:C.surf,borderBottom:`1px solid ${C.bord}`,padding:"13px 16px",position:"sticky",top:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>navigate("home")}>
@@ -2211,6 +2281,11 @@ export default function App() {
                 </button>
               ))}
             </div>
+            {subStatus==="active"?(
+              <button onClick={()=>{setShowMenu(false);goToPortal();}} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.green}40`,color:C.green,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:10}}>⚙️ Manage Subscription</button>
+            ):(subStatus==="trial"||subStatus==="expired"||subStatus==="canceled")&&(
+              <button onClick={()=>{setShowMenu(false);goToCheckout();}} style={{width:"100%",padding:"12px",background:C.green,color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800,marginBottom:10}}>⚡ Upgrade to Pro — $25/mo</button>
+            )}
             <button onClick={signOut} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.red}30`,color:C.red,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>Sign Out</button>
           </div>
         </div>

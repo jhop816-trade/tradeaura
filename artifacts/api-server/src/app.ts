@@ -26,6 +26,8 @@ app.use(
   }),
 );
 app.use(cors());
+// Raw body required for Stripe webhook signature verification
+app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
