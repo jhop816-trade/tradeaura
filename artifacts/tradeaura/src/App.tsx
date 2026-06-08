@@ -2148,9 +2148,9 @@ export default function App() {
   }
 
   async function deleteAccount(id: any){
-    if(accounts.length<=1){alert("You need at least one account.");return;}
+    if(accounts.length<=1){setAppError("You need at least one account.");return;}
     const {error}=await supabase.from("accounts").delete().eq("id",id);
-    if(error){alert("Delete failed: "+error.message);return;}
+    if(error){setAppError("Delete failed: "+error.message);return;}
     const remaining=accounts.filter(a=>a.id!==id);
     setAccounts(remaining);
     if(activeAccountId===id)setActiveAccountId(remaining[0]?.id||null);
