@@ -1054,8 +1054,342 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   );
 }
 
+// ── CSV IMPORT ────────────────────────────────────────────────────────────────
+interface ParsedTrade {
+  ticker: string;
+  direction: 'long' | 'short';
+  pnl: number;
+  date: string;
+  setup: string;
+  notes: string;
+}
+
+function splitCSV(line: string): string[] {
+  const result: string[] = [];
+  let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function normalizeDate(raw: string): string {
+  if (!raw) return new Date().toISOString().slice(0, 10);
+  const s = raw.trim().slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const parts = raw.split(/[\/\s]/);
+  if (parts.length >= 3) {
+    const [m, d, y] = parts;
+    if (y && y.length === 4) return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parsePnl(raw: string): number {
+  if (!raw) return NaN;
+  return parseFloat(raw.replace(/[$,\s]/g, ''));
+}
+
+function parseCSV(text: string): { broker: string; trades: ParsedTrade[] } {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return { broker: 'Unknown Broker', trades: [] };
+
+  const rawHeaders = splitCSV(lines[0]);
+  const headers = rawHeaders.map(h => h.toLowerCase().replace(/[\s_]/g, ''));
+  const idx = (names: string[]): number => {
+    for (const n of names) { const i = headers.indexOf(n); if (i >= 0) return i; }
+    // partial match
+    for (const n of names) { const i = headers.findIndex(h => h.includes(n)); if (i >= 0) return i; }
+    return -1;
+  };
+
+  let broker = 'Unknown Broker';
+  let tickerIdx = -1, dirIdx = -1, pnlIdx = -1, dateIdx = -1;
+  let setup = 'Import';
+  let dirMapper: (v: string) => 'long' | 'short' = v => v.toLowerCase().includes('sell') || v === 'S' || v === 's' ? 'short' : 'long';
+
+  const hasAll = (...names: string[]) => names.every(n => headers.some(h => h === n || h.includes(n)));
+  const hasAny = (...names: string[]) => names.some(n => headers.some(h => h === n || h.includes(n)));
+
+  // Webull
+  if (hasAny('realizedpl', 'realizedp&l') || (hasAny('filledqty') && hasAny('avgprice'))) {
+    broker = 'Webull';
+    tickerIdx = idx(['symbol']);
+    dirIdx = idx(['side']);
+    pnlIdx = idx(['realizedpl', 'realizedp&l', 'netamount']);
+    dateIdx = idx(['closedate', 'date', 'ordertime']);
+    setup = 'Webull Import';
+    dirMapper = v => (v.toLowerCase() === 'buy' || v.toLowerCase() === 'b') ? 'long' : 'short';
+  }
+  // Robinhood
+  else if (hasAny('realizedprofitloss', 'totalprofitloss') || (hasAny('averageprice') && hasAny('quantity'))) {
+    broker = 'Robinhood';
+    tickerIdx = idx(['symbol']);
+    dirIdx = idx(['side']);
+    pnlIdx = idx(['realizedprofitloss', 'totalprofitloss', 'netreturn']);
+    dateIdx = idx(['activitydate', 'date', 'processdate']);
+    setup = 'Robinhood Import';
+    dirMapper = v => v.toLowerCase() === 'buy' ? 'long' : 'short';
+  }
+  // MT4/MT5
+  else if (hasAny('openprice') && hasAny('closeprice') && hasAny('profit')) {
+    broker = 'MT4/MT5';
+    tickerIdx = idx(['symbol']);
+    dirIdx = idx(['type']);
+    pnlIdx = idx(['profit']);
+    dateIdx = idx(['closetime', 'opentime']);
+    setup = 'MT4/MT5 Import';
+    dirMapper = v => v.toLowerCase().includes('sell') ? 'short' : 'long';
+  }
+  // Tradovate
+  else if ((hasAny('b/s', 'bs')) && hasAny('fillprice', 'price')) {
+    broker = 'Tradovate';
+    tickerIdx = idx(['symbol']);
+    dirIdx = idx(['b/s', 'bs']);
+    pnlIdx = idx(['pnl', 'realizedpnl', 'profit']);
+    dateIdx = idx(['date', 'filltime', 'timestamp']);
+    setup = 'Tradovate Import';
+    dirMapper = v => (v.toUpperCase() === 'B') ? 'long' : 'short';
+  }
+  // Rithmic
+  else if ((hasAny('buysells', 'buysell')) && hasAny('closedpnl')) {
+    broker = 'Rithmic';
+    tickerIdx = idx(['instrument', 'symbol']);
+    dirIdx = idx(['buysells', 'buysell']);
+    pnlIdx = idx(['closedpnl']);
+    dateIdx = idx(['date', 'filltime']);
+    setup = 'Rithmic Import';
+    dirMapper = v => (v.toUpperCase() === 'B') ? 'long' : 'short';
+  }
+  // Unknown — best-effort
+  else {
+    broker = 'Unknown Broker';
+    tickerIdx = headers.findIndex(h => !h.includes('date') && !h.includes('pnl') && !h.includes('profit') && !h.includes('price') && !h.includes('qty') && !h.includes('side') && !h.includes('type') && !h.includes('note'));
+    dirIdx = headers.findIndex(h => h.includes('side') || h.includes('direction') || h.includes('buysell') || h === 'type');
+    pnlIdx = headers.findIndex(h => h.includes('pnl') || h.includes('profit') || h.includes('gain') || h.includes('loss') || h.includes('p&l'));
+    dateIdx = headers.findIndex(h => h.includes('date'));
+    setup = 'Imported Trade';
+  }
+
+  const trades: ParsedTrade[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSV(lines[i]);
+    if (cols.length < 2) continue;
+    const ticker = (tickerIdx >= 0 ? cols[tickerIdx] : '').replace(/"/g, '').trim().toUpperCase();
+    if (!ticker) continue;
+    const rawPnl = pnlIdx >= 0 ? cols[pnlIdx] : '';
+    const pnl = parsePnl(rawPnl);
+    if (isNaN(pnl) || pnl === 0) continue;
+    const rawDir = dirIdx >= 0 ? cols[dirIdx] : '';
+    const direction = dirMapper(rawDir.replace(/"/g, '').trim());
+    const rawDate = dateIdx >= 0 ? cols[dateIdx] : '';
+    const date = normalizeDate(rawDate.replace(/"/g, '').trim());
+    trades.push({ ticker, direction, pnl, date, setup, notes: '' });
+  }
+
+  return { broker, trades };
+}
+
+interface ImportModalProps {
+  accountId: string;
+  onClose: () => void;
+  onImported: (count: number) => void;
+}
+
+function ImportModal({ accountId, onClose, onImported }: ImportModalProps) {
+  const [screen, setScreen] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
+  const [broker, setBroker] = useState('');
+  const [parsed, setParsed] = useState<ParsedTrade[]>([]);
+  const [importedCount, setImportedCount] = useState(0);
+  const [importError, setImportError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = (e.target as any).result as string;
+      const result = parseCSV(text);
+      setBroker(result.broker);
+      setParsed(result.trades);
+      setScreen('preview');
+    };
+    reader.readAsText(file);
+  }
+
+  async function doImport() {
+    setScreen('importing');
+    setImportError('');
+    let count = 0;
+    try {
+      for (const t of parsed) {
+        const payload = {
+          accountId,
+          symbol: t.ticker,
+          direction: t.direction,
+          entryPrice: 0,
+          exitPrice: 0,
+          quantity: 1,
+          entryDate: `${t.date}T12:00:00Z`,
+          exitDate: `${t.date}T12:00:00Z`,
+          stopLoss: null,
+          manualPnl: t.pnl,
+          setup: t.setup,
+          session: null,
+          mood: null,
+          rulesFollowed: [],
+          notes: t.notes || null,
+          screenshot: null,
+          accountType: 'live',
+          aiGrade: null,
+          aiFeedback: null,
+          tags: null,
+        };
+        await apiCall('POST', '/api/trades', payload);
+        count++;
+      }
+      setImportedCount(count);
+      setScreen('done');
+      setTimeout(() => { onClose(); onImported(count); }, 1500);
+    } catch (e: any) {
+      setImportError(e.message || 'Import failed');
+      setScreen('preview');
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 100, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: C.surf, borderRadius: '20px 20px 0 0', padding: '0 0 40px', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 -8px 48px #00000088' }}>
+        {/* drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: 36, height: 4, background: C.bord, borderRadius: 2 }} />
+        </div>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px 16px' }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.txt }}>Import Trades</div>
+          <button onClick={onClose} style={{ background: '#1c2333', border: `1px solid ${C.bord}`, color: C.muted, width: 32, height: 32, borderRadius: 8, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
+        </div>
+
+        <div style={{ padding: '0 20px' }}>
+          {/* SCREEN 1: UPLOAD */}
+          {screen === 'upload' && (
+            <div>
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 16, lineHeight: 1.6 }}>Upload a CSV export from your broker</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+                {['Webull', 'Robinhood', 'MetaTrader 4/5', 'Tradovate', 'Apex / TopstepX'].map(b => (
+                  <span key={b} style={{ fontSize: 10, padding: '4px 10px', borderRadius: 20, background: C.blue + '18', color: C.blue, border: `1px solid ${C.blue}35`, fontWeight: 600 }}>{b}</span>
+                ))}
+              </div>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{ border: `2px dashed ${C.bord}`, borderRadius: 12, padding: '40px 20px', textAlign: 'center', cursor: 'pointer', color: C.muted, marginBottom: 8, background: '#0a0d14' }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📂</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.dim }}>Tap to select CSV file</div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>Supports .csv exports from all major brokers</div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
+            </div>
+          )}
+
+          {/* SCREEN 2: PREVIEW */}
+          {screen === 'preview' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '10px 14px', background: broker === 'Unknown Broker' ? C.gold + '15' : C.green + '15', border: `1px solid ${broker === 'Unknown Broker' ? C.gold + '50' : C.green + '50'}`, borderRadius: 10 }}>
+                <span style={{ fontSize: 18 }}>{broker === 'Unknown Broker' ? '⚠️' : '✓'}</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: broker === 'Unknown Broker' ? C.gold : C.green }}>Detected: {broker}</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>{parsed.length} trade{parsed.length !== 1 ? 's' : ''} found</div>
+                </div>
+              </div>
+              {broker === 'Unknown Broker' && (
+                <div style={{ fontSize: 11, color: C.gold, background: C.gold + '12', border: `1px solid ${C.gold}30`, borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>
+                  Format not recognized. Showing best-effort parse.
+                </div>
+              )}
+              {importError && (
+                <div style={{ fontSize: 11, color: C.red, background: C.red + '12', border: `1px solid ${C.red}30`, borderRadius: 8, padding: '8px 12px', marginBottom: 12 }}>
+                  {importError}
+                </div>
+              )}
+              {parsed.length > 0 ? (
+                <div style={{ border: `1px solid ${C.bord}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
+                  {/* table header */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr 1fr', background: '#0a0d14', padding: '8px 12px', borderBottom: `1px solid ${C.bord}` }}>
+                    {['Date', 'Ticker', 'Dir', 'P&L'].map(h => (
+                      <div key={h} style={{ fontSize: 9, color: C.muted, fontWeight: 700, letterSpacing: '0.1em' }}>{h}</div>
+                    ))}
+                  </div>
+                  <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                    {parsed.slice(0, 20).map((t, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr 1fr', padding: '8px 12px', borderBottom: i < Math.min(parsed.length, 20) - 1 ? `1px solid ${C.bord}33` : 'none', background: i % 2 === 0 ? 'transparent' : '#0a0d1422' }}>
+                        <div style={{ fontSize: 11, color: C.dim }}>{t.date.slice(5)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: C.txt }}>{t.ticker}</div>
+                        <div>
+                          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, background: t.direction === 'long' ? C.green + '22' : C.red + '22', color: t.direction === 'long' ? C.green : C.red }}>
+                            {t.direction === 'long' ? 'Long' : 'Short'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: t.pnl >= 0 ? C.green : C.red }}>{t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {parsed.length > 20 && (
+                    <div style={{ padding: '6px 12px', fontSize: 10, color: C.muted, background: '#0a0d14', borderTop: `1px solid ${C.bord}` }}>
+                      +{parsed.length - 20} more trades not shown
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: C.muted, fontSize: 12, marginBottom: 16 }}>No valid trades found in this file.</div>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => { setParsed([]); setBroker(''); setImportError(''); setScreen('upload'); }} style={{ flex: 1, padding: 13, background: 'transparent', border: `1px solid ${C.bord}`, color: C.muted, borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>Cancel</button>
+                <button
+                  onClick={doImport}
+                  disabled={parsed.length === 0}
+                  style={{ flex: 2, padding: 13, background: parsed.length === 0 ? C.muted : C.green, color: parsed.length === 0 ? C.bord : '#000', border: 'none', borderRadius: 10, cursor: parsed.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700 }}
+                >
+                  Import {parsed.length} trade{parsed.length !== 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 3: IMPORTING / DONE */}
+          {(screen === 'importing' || screen === 'done') && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              {screen === 'importing' ? (
+                <>
+                  <div style={{ fontSize: 36, marginBottom: 16 }}>⏳</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.txt }}>Importing trades…</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Please wait</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 42, marginBottom: 16 }}>✓</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: C.green }}>{importedCount} trade{importedCount !== 1 ? 's' : ''} imported!</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>Your journal has been updated.</div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── JOURNAL ───────────────────────────────────────────────────────────────────
-function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
+function JournalView({trades,onSave,onDelete,onImport,balance,pnlMode,onPnlModeChange}: {trades:any[],onSave:(t:any)=>void,onDelete:(id:any)=>void,onImport?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [expandedId,setExpandedId]=useState<any>(null);
   const [editingTrade,setEditingTrade]=useState<any>(null);
   const [filterSymbol,setFilterSymbol]=useState("");
@@ -1084,6 +1418,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
       <div style={{fontSize:44,marginBottom:12}}>📋</div>
       <div style={{fontSize:13,fontWeight:600}}>No trades yet</div>
       <div style={{fontSize:12,marginTop:6}}>Tap + to log your first trade</div>
+      {onImport&&<button onClick={onImport} style={{marginTop:16,padding:"9px 20px",background:"transparent",border:`1px solid ${C.bord}`,color:C.dim,borderRadius:8,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>⬆ Import from CSV</button>}
     </div>
   );
 
@@ -1127,6 +1462,7 @@ function JournalView({trades,onSave,onDelete,balance,pnlMode,onPnlModeChange}: {
             <button onClick={()=>{setFilterSymbol("");setFilterDir("");setFilterSetup("");}} style={{padding:"6px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>Clear</button>
             {screenshotTrades.length>0&&<button onClick={()=>setShowGallery(s=>!s)} style={{padding:"6px 10px",background:showGallery?C.purp+"22":"transparent",border:`1px solid ${showGallery?C.purp+"60":C.bord}`,color:showGallery?C.purp:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>📸 Gallery</button>}
             <button onClick={exportCSV} style={{padding:"6px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.muted,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>⬇ CSV</button>
+            {onImport&&<button onClick={onImport} style={{padding:"6px 10px",background:"transparent",border:`1px solid ${C.bord}`,color:C.dim,borderRadius:8,cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0}}>⬆ Import</button>}
           </div>
         </div>
       )}
@@ -2173,6 +2509,7 @@ export default function App() {
   const [showModal,setShowModal]=useState(false);
   const [showNewTrade,setShowNewTrade]=useState(false);
   const [editingTrade,setEditingTrade]=useState<any>(null);
+  const [showImport,setShowImport]=useState(false);
   const [pnlMode,setPnlMode]=useState<"$"|"%">("$");
   function changePnlMode(m: "$"|"%"){if(activeAccountId)localStorage.setItem(`pnl_display_mode_${activeAccountId}`,m);setPnlMode(m);}
   const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
@@ -2368,7 +2705,7 @@ export default function App() {
       {/* CONTENT */}
       <div style={{paddingBottom:80}}>
         {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance}/>}
-        {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
+        {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} onImport={()=>setShowImport(true)} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades} account={activeAccount}/>}
         {view==="playbook"&&<PlaybookView trades={trades}/>}
@@ -2409,6 +2746,7 @@ export default function App() {
       )}
 
       {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onDelete={deleteAccount} onUpdateLimit={updateDailyLimit} onClose={()=>setShowModal(false)}/>}
+      {showImport&&activeAccountId&&<ImportModal accountId={activeAccountId} onClose={()=>setShowImport(false)} onImported={()=>{setShowImport(false);apiCall("GET",`/api/trades?accountId=${activeAccountId}&limit=500`).then((data:any[])=>setTrades(data.map(fromApiTrade))).catch(e=>console.error(e));}}/>}
 
       {/* ERROR TOAST */}
       {appError&&(
