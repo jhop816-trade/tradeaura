@@ -189,7 +189,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
     // AI Coach
     <div>
       <div style={{background:C.surf2,border:`1px solid ${C.purp}44`,borderRadius:14,padding:14,marginBottom:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><div style={{width:32,height:32,background:C.purp+"22",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🤖</div><div><div style={{fontSize:13,fontWeight:800,color:C.txt}}>AI Grade: <span style={{color:C.green}}>A+</span></div><div style={{fontSize:10,color:C.muted}}>NQ Futures · Jun 7</div></div></div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><div style={{width:32,height:32,background:C.purp+"22",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:C.purp}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg></div><div><div style={{fontSize:13,fontWeight:800,color:C.txt}}>AI Grade: <span style={{color:C.green}}>A+</span></div><div style={{fontSize:10,color:C.muted}}>NQ Futures · Jun 7</div></div></div>
         <div style={{fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10,fontStyle:"italic"}}>"Clean entry on the BOS retest. Stop placement was precise and you respected your risk. Took full 3R — this is textbook execution."</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["✓ Entry timing","✓ Risk management","✓ Exit discipline"].map(s=><span key={s} style={{fontSize:10,color:C.green,background:C.green+"14",border:`1px solid ${C.green}30`,borderRadius:20,padding:"3px 8px",fontWeight:600}}>{s}</span>)}</div>
       </div>
@@ -459,9 +459,14 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
 
       {/* PILLARS BAR */}
       <div style={{display:"flex",borderTop:`1px solid ${C.bord}`,borderBottom:`1px solid ${C.bord}`,marginBottom:56,position:"relative",zIndex:1}}>
-        {([["📊","Track Every Trade"],["🤖","AI Coaching"],["📡","Live Market Data"],["📱","Mobile First"]] as const).map(([icon,label],i,arr)=>(
+        {([
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="12" width="5" height="10" rx="1"/><rect x="9.5" y="7" width="5" height="15" rx="1"/><rect x="16" y="3" width="5" height="19" rx="1"/></svg>,label:"Track Every Trade"},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>,label:"AI Coaching"},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="2 12 6 12 8 4 10 20 12 12 14 16 16 12 22 12"/></svg>,label:"Live Market Data"},
+          {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>,label:"Mobile First"},
+        ]).map(({icon,label},i,arr)=>(
           <div key={label} style={{flex:1,textAlign:"center",padding:"14px 4px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
-            <div style={{fontSize:16,marginBottom:3}}>{icon}</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:18,marginBottom:4,color:C.dim}}>{icon}</div>
             <div style={{fontSize:10,fontWeight:700,color:C.dim,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",letterSpacing:"0.02em"}}>{label}</div>
           </div>
         ))}
@@ -526,13 +531,13 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Three steps to a sharper edge</div>
         </div>
         {([
-          {n:"01",col:C.green,icon:"📝",title:"Log your trade",body:"Enter your trade in seconds — ticker, direction, P&L, and which rules you followed. Manual entry or paste from your broker."},
-          {n:"02",col:C.blue,icon:"🤖",title:"AI reviews it instantly",body:"Your AI coach analyzes every trade, scores your discipline, and calls out exactly what you did right and what to fix."},
-          {n:"03",col:C.purp,icon:"📈",title:"Your patterns surface",body:"Over time your Playbook builds itself — your best setups, worst habits, and the rules that actually make you money."},
-        ] as const).map((step,i)=>(
+          {n:"01",col:C.green,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,title:"Log your trade",body:"Enter your trade in seconds — ticker, direction, P&L, and which rules you followed. Manual entry or paste from your broker."},
+          {n:"02",col:C.blue,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>,title:"AI reviews it instantly",body:"Your AI coach analyzes every trade, scores your discipline, and calls out exactly what you did right and what to fix."},
+          {n:"03",col:C.purp,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,title:"Your patterns surface",body:"Over time your Playbook builds itself — your best setups, worst habits, and the rules that actually make you money."},
+        ]).map((step,i)=>(
           <div key={step.n} style={{display:"flex",gap:16,marginBottom:i<2?28:0}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
-              <div style={{width:44,height:44,borderRadius:12,background:step.col+"1a",border:`1.5px solid ${step.col}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{step.icon}</div>
+              <div style={{width:44,height:44,borderRadius:12,background:step.col+"1a",border:`1.5px solid ${step.col}55`,display:"flex",alignItems:"center",justifyContent:"center",color:step.col}}>{step.icon}</div>
               {i<2&&<div style={{width:2,flex:1,marginTop:8,background:`linear-gradient(${step.col}44,transparent)`,minHeight:20}}/>}
             </div>
             <div style={{paddingTop:8}}>
@@ -575,7 +580,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           ))}
         </div>
         <div style={{marginTop:16,padding:"14px 16px",background:C.surf,border:`1px solid ${C.bord}`,borderRadius:12,display:"flex",gap:12,alignItems:"flex-start"}}>
-          <span style={{fontSize:20,flexShrink:0}}>💡</span>
+          <span style={{flexShrink:0,color:C.gold,display:"flex",alignItems:"center"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r=".5" fill="currentColor" strokeWidth="0"/></svg></span>
           <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}><span style={{color:C.txt,fontWeight:700}}>The real difference:</span> Tradezilla, spreadsheets, and most journals are rearview mirrors. TradeAura is the coach in your corner telling you what to do differently next time.</div>
         </div>
       </div>
