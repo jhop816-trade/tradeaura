@@ -1404,6 +1404,7 @@ function ReviewView({trades}: {trades:any[]}) {
   const [copied,setCopied]=useState(false),[paste,setPaste]=useState("");
   const [patterns,setPatterns]=useState<any[]>([]);
   const [aiPatternResult,setAiPatternResult]=useState<any>(null),[aiPatternLoading,setAiPatternLoading]=useState(false);
+  useEffect(()=>{setPatterns(computePatterns());},[trades]);
 
   function getRange(){const n=new Date();if(period==="week"){const d=n.getDay();const s=new Date(n);s.setDate(n.getDate()-(d===0?6:d-1));const e=new Date(s);e.setDate(s.getDate()+6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}if(period==="lastweek"){const d=n.getDay();const e=new Date(n);e.setDate(n.getDate()-(d===0?0:d));const s=new Date(e);s.setDate(e.getDate()-6);return{s:s.toISOString().slice(0,10),e:e.toISOString().slice(0,10)};}if(period==="month")return{s:`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`,e:n.toISOString().slice(0,10)};if(period==="lastmonth"){const lm=new Date(n.getFullYear(),n.getMonth()-1,1);const lme=new Date(n.getFullYear(),n.getMonth(),0);return{s:lm.toISOString().slice(0,10),e:lme.toISOString().slice(0,10)};}return{s:cs,e:ce};}
   const rng=getRange();
@@ -2045,6 +2046,7 @@ export default function App() {
   const [plan,setPlan]=useState<string>(()=>localStorage.getItem("user_plan")||"elite");
   function changePlan(p: string){localStorage.setItem("user_plan",p);setPlan(p);}
   const [showMenu,setShowMenu]=useState(false);
+  const [appError,setAppError]=useState<string|null>(null);
   const [subStatus,setSubStatus]=useState<"trial"|"active"|"past_due"|"expired"|"canceled"|null>(null);
   const [trialDaysLeft,setTrialDaysLeft]=useState(0);
 
@@ -2079,12 +2081,15 @@ export default function App() {
 
   async function goToCheckout(){
     try{const{url}=await apiCall("POST","/api/billing/checkout");window.location.href=url;}
-    catch(e:any){alert(e.message);}
+    catch(e:any){setAppError(e.message);}
   }
   async function goToPortal(){
     try{const{url}=await apiCall("POST","/api/billing/portal");window.location.href=url;}
-    catch(e:any){alert(e.message);}
+    catch(e:any){setAppError(e.message);}
   }
+
+  // ── AUTO-DISMISS APP ERROR ──
+  useEffect(()=>{if(!appError)return;const t=setTimeout(()=>setAppError(null),5000);return()=>clearTimeout(t);},[appError]);
 
   // ── PNL MODE PER ACCOUNT ──
   useEffect(()=>{
@@ -2115,15 +2120,16 @@ export default function App() {
   // ── TRADE ACTIONS ──
   async function saveTrade(trade: any){
     const payload = toApiPayload(trade, activeAccountId);
+    const isExisting = trades.some(t=>t.id===trade.id);
     try {
-      if(typeof trade.id === "number"){
+      if(isExisting){
         const updated = await apiCall("PATCH",`/api/trades/${trade.id}`,payload);
         setTrades(prev=>prev.map(t=>t.id===trade.id?fromApiTrade(updated):t));
       } else {
         const created = await apiCall("POST","/api/trades",payload);
         setTrades(prev=>[fromApiTrade(created),...prev]);
       }
-    } catch(e: any){ alert("Save failed: "+e.message); return; }
+    } catch(e: any){ setAppError("Save failed: "+e.message); return; }
     setShowNewTrade(false); setEditingTrade(null);
   }
 
@@ -2131,13 +2137,13 @@ export default function App() {
     try {
       await apiCall("DELETE",`/api/trades/${id}`);
       setTrades(prev=>prev.filter(t=>t.id!==id));
-    } catch(e: any){ alert("Delete failed: "+e.message); }
+    } catch(e: any){ setAppError("Delete failed: "+e.message); }
   }
 
   // ── ACCOUNT ACTIONS ──
   async function addAccount(name: string,type: string,limit=5){
     const {data,error}=await supabase.from("accounts").insert({user_id:user.id,name,type,starting_balance:25000,max_daily_trades:limit}).select().single();
-    if(error){alert("Could not create account: "+error.message);return;}
+    if(error){setAppError("Could not create account: "+error.message);return;}
     if(data){setAccounts(prev=>[...prev,data]);setActiveAccountId(data.id);}
   }
 
@@ -2153,7 +2159,7 @@ export default function App() {
 
   async function updateDailyLimit(id: any,limit: number){
     const {error}=await supabase.from("accounts").update({max_daily_trades:limit}).eq("id",id);
-    if(error){alert("Update failed: "+error.message);return;}
+    if(error){setAppError("Update failed: "+error.message);return;}
     setAccounts(prev=>prev.map(a=>a.id===id?{...a,max_daily_trades:limit}:a));
   }
 
@@ -2292,6 +2298,15 @@ export default function App() {
       )}
 
       {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onDelete={deleteAccount} onUpdateLimit={updateDailyLimit} onClose={()=>setShowModal(false)}/>}
+
+      {/* ERROR TOAST */}
+      {appError&&(
+        <div style={{position:"fixed",bottom:96,left:"50%",transform:"translateX(-50%)",zIndex:100,maxWidth:380,width:"calc(100% - 32px)",background:"#1a0a0a",border:`1px solid ${C.red}50`,borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:10,boxShadow:`0 8px 32px rgba(0,0,0,0.5)`}}>
+          <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+          <span style={{fontSize:13,color:C.red,flex:1,lineHeight:1.4}}>{appError}</span>
+          <button onClick={()=>setAppError(null)} style={{background:"transparent",border:"none",color:C.muted,cursor:"pointer",fontSize:18,padding:"0 4px",lineHeight:1,flexShrink:0}}>×</button>
+        </div>
+      )}
     </div>
   );
 }
