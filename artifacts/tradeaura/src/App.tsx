@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { Analytics } from "@vercel/analytics/react";
 const EducationCenter = lazy(() => import("./EducationCenter"));
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
@@ -906,7 +907,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
             {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",minHeight:32,background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
           </div>
         </div>
-        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder={pnlMode==="%"?"Enter % return (e.g. 300 for +300%)":"Enter exact dollar amount..."} style={inp()}/>
+        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder={pnlMode==="%"?"Enter % e.g. 5 for +5%":"Enter dollar amount e.g. 250"} style={inp()}/>
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
@@ -2669,6 +2670,7 @@ export default function App() {
   function navigate(id: string){setView(id);setShowNewTrade(false);setEditingTrade(null);setShowMenu(false);}
 
   return(
+    <>
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'Space Grotesk',sans-serif",maxWidth:480,margin:"0 auto"}}>
       {/* TRIAL BANNER */}
       {subStatus==="trial"&&(
@@ -2757,5 +2759,7 @@ export default function App() {
         </div>
       )}
     </div>
+    <Analytics />
+    </>
   );
 }
