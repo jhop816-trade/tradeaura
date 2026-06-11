@@ -100,6 +100,27 @@ CAPTION: [Instagram/TikTok caption with 3-5 hashtags]
 Keep the script under 150 words.`;
 }
 
+export function WeekCalendarPrompt(recentTopics: string[]): string {
+  const avoid =
+    recentTopics.length > 0 ? `Recently covered topics to avoid: ${recentTopics.join(', ')}.` : '';
+
+  return `${BRAND_VOICE}
+
+Generate a 7-day content calendar for TradeAura covering Instagram and TikTok — 14 pieces total (2 per day).
+${avoid}
+
+For each of the 7 days, produce exactly 2 items. Format each item as:
+DAY: [1-7]
+PLATFORM: [instagram|tiktok]
+TITLE: [short content title, max 8 words]
+CONTENT: [full caption for instagram, or full script for tiktok]
+---
+
+Instagram: same format as existing captions — hook, 3-5 value lines, CTA, hashtags.
+TikTok: same format as existing scripts — visual directions with | separators, hook first, CTA last.
+Keep brand voice consistent. No repeated themes across the 14 pieces.`;
+}
+
 export function AuditReportPrompt(recentPosts: string[]): string {
   return `${BRAND_VOICE}
 

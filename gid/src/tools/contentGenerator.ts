@@ -4,6 +4,7 @@ import {
   FacebookPostPrompt,
   InstagramPostPrompt,
   TikTokScriptPrompt,
+  WeekCalendarPrompt,
   XPostPrompt,
 } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
@@ -65,6 +66,35 @@ export class ContentGenerator {
       messages: [{ role: 'user', content: TikTokScriptPrompt() }],
     });
     return { script: extractText(response) };
+  }
+
+  async generateWeekCalendar(
+    recentTopics: string[],
+  ): Promise<Array<{ platform: string; title: string; content: string }>> {
+    this.logger.info('Generating week calendar');
+    const response = await this.anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: WeekCalendarPrompt(recentTopics) }],
+    });
+    const raw = extractText(response);
+
+    const pieces: Array<{ platform: string; title: string; content: string }> = [];
+    const blocks = raw.split('---').map((b) => b.trim()).filter(Boolean);
+    for (const block of blocks) {
+      const platformMatch = block.match(/^PLATFORM:\s*(.+)$/m);
+      const titleMatch = block.match(/^TITLE:\s*(.+)$/m);
+      const contentMatch = block.match(/^CONTENT:\s*([\s\S]+?)(?=\n[A-Z]+:|$)/m);
+      if (platformMatch && titleMatch && contentMatch) {
+        pieces.push({
+          platform: platformMatch[1].trim().toLowerCase(),
+          title: titleMatch[1].trim(),
+          content: contentMatch[1].trim(),
+        });
+      }
+    }
+
+    return pieces;
   }
 
   async generateAuditReport(recentPosts: string[]): Promise<{ report: string }> {

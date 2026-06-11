@@ -16,6 +16,12 @@ interface DailyCounts {
   tiktok: number;
 }
 
+interface CalendarRow {
+  id: string;
+  content: string;
+  title: string | null;
+}
+
 const AGENT_NAME = 'marketing-agent';
 
 export class MarketingAgent {
@@ -28,6 +34,11 @@ export class MarketingAgent {
     private readonly alerter: Alerter,
     private readonly logger: Logger,
   ) {}
+
+  private async isPostingPaused(): Promise<boolean> {
+    const paused = await this.memory.get<boolean>(AGENT_NAME, 'posting-paused');
+    return paused === true;
+  }
 
   private async getRecentTopics(): Promise<string[]> {
     const topics = await this.memory.get<string[]>(AGENT_NAME, 'recent-topics');
@@ -68,7 +79,46 @@ export class MarketingAgent {
     await this.alerter.send(AlertMessages.sentryError(`${platform} post failed: ${message}`));
   }
 
+  async getCalendarContent(
+    platform: string,
+    slot?: string,
+  ): Promise<{ row: CalendarRow } | null> {
+    const today = getTodayKeyNY();
+    let query = this.supabase
+      .from('content_calendar')
+      .select('id, content, title')
+      .eq('scheduled_date', today)
+      .eq('platform', platform)
+      .eq('status', 'scheduled');
+
+    if (slot !== undefined) {
+      query = query.eq('slot', slot);
+    }
+
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (error) {
+      this.logger.error({ error, platform }, 'Failed to query content_calendar');
+      return null;
+    }
+    if (!data) return null;
+    return { row: data as CalendarRow };
+  }
+
+  private async markCalendarRowPosted(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('content_calendar')
+      .update({ status: 'posted' })
+      .eq('id', id);
+    if (error) {
+      this.logger.error({ error, id }, 'Failed to mark calendar row as posted');
+    }
+  }
+
   async postX(slot: 'morning' | 'midday' | 'afternoon' | 'evening'): Promise<void> {
+    if (await this.isPostingPaused()) {
+      this.logger.info({ slot }, 'Posting paused — skipping X post');
+      return;
+    }
     try {
       const recentTopics = await this.getRecentTopics();
       const { text } = await this.contentGenerator.generateXPost(slot, recentTopics);
@@ -83,20 +133,42 @@ export class MarketingAgent {
   }
 
   async postInstagram(): Promise<void> {
+    if (await this.isPostingPaused()) {
+      this.logger.info('Posting paused — skipping Instagram post');
+      return;
+    }
     try {
-      const recentTopics = await this.getRecentTopics();
-      const { caption } = await this.contentGenerator.generateInstagramPost(recentTopics);
-      const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption));
-      await this.logPost('instagram', caption, postId);
-      await this.incrementDailyCounter('ig');
-      await this.addRecentTopic(caption.substring(0, 60));
-      this.logger.info({ postId }, 'Instagram post published');
+      let caption: string;
+      const calendarResult = await this.getCalendarContent('instagram');
+
+      if (calendarResult) {
+        caption = calendarResult.row.content;
+        this.logger.info({ id: calendarResult.row.id }, 'Using calendar content for Instagram');
+        const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption));
+        await this.logPost('instagram', caption, postId);
+        await this.markCalendarRowPosted(calendarResult.row.id);
+        await this.incrementDailyCounter('ig');
+        await this.addRecentTopic(caption.substring(0, 60));
+        this.logger.info({ postId }, 'Instagram post published from calendar');
+      } else {
+        const recentTopics = await this.getRecentTopics();
+        ({ caption } = await this.contentGenerator.generateInstagramPost(recentTopics));
+        const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption));
+        await this.logPost('instagram', caption, postId);
+        await this.incrementDailyCounter('ig');
+        await this.addRecentTopic(caption.substring(0, 60));
+        this.logger.info({ postId }, 'Instagram post published from Claude generation');
+      }
     } catch (err) {
       await this.handlePostError('instagram', err);
     }
   }
 
   async postFacebook(): Promise<void> {
+    if (await this.isPostingPaused()) {
+      this.logger.info('Posting paused — skipping Facebook post');
+      return;
+    }
     try {
       const recentTopics = await this.getRecentTopics();
       const { message } = await this.contentGenerator.generateFacebookPost(recentTopics);
@@ -111,12 +183,31 @@ export class MarketingAgent {
   }
 
   async generateTikTokDraft(): Promise<void> {
+    if (await this.isPostingPaused()) {
+      this.logger.info('Posting paused — skipping TikTok draft');
+      return;
+    }
     try {
-      const { script } = await this.contentGenerator.generateTikTokScript();
-      await this.tiktokDrafter.saveDraft(script);
-      await this.incrementDailyCounter('tiktok');
-      await this.alerter.send(AlertMessages.tiktokDraftReady());
-      this.logger.info('TikTok draft saved');
+      const calendarResult = await this.getCalendarContent('tiktok');
+
+      if (calendarResult) {
+        const { row } = calendarResult;
+        const scriptContent = row.title
+          ? `TITLE: ${row.title}\n\n${row.content}`
+          : row.content;
+        this.logger.info({ id: row.id }, 'Using calendar content for TikTok draft');
+        await this.tiktokDrafter.saveDraft(scriptContent);
+        await this.markCalendarRowPosted(row.id);
+        await this.incrementDailyCounter('tiktok');
+        await this.alerter.send(AlertMessages.tiktokDraftReady());
+        this.logger.info('TikTok draft saved from calendar');
+      } else {
+        const { script } = await this.contentGenerator.generateTikTokScript();
+        await this.tiktokDrafter.saveDraft(script);
+        await this.incrementDailyCounter('tiktok');
+        await this.alerter.send(AlertMessages.tiktokDraftReady());
+        this.logger.info('TikTok draft saved from Claude generation');
+      }
     } catch (err) {
       await this.handlePostError('tiktok', err);
     }
@@ -155,8 +246,78 @@ export class MarketingAgent {
       const weekKey = `weekly-audit-${getTodayKeyNY()}`;
       await this.memory.upsert(AGENT_NAME, weekKey, { report, auditedAt: new Date().toISOString() });
       this.logger.info('Weekly content audit complete');
+
+      await this.refillCalendarIfNeeded();
     } catch (err) {
       this.logger.error({ err }, 'Weekly content audit failed');
+    }
+  }
+
+  private async refillCalendarIfNeeded(): Promise<void> {
+    try {
+      const today = getTodayKeyNY();
+      const { count, error } = await this.supabase
+        .from('content_calendar')
+        .select('id', { count: 'exact', head: true })
+        .gt('scheduled_date', today)
+        .eq('status', 'scheduled');
+
+      if (error) {
+        this.logger.error({ error }, 'Failed to count future calendar rows');
+        return;
+      }
+
+      const futureDays = Math.floor((count ?? 0) / 2);
+      this.logger.info({ futureDays }, 'Future calendar days remaining');
+
+      if (futureDays >= 14) return;
+
+      this.logger.info('Fewer than 14 days of calendar content remain — generating new week');
+
+      const recentTopics = await this.getRecentTopics();
+      const pieces = await this.contentGenerator.generateWeekCalendar(recentTopics);
+
+      if (pieces.length === 0) {
+        this.logger.warn('generateWeekCalendar returned no pieces');
+        return;
+      }
+
+      const lastDateResult = await this.supabase
+        .from('content_calendar')
+        .select('scheduled_date')
+        .eq('status', 'scheduled')
+        .gt('scheduled_date', today)
+        .order('scheduled_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const baseDate = lastDateResult.data?.scheduled_date
+        ? new Date(lastDateResult.data.scheduled_date as string)
+        : new Date(today);
+
+      const rows = pieces.map((piece, idx) => {
+        const dayOffset = Math.floor(idx / 2) + 1;
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + dayOffset);
+        return {
+          day_number: dayOffset,
+          scheduled_date: d.toISOString().slice(0, 10),
+          platform: piece.platform,
+          slot: null as string | null,
+          title: piece.title,
+          content: piece.content,
+          status: 'scheduled',
+        };
+      });
+
+      const { error: insertError } = await this.supabase.from('content_calendar').insert(rows);
+      if (insertError) {
+        this.logger.error({ insertError }, 'Failed to insert new calendar rows');
+      } else {
+        this.logger.info({ count: rows.length }, 'New calendar rows inserted');
+      }
+    } catch (err) {
+      this.logger.error({ err }, 'refillCalendarIfNeeded failed');
     }
   }
 }

@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { MarketingAgent } from './agents/marketingAgent.js';
 import { AgentMemory } from './memory/agentMemory.js';
+import { TelegramBot } from './telegram/telegramBot.js';
 import { ContentGenerator } from './tools/contentGenerator.js';
 import { SocialPoster } from './tools/socialPoster.js';
 import { TiktokDrafter } from './tools/tiktokDrafter.js';
@@ -50,6 +51,7 @@ async function main(): Promise<void> {
     logger,
   );
   const scheduler = new Scheduler(agent, monitor, logger);
+  const telegramBot = new TelegramBot(supabase, memory, anthropic, logger);
 
   process.on('uncaughtException', async (err) => {
     logger.fatal({ err }, 'Uncaught exception');
@@ -64,6 +66,7 @@ async function main(): Promise<void> {
   });
 
   scheduler.registerAll();
+  telegramBot.start();
   await alerter.send(AlertMessages.online());
   logger.info('GID started');
 }

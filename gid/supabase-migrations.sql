@@ -37,3 +37,16 @@ create table if not exists system_alerts (
   resolved    boolean not null default false,
   created_at  timestamptz not null default now()
 );
+
+-- Content calendar: pre-scheduled content for Instagram and TikTok
+CREATE TABLE IF NOT EXISTS content_calendar (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  day_number     INTEGER NOT NULL,
+  scheduled_date DATE,
+  platform       TEXT NOT NULL,
+  slot           TEXT,
+  title          TEXT,
+  content        TEXT NOT NULL,
+  status         TEXT NOT NULL DEFAULT 'scheduled',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
