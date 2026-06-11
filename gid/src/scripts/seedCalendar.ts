@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const CALENDAR_HTML_PATH = resolve(
   process.cwd(),
-  '../../artifacts/tradeaura/public/calendar.html',
+  '../artifacts/tradeaura/public/calendar.html',
 );
 
 interface CalendarRow {
