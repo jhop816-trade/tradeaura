@@ -142,7 +142,12 @@ export class TelegramBot {
       .eq('scheduled_date', today)
       .order('platform');
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      this.logger.error({ error }, 'content_calendar query failed');
+      await this.sendMessage(chatId, `Database error: ${error.message}`);
+      return;
+    }
+    if (!data || data.length === 0) {
       await this.sendMessage(chatId, `No calendar content scheduled for today (${today}).`);
       return;
     }
