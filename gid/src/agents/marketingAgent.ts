@@ -16,10 +16,12 @@ interface DailyCounts {
   tiktok: number;
 }
 
-interface CalendarRow {
+interface CalendarContent {
   id: string;
   content: string;
   title: string | null;
+  image_url: string | null;
+  video_url: string | null;
 }
 
 const AGENT_NAME = 'marketing-agent';
@@ -82,11 +84,11 @@ export class MarketingAgent {
   async getCalendarContent(
     platform: string,
     slot?: string,
-  ): Promise<{ row: CalendarRow } | null> {
+  ): Promise<{ row: CalendarContent } | null> {
     const today = getTodayKeyNY();
     let query = this.supabase
       .from('content_calendar')
-      .select('id, content, title')
+      .select('id, content, title, image_url, video_url')
       .eq('scheduled_date', today)
       .eq('platform', platform)
       .eq('status', 'scheduled');
@@ -101,7 +103,7 @@ export class MarketingAgent {
       return null;
     }
     if (!data) return null;
-    return { row: data as CalendarRow };
+    return { row: data as CalendarContent };
   }
 
   private async markCalendarRowPosted(id: string): Promise<void> {
@@ -114,7 +116,7 @@ export class MarketingAgent {
     }
   }
 
-  async postX(slot: 'morning' | 'midday' | 'afternoon' | 'evening'): Promise<void> {
+  async postX(slot: 'morning' | 'midday' | 'evening'): Promise<void> {
     if (await this.isPostingPaused()) {
       this.logger.info({ slot }, 'Posting paused — skipping X post');
       return;
@@ -143,8 +145,9 @@ export class MarketingAgent {
 
       if (calendarResult) {
         caption = calendarResult.row.content;
+        const imageUrl = calendarResult.row.image_url ?? undefined;
         this.logger.info({ id: calendarResult.row.id }, 'Using calendar content for Instagram');
-        const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption));
+        const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption, imageUrl));
         await this.logPost('instagram', caption, postId);
         await this.markCalendarRowPosted(calendarResult.row.id);
         await this.incrementDailyCounter('ig');
@@ -153,7 +156,9 @@ export class MarketingAgent {
       } else {
         const recentTopics = await this.getRecentTopics();
         ({ caption } = await this.contentGenerator.generateInstagramPost(recentTopics));
-        const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption));
+        const { postId } = await withRetry(() =>
+          this.socialPoster.postToInstagram(caption, process.env.INSTAGRAM_DEFAULT_IMAGE_URL),
+        );
         await this.logPost('instagram', caption, postId);
         await this.incrementDailyCounter('ig');
         await this.addRecentTopic(caption.substring(0, 60));
@@ -196,11 +201,22 @@ export class MarketingAgent {
           ? `TITLE: ${row.title}\n\n${row.content}`
           : row.content;
         this.logger.info({ id: row.id }, 'Using calendar content for TikTok draft');
-        await this.tiktokDrafter.saveDraft(scriptContent);
-        await this.markCalendarRowPosted(row.id);
-        await this.incrementDailyCounter('tiktok');
-        await this.alerter.send(AlertMessages.tiktokDraftReady());
-        this.logger.info('TikTok draft saved from calendar');
+
+        if (row.video_url) {
+          const { postId } = await withRetry(() =>
+            this.socialPoster.postToTikTok(row.video_url!, scriptContent),
+          );
+          await this.logPost('tiktok', scriptContent, postId);
+          await this.markCalendarRowPosted(row.id);
+          await this.incrementDailyCounter('tiktok');
+          this.logger.info({ postId }, 'TikTok video posted from calendar');
+        } else {
+          await this.tiktokDrafter.saveDraft(scriptContent);
+          await this.markCalendarRowPosted(row.id);
+          await this.incrementDailyCounter('tiktok');
+          await this.alerter.send(AlertMessages.tiktokDraftReady());
+          this.logger.info('TikTok draft saved from calendar');
+        }
       } else {
         const { script } = await this.contentGenerator.generateTikTokScript();
         await this.tiktokDrafter.saveDraft(script);

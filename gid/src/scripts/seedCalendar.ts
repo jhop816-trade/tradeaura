@@ -16,6 +16,7 @@ interface CalendarRow {
   slot: string | null;
   title: string | null;
   content: string;
+  image_url: string | null;
   status: string;
 }
 
@@ -65,6 +66,7 @@ async function main(): Promise<void> {
           slot: null,
           title,
           content: igContent,
+          image_url: `https://tradeauraapp.com/ig/d${day}${slot}.jpg`,
           status: 'scheduled',
         });
       }
@@ -77,6 +79,7 @@ async function main(): Promise<void> {
           slot: null,
           title,
           content: ttContent,
+          image_url: null,
           status: 'scheduled',
         });
       }

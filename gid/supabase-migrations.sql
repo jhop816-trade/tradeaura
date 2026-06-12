@@ -50,3 +50,6 @@ CREATE TABLE IF NOT EXISTS content_calendar (
   status         TEXT NOT NULL DEFAULT 'scheduled',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS video_url TEXT;

@@ -32,18 +32,18 @@ export class SocialPoster {
     return { postId: data.id as string };
   }
 
-  async postToInstagram(caption: string): Promise<{ postId: string }> {
+  async postToInstagram(caption: string, imageUrl?: string): Promise<{ postId: string }> {
     this.logger.info('Posting to Instagram');
-    const imageUrl = process.env.INSTAGRAM_DEFAULT_IMAGE_URL;
-    if (!imageUrl) {
-      throw new Error('INSTAGRAM_DEFAULT_IMAGE_URL is required for Instagram posts');
+    const resolvedImageUrl = imageUrl ?? process.env.INSTAGRAM_DEFAULT_IMAGE_URL;
+    if (!resolvedImageUrl) {
+      throw new Error('No image URL provided and INSTAGRAM_DEFAULT_IMAGE_URL is not set');
     }
 
     const { data: container } = await axios.post(
       `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`,
       {
         caption,
-        image_url: imageUrl,
+        image_url: resolvedImageUrl,
         access_token: process.env.META_ACCESS_TOKEN,
       },
     );
@@ -57,5 +57,34 @@ export class SocialPoster {
     );
 
     return { postId: published.id as string };
+  }
+
+  async postToTikTok(videoUrl: string, caption: string): Promise<{ postId: string }> {
+    this.logger.info('Posting to TikTok');
+    const { data: init } = await axios.post(
+      'https://open.tiktokapis.com/v2/post/publish/video/init/',
+      {
+        post_info: {
+          title: caption.substring(0, 150),
+          privacy_level: 'PUBLIC_TO_EVERYONE',
+          disable_duet: false,
+          disable_comment: false,
+          disable_stitch: false,
+          video_cover_timestamp_ms: 1000,
+        },
+        source_info: {
+          source: 'PULL_FROM_URL',
+          video_url: videoUrl,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.TIKTOK_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      },
+    );
+
+    return { postId: init.data?.publish_id ?? 'unknown' };
   }
 }
