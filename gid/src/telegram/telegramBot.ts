@@ -6,7 +6,7 @@ import type { MarketingAgent } from '../agents/marketingAgent.js';
 import { BRAND_VOICE } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
 
-const MODEL = 'claude-sonnet-4-5-20251022';
+const MODEL = 'claude-sonnet-4-6';
 
 interface TelegramUpdate {
   update_id: number;

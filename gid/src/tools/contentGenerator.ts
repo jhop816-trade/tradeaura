@@ -9,7 +9,7 @@ import {
 } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
 
-const MODEL = 'claude-sonnet-4-5-20251022';
+const MODEL = 'claude-sonnet-4-6';
 
 function extractText(response: Anthropic.Message): string {
   const block = response.content[0];
