@@ -2,6 +2,7 @@ import axios from 'axios';
 import type Anthropic from '@anthropic-ai/sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentMemory } from '../memory/agentMemory.js';
+import type { MarketingAgent } from '../agents/marketingAgent.js';
 import { BRAND_VOICE } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
 
@@ -27,6 +28,7 @@ const AGENT_NAME = 'marketing-agent';
 export class TelegramBot {
   private offset = 0;
   private running = false;
+  private agent: MarketingAgent | null = null;
 
   constructor(
     private readonly supabase: SupabaseClient,
@@ -34,6 +36,10 @@ export class TelegramBot {
     private readonly anthropic: Anthropic,
     private readonly logger: Logger,
   ) {}
+
+  setAgent(agent: MarketingAgent): void {
+    this.agent = agent;
+  }
 
   start(): void {
     if (this.running) return;
@@ -129,8 +135,11 @@ export class TelegramBot {
       case '/tiktok':
         await this.cmdTikTok(chatId);
         break;
+      case '/test':
+        await this.cmdTest(chatId);
+        break;
       default:
-        await this.sendMessage(chatId, `Unknown command: ${command}\n\nAvailable: /today /week /pause /resume /status /tiktok`);
+        await this.sendMessage(chatId, `Unknown command: ${command}\n\nAvailable: /today /week /pause /resume /status /tiktok /test`);
     }
   }
 
@@ -265,6 +274,39 @@ export class TelegramBot {
       chatId,
       `<b>Latest TikTok Draft</b> (${created})\n\n${preview}${data.content.length > 500 ? '...' : ''}`,
     );
+  }
+
+  private async cmdTest(chatId: number): Promise<void> {
+    if (!this.agent) {
+      await this.sendMessage(chatId, 'Agent not ready yet.');
+      return;
+    }
+    await this.sendMessage(chatId, '⏳ Testing all platforms — this may take 30 seconds...');
+
+    const results: string[] = [];
+
+    try {
+      await this.agent.postX('morning');
+      results.push('✅ X — posted');
+    } catch (err) {
+      results.push(`❌ X — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
+    }
+
+    try {
+      await this.agent.postInstagram();
+      results.push('✅ Instagram — posted');
+    } catch (err) {
+      results.push(`❌ Instagram — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
+    }
+
+    try {
+      await this.agent.postFacebook();
+      results.push('✅ Facebook — posted');
+    } catch (err) {
+      results.push(`❌ Facebook — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
+    }
+
+    await this.sendMessage(chatId, `<b>Test Results</b>\n\n${results.join('\n')}`);
   }
 
   private async handleMessage(chatId: number, text: string): Promise<void> {

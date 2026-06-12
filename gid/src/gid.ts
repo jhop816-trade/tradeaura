@@ -74,6 +74,7 @@ async function main(): Promise<void> {
   );
   const scheduler = new Scheduler(agent, monitor, logger);
   const telegramBot = new TelegramBot(supabase, memory, anthropic, logger);
+  telegramBot.setAgent(agent);
 
   process.on('uncaughtException', async (err) => {
     logger.fatal({ err }, 'Uncaught exception');
