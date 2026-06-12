@@ -8,7 +8,17 @@ async function axiosFetch(input: any, init?: any): Promise<any> {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url ?? String(input);
   const res = await axios({ url, method: init?.method ?? 'GET', headers: init?.headers, data: init?.body, validateStatus: () => true, responseType: 'text' });
   const responseText = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-  return { ok: res.status >= 200 && res.status < 300, status: res.status, json: () => Promise.resolve(JSON.parse(responseText)), text: () => Promise.resolve(responseText) };
+  const resHeaders = res.headers as Record<string, string>;
+  return {
+    ok: res.status >= 200 && res.status < 300,
+    status: res.status,
+    headers: {
+      get: (name: string) => resHeaders[name.toLowerCase()] ?? null,
+      has: (name: string) => name.toLowerCase() in resHeaders,
+    },
+    json: () => Promise.resolve(JSON.parse(responseText)),
+    text: () => Promise.resolve(responseText),
+  };
 }
 
 import { MarketingAgent } from './agents/marketingAgent.js';
