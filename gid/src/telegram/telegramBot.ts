@@ -95,7 +95,7 @@ export class TelegramBot {
     const text = msg.text.trim();
     if (text.startsWith('/')) {
       const command = text.split(' ')[0].toLowerCase();
-      await this.handleCommand(chatId, command);
+      await this.handleCommand(chatId, command, text);
     } else {
       await this.handleMessage(chatId, text);
     }
@@ -115,7 +115,7 @@ export class TelegramBot {
     }
   }
 
-  private async handleCommand(chatId: number, command: string): Promise<void> {
+  private async handleCommand(chatId: number, command: string, fullText: string): Promise<void> {
     switch (command) {
       case '/today':
         await this.cmdToday(chatId);
@@ -135,11 +135,23 @@ export class TelegramBot {
       case '/tiktok':
         await this.cmdTikTok(chatId);
         break;
+      case '/post':
+        await this.cmdPost(chatId, fullText);
+        break;
+      case '/logs':
+        await this.cmdLogs(chatId);
+        break;
+      case '/help':
+        await this.cmdHelp(chatId);
+        break;
       case '/test':
         await this.cmdTest(chatId);
         break;
       default:
-        await this.sendMessage(chatId, `Unknown command: ${command}\n\nAvailable: /today /week /pause /resume /status /tiktok /test`);
+        await this.sendMessage(
+          chatId,
+          `Unknown command: ${command}\n\nSend /help for a list of available commands.`,
+        );
     }
   }
 
@@ -215,6 +227,39 @@ export class TelegramBot {
     await this.sendMessage(chatId, '▶️ Posting resumed. Scheduled posts will run normally.');
   }
 
+  private getNextScheduledPost(): string {
+    // Schedule (ET): X at 9:30, 13:00, 19:00 | IG at 11:00 | FB at 15:00 | TikTok draft at 8:00
+    const now = new Date();
+    const etFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const etParts = etFormatter.formatToParts(now);
+    const etHour = Number(etParts.find((p) => p.type === 'hour')?.value ?? 0);
+    const etMinute = Number(etParts.find((p) => p.type === 'minute')?.value ?? 0);
+    const etTotalMinutes = etHour * 60 + etMinute;
+
+    // Sorted schedule entries: [minuteOfDay, label]
+    const schedule: [number, string][] = [
+      [8 * 60, '🎵 TikTok draft at 8:00am ET'],
+      [9 * 60 + 30, '𝕏 X post at 9:30am ET'],
+      [11 * 60, '📸 Instagram post at 11:00am ET'],
+      [13 * 60, '𝕏 X post at 1:00pm ET'],
+      [15 * 60, '👥 Facebook post at 3:00pm ET'],
+      [19 * 60, '𝕏 X post at 7:00pm ET'],
+    ];
+
+    for (const [minuteOfDay, label] of schedule) {
+      if (etTotalMinutes < minuteOfDay) {
+        return label;
+      }
+    }
+    // All posts done for today — next is tomorrow's first
+    return '🎵 TikTok draft at 8:00am ET (tomorrow)';
+  }
+
   private async cmdStatus(chatId: number): Promise<void> {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
     const key = `daily-counts-${today}`;
@@ -237,10 +282,13 @@ export class TelegramBot {
       .map((r) => `  ${String(r.platform).toUpperCase()}: ${String(r.posted_at).slice(0, 16).replace('T', ' ')}`)
       .join('\n');
 
+    const nextPost = this.getNextScheduledPost();
+
     const lines = [
       '<b>GID Status</b>\n',
       `Posting: ${paused ? '⏸ Paused' : '▶️ Active'}`,
       `Site: ${siteStatus?.up !== false ? '✅ Up' : '❌ Down'}`,
+      `Next: ${nextPost}`,
       `\n<b>Today's counts (${today})</b>`,
       `X: ${counts.x} | IG: ${counts.ig} | FB: ${counts.fb} | TikTok drafts: ${counts.tiktok}`,
     ];
@@ -307,6 +355,113 @@ export class TelegramBot {
     }
 
     await this.sendMessage(chatId, `<b>Test Results</b>\n\n${results.join('\n')}`);
+  }
+
+  private async cmdPost(chatId: number, fullText: string): Promise<void> {
+    if (!this.agent) {
+      await this.sendMessage(chatId, 'Agent not ready yet.');
+      return;
+    }
+
+    const parts = fullText.trim().split(/\s+/);
+    const platform = parts[1]?.toLowerCase();
+
+    if (!platform) {
+      await this.sendMessage(chatId, 'Usage: /post x | /post ig | /post fb | /post tiktok');
+      return;
+    }
+
+    const platformLabels: Record<string, string> = {
+      x: '𝕏',
+      ig: '📸 Instagram',
+      fb: '👥 Facebook',
+      tiktok: '🎵 TikTok',
+    };
+
+    const label = platformLabels[platform];
+    if (!label) {
+      await this.sendMessage(chatId, `Unknown platform: ${platform}\n\nAvailable: x, ig, fb, tiktok`);
+      return;
+    }
+
+    await this.sendMessage(chatId, `⏳ Posting to ${label}...`);
+
+    try {
+      if (platform === 'x') {
+        await this.agent.postX('morning');
+      } else if (platform === 'ig') {
+        await this.agent.postInstagram();
+      } else if (platform === 'fb') {
+        await this.agent.postFacebook();
+      } else if (platform === 'tiktok') {
+        await this.agent.generateTikTokDraft();
+      }
+      await this.sendMessage(chatId, `✅ ${label} — done`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.sendMessage(chatId, `❌ ${label} — ${msg.substring(0, 200)}`);
+    }
+  }
+
+  private async cmdLogs(chatId: number): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('content_log')
+      .select('platform, content, posted_at')
+      .order('posted_at', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      this.logger.error({ error }, 'content_log query failed');
+      await this.sendMessage(chatId, `Database error: ${error.message}`);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      await this.sendMessage(chatId, 'No posts logged yet.');
+      return;
+    }
+
+    const platformIcon: Record<string, string> = {
+      x: '𝕏',
+      instagram: '📸',
+      facebook: '👥',
+      tiktok: '🎵',
+    };
+
+    const lines = ['<b>Last 5 Posts</b>\n'];
+    for (const row of data) {
+      const platform = String(row.platform);
+      const icon = platformIcon[platform] ?? platform.toUpperCase();
+      const preview = String(row.content).substring(0, 60).replace(/\n/g, ' ');
+      const time = String(row.posted_at).slice(0, 16).replace('T', ' ');
+      lines.push(`${icon} <b>${time}</b>`);
+      lines.push(`<i>${preview}…</i>\n`);
+    }
+
+    await this.sendMessage(chatId, lines.join('\n'));
+  }
+
+  private async cmdHelp(chatId: number): Promise<void> {
+    const help = [
+      '<b>GID Marketing Bot — Commands</b>\n',
+      '/status — Agent status and today\'s post counts',
+      '/today — Content scheduled for today',
+      '/week — Content calendar for the next 7 days',
+      '/logs — Last 5 published posts',
+      '',
+      '/post x — Post to 𝕏 immediately',
+      '/post ig — Post to Instagram immediately',
+      '/post fb — Post to Facebook immediately',
+      '/post tiktok — Generate a TikTok draft immediately',
+      '',
+      '/tiktok — View the latest pending TikTok draft',
+      '/pause — Pause all scheduled posting',
+      '/resume — Resume scheduled posting',
+      '/test — Run a test post to all platforms',
+      '',
+      'You can also send a free-text message to ask GID a question.',
+    ];
+    await this.sendMessage(chatId, help.join('\n'));
   }
 
   private async handleMessage(chatId: number, text: string): Promise<void> {
