@@ -65,6 +65,7 @@ async function main(): Promise<void> {
     process.exit(1);
   });
 
+  logger.info({ supabaseUrl: process.env.SUPABASE_URL }, 'Supabase URL check');
   scheduler.registerAll();
   telegramBot.start();
   await alerter.send(AlertMessages.online());
