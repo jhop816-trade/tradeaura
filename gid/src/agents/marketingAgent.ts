@@ -70,7 +70,7 @@ export class MarketingAgent {
     await this.supabase.from('content_log').insert({ platform, content, post_id: postId });
   }
 
-  private async handlePostError(platform: string, err: unknown): Promise<void> {
+  private async handlePostError(platform: string, err: unknown): Promise<never> {
     const message = err instanceof Error ? err.message : String(err);
     this.logger.error({ platform, err }, 'Post failed after all retries');
     await this.supabase.from('system_alerts').insert({
@@ -79,6 +79,7 @@ export class MarketingAgent {
       resolved: false,
     });
     await this.alerter.send(AlertMessages.sentryError(`${platform} post failed: ${message}`));
+    throw err;
   }
 
   async getCalendarContent(
