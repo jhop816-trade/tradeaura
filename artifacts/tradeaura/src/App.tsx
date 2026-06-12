@@ -55,6 +55,8 @@ async function getAuthToken(): Promise<string> {
 
 async function apiCall(method: string, path: string, body?: unknown): Promise<any> {
   const token = await getAuthToken();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   let res: Response;
   try {
     res = await fetch(API_BASE + path, {
@@ -64,10 +66,16 @@ async function apiCall(method: string, path: string, body?: unknown): Promise<an
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: body != null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
   } catch (networkErr: any) {
+    clearTimeout(timeoutId);
+    if (networkErr?.name === "AbortError") {
+      throw new Error("Request timed out — please try again.");
+    }
     throw new Error(`Network error: ${networkErr?.message || networkErr?.toString() || "fetch failed"}`);
   }
+  clearTimeout(timeoutId);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     const errMsg = err.error != null
@@ -789,23 +797,24 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChange}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:"",option_type:"",strike:"",option_expiry:""});
   const [loading,setLoading]=useState(false);
+  const [formError,setFormError]=useState<string|null>(null);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
-  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
+  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch(e){console.warn("Failed to parse fav_symbols from localStorage",e);return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
-  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch{return [];}});
+  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch(e){console.warn("Failed to parse custom_setups from localStorage",e);return [];}});
   const [newSetup,setNewSetup]=useState("");
   function addCustomSetup(){if(!newSetup.trim())return;const s=newSetup.trim();if([...SETUPS,...customSetups].includes(s)){set("setup",s);setNewSetup("");return;}const next=[...customSetups,s];setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));set("setup",s);setNewSetup("");}
   function removeCustomSetup(s: string){const next=customSetups.filter(x=>x!==s);setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));}
   const allSetups=[...SETUPS,...customSetups.filter(s=>!SETUPS.includes(s))];
-  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch{return [];}});
+  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch(e){console.warn("Failed to parse custom_rules from localStorage",e);return [];}});
   const [newRule,setNewRule]=useState("");
   const [showRuleTemplates,setShowRuleTemplates]=useState(false);
   const [activeTemplate,setActiveTemplate]=useState<string|null>(null);
   const [expandEditor,setExpandEditor]=useState(false);
   const [checklistName,setChecklistName]=useState(()=>localStorage.getItem("checklist_name")||"");
-  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch{return [];}});
-  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch{return [];}});
+  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch(e){console.warn("Failed to parse saved_checklists from localStorage",e);return [];}});
+  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch(e){console.warn("Failed to parse hidden_rules from localStorage",e);return [];}});
   function saveHidden(next: string[]){setHiddenRules(next);localStorage.setItem("hidden_rules",JSON.stringify(next));}
   function saveRules(next: string[]){setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}
   function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();if(!allRules.includes(r))saveRules([...customRules,r]);setNewRule("");}
@@ -835,6 +844,13 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const pnlPreview=calcPnl({...form,manual_pnl:resolvedManualPnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
   async function submit() {
+    setFormError(null);
+    const entryVal = parseFloat(form.entry);
+    const exitVal = parseFloat(form.exit);
+    const contractsVal = parseFloat(form.contracts);
+    if (form.entry !== "" && (isNaN(entryVal) || entryVal <= 0)) { setFormError("Entry price must be a positive number."); return; }
+    if (form.exit !== "" && (isNaN(exitVal) || exitVal <= 0)) { setFormError("Exit price must be a positive number."); return; }
+    if (isNaN(contractsVal) || contractsVal <= 0) { setFormError("Quantity must be a positive number."); return; }
     let pnl=calcPnl({...form,manual_pnl:resolvedManualPnl}); if(pnl===null)pnl=0;
     setLoading(true); let grade=null;
     try {
@@ -1048,6 +1064,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
         </div>
       )}
 
+      {formError&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:10}}>{formError}</div>}
       <button onClick={submit} disabled={loading} style={{width:"100%",padding:14,background:loading?C.muted:C.blue,color:"#fff",border:"none",borderRadius:10,cursor:loading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700}}>
         {loading?"🤖 Grading...":isEdit?"Save Changes":"Log Trade"}
       </button>
@@ -1707,7 +1724,7 @@ function StatsView({trades,account}: {trades:any[],account?:any}) {
 
 // ── PLAYBOOK ──────────────────────────────────────────────────────────────────
 function PlaybookView({trades}: {trades:any[]}) {
-  const [entries,setEntries]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("playbook")||"[]");}catch{return [];}});
+  const [entries,setEntries]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("playbook")||"[]");}catch(e){console.warn("Failed to parse playbook from localStorage",e);return [];}});
   const [showForm,setShowForm]=useState(false);
   const [formName,setFormName]=useState("");
   const [formDesc,setFormDesc]=useState("");
@@ -2599,7 +2616,7 @@ export default function App() {
         const created = await apiCall("POST","/api/trades",payload);
         setTrades(prev=>[fromApiTrade(created),...prev]);
       }
-    } catch(e: any){ setAppError("Save failed: "+e.message); return; }
+    } catch(e: any){ setAppError("Failed to save trade. Please try again."); return; }
     setShowNewTrade(false); setEditingTrade(null);
   }
 
@@ -2607,7 +2624,7 @@ export default function App() {
     try {
       await apiCall("DELETE",`/api/trades/${id}`);
       setTrades(prev=>prev.filter(t=>t.id!==id));
-    } catch(e: any){ setAppError("Delete failed: "+e.message); }
+    } catch(e: any){ setAppError("Failed to delete trade. Please try again."); }
   }
 
   // ── ACCOUNT ACTIONS ──

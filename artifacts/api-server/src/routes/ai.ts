@@ -35,6 +35,9 @@ router.post("/ai/chat", async (req, res) => {
     return;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -49,6 +52,7 @@ router.post("/ai/chat", async (req, res) => {
         system: TUTOR_SYSTEM,
         messages,
       }),
+      signal: controller.signal,
     }) as unknown as FetchResponse;
 
     if (!response.ok) {
@@ -62,8 +66,15 @@ router.post("/ai/chat", async (req, res) => {
     const reply = data.content.map((b) => b.text || "").join("");
     res.json({ reply });
   } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      req.log.warn("AI chat request timed out after 30s");
+      res.status(504).json({ error: "AI request timed out" });
+      return;
+    }
     req.log.error(err, "AI chat error");
     res.status(500).json({ error: "Internal error" });
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
@@ -81,6 +92,9 @@ router.post("/ai/grade", async (req, res) => {
     return;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -94,6 +108,7 @@ router.post("/ai/grade", async (req, res) => {
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
       }),
+      signal: controller.signal,
     }) as unknown as FetchResponse;
 
     if (!response.ok) {
@@ -112,8 +127,15 @@ router.post("/ai/grade", async (req, res) => {
     }
     res.json(JSON.parse(match[0]));
   } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      req.log.warn("AI grade request timed out after 30s");
+      res.status(504).json({ error: "AI request timed out" });
+      return;
+    }
     req.log.error(err, "AI proxy error");
     res.status(500).json({ error: "Internal error" });
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
