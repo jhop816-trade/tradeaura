@@ -1,6 +1,16 @@
 import 'dotenv/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function axiosFetch(input: any, init?: any): Promise<any> {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url ?? String(input);
+  const res = await axios({ url, method: init?.method ?? 'GET', headers: init?.headers, data: init?.body, validateStatus: () => true, responseType: 'text' });
+  const responseText = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, json: () => Promise.resolve(JSON.parse(responseText)), text: () => Promise.resolve(responseText) };
+}
+
 import { MarketingAgent } from './agents/marketingAgent.js';
 import { AgentMemory } from './memory/agentMemory.js';
 import { TelegramBot } from './telegram/telegramBot.js';
@@ -32,7 +42,9 @@ async function main(): Promise<void> {
   validateEnv();
 
   const logger = buildLogger();
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    global: { fetch: axiosFetch },
+  });
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const alerter = new Alerter(logger);
