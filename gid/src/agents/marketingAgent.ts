@@ -131,6 +131,11 @@ export class MarketingAgent {
       await this.addRecentTopic(text.substring(0, 60));
       this.logger.info({ slot, postId }, 'X post published');
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('TWITTER_PAYMENT_REQUIRED')) {
+        this.logger.info({ slot }, 'X post skipped — paid API tier required (402)');
+        return;
+      }
       await this.handlePostError('x', err);
     }
   }

@@ -123,6 +123,9 @@ export class TelegramBot {
       case '/week':
         await this.cmdWeek(chatId);
         break;
+      case '/calendar':
+        await this.cmdCalendar(chatId);
+        break;
       case '/pause':
         await this.cmdPause(chatId);
         break;
@@ -212,6 +215,46 @@ export class TelegramBot {
       }
       const statusIcon = row.status === 'posted' ? '✅' : '⏳';
       lines.push(`  ${statusIcon} ${String(row.platform).toUpperCase()} — ${String(row.title ?? 'Untitled')}`);
+    }
+
+    await this.sendMessage(chatId, lines.join('\n'));
+  }
+
+  private async cmdCalendar(chatId: number): Promise<void> {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+    const end = sevenDaysLater.toISOString().slice(0, 10);
+
+    const { data, error } = await this.supabase
+      .from('content_calendar')
+      .select('id, scheduled_date, platform, title')
+      .eq('status', 'scheduled')
+      .gte('scheduled_date', today)
+      .lte('scheduled_date', end)
+      .order('scheduled_date')
+      .order('platform')
+      .limit(20);
+
+    if (error) {
+      this.logger.error({ error }, 'content_calendar query failed');
+      await this.sendMessage(chatId, `Database error: ${error.message}`);
+      return;
+    }
+    if (!data || data.length === 0) {
+      await this.sendMessage(chatId, 'No scheduled content found for the next 7 days.');
+      return;
+    }
+
+    const lines = ['📅 <b>Upcoming Content</b>\n'];
+    let lastDate = '';
+    for (const row of data) {
+      const date = String(row.scheduled_date);
+      if (date !== lastDate) {
+        lines.push(`\n<b>${date}</b>`);
+        lastDate = date;
+      }
+      lines.push(`  • ${String(row.platform)} — ${String(row.title ?? 'Untitled')}`);
     }
 
     await this.sendMessage(chatId, lines.join('\n'));
@@ -446,7 +489,8 @@ export class TelegramBot {
       '<b>GID Marketing Bot — Commands</b>\n',
       '/status — Agent status and today\'s post counts',
       '/today — Content scheduled for today',
-      '/week — Content calendar for the next 7 days',
+      '/week — This week\'s full calendar',
+      '/calendar — Next 7 days of scheduled content',
       '/logs — Last 5 published posts',
       '',
       '/post x — Post to 𝕏 immediately',

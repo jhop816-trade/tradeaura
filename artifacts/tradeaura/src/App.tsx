@@ -2012,7 +2012,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
       :"";
     const prompt=`You are an elite trading coach with access to today's live market data. Generate a morning market prep briefing.\nToday: ${dayName}, ${dateStr}${timeET?` at ${timeET} ET`:""}${priceBlock}${newsBlock}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%\n\nUse the live price data and headlines above. Reference actual price levels in your key levels section. JSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e:any){setPrep({_error:e?.message||"Failed to generate prep. Try again."});}
     setPrepLoading(false);
   }
 
@@ -2050,7 +2050,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     }
     const apiMsgs=[...systemCtxRef.current,...chatMsgs.map(({role,content})=>({role,content})),{role:userMsg.role,content:userMsg.content}];
     setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
-    try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
+    try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e:any){setChatMsgs(prev=>[...prev,{role:"assistant",content:`Error: ${e?.message||"Failed to get response. Please try again."}`}]);}
     setChatLoading(false);
     setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
   }
@@ -2092,7 +2092,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const pts=computePatterns();if(!pts.length)return;
     setAiPL(true);setAiPR(null);
     const summary=pts.map(p=>`${p.label}: ${p.insight}`).join("\n");
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt:`Elite trading coach. Actionable insights from these patterns:\n\n${summary}\n\nJSON: {"insights":[""],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,maxTokens:1200});setAiPR(r);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt:`Elite trading coach. Actionable insights from these patterns:\n\n${summary}\n\nJSON: {"insights":[""],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,maxTokens:1200});setAiPR(r);}catch(e:any){setAiPR({_error:e?.message||"AI analysis failed. Try again."});}
     setAiPL(false);
   }
 
@@ -2109,7 +2109,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       :"";
     const prompt=`You are an elite market analyst. Today is ${dayName}, ${dateStr}.${priceBlock}${newsBlock}\n\nUsing the real price data above, provide a direct opinionated market outlook. Reference actual price levels from the data. Be specific — give exact levels for entries, targets, stops. JSON only:\n{"weekSummary":"2-3 sentence overall market sentiment with specific price context","markets":[{"symbol":"SPY","name":"S&P 500","bias":"bullish|bearish|neutral","analysis":"2-3 sentences referencing actual price levels from the data","playbook":"Specific entry/target/stop levels based on real data","watchLevel":"Exact price level"},{"symbol":"QQQ","name":"Nasdaq 100","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"BTC","name":"Bitcoin","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"GC","name":"Gold","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."}],"macro":"Key macro theme with price context","topOpportunity":"Specific trade with levels","riskWarning":"Biggest risk with key level to watch"}`;
     setWeekLoading(true);setWeekReview(null);
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e:any){setWeekReview({_error:e?.message||"Market outlook failed. Try again."});}
     setWeekLoading(false);
   }
 

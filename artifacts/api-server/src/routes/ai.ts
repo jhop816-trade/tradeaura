@@ -125,7 +125,14 @@ router.post("/ai/grade", async (req, res) => {
       res.status(502).json({ error: "No JSON in AI response" });
       return;
     }
-    res.json(JSON.parse(match[0]));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      res.status(502).json({ error: "Failed to parse AI response JSON" });
+      return;
+    }
+    res.json(parsed);
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       req.log.warn("AI grade request timed out after 30s");

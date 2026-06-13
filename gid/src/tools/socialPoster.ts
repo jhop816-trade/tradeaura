@@ -16,8 +16,16 @@ export class SocialPoster {
 
   async postToX(text: string): Promise<{ postId: string }> {
     this.logger.info('Posting to X');
-    const tweet = await this.xClient.v2.tweet(text);
-    return { postId: tweet.data.id };
+    try {
+      const tweet = await this.xClient.v2.tweet(text);
+      return { postId: tweet.data.id };
+    } catch (err: unknown) {
+      const status = (err as any)?.code ?? (err as any)?.status ?? (err as any)?.data?.status;
+      if (status === 402 || String((err as any)?.message ?? '').includes('402')) {
+        throw new Error('TWITTER_PAYMENT_REQUIRED');
+      }
+      throw err;
+    }
   }
 
   private async getPageAccessToken(): Promise<string> {
@@ -56,26 +64,46 @@ export class SocialPoster {
       throw new Error('No image URL provided and INSTAGRAM_DEFAULT_IMAGE_URL is not set');
     }
 
-    const containerRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`,
-      {
-        caption,
-        image_url: resolvedImageUrl,
-        access_token: process.env.META_ACCESS_TOKEN,
-      },
-    );
+    const pageToken = await this.getPageAccessToken();
+
+    let containerRes;
+    try {
+      containerRes = await axios.post(
+        `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`,
+        {
+          caption,
+          image_url: resolvedImageUrl,
+          access_token: pageToken,
+        },
+      );
+    } catch (err: unknown) {
+      const metaErr = (err as any)?.response?.data;
+      throw new Error(
+        `Instagram media container request failed: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
+      );
+    }
+
     const container = containerRes.data;
     if (!container.id) {
       throw new Error(`Instagram media container failed: ${JSON.stringify(container)}`);
     }
 
-    const publishRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish`,
-      {
-        creation_id: container.id,
-        access_token: process.env.META_ACCESS_TOKEN,
-      },
-    );
+    let publishRes;
+    try {
+      publishRes = await axios.post(
+        `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish`,
+        {
+          creation_id: container.id,
+          access_token: pageToken,
+        },
+      );
+    } catch (err: unknown) {
+      const metaErr = (err as any)?.response?.data;
+      throw new Error(
+        `Instagram media publish request failed: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
+      );
+    }
+
     const published = publishRes.data;
 
     return { postId: published.id as string };
