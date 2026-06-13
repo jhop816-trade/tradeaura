@@ -25,10 +25,13 @@ router.get("/instruments", async (req, res): Promise<void> => {
     .where(eq(instrumentsTable.userEmail, userEmail))
     .orderBy(asc(instrumentsTable.createdAt));
 
-  // Enrich with trade stats per symbol
-  const allTrades = await db.select().from(tradesTable);
+  // Enrich with trade stats per symbol — only the current user's trades
+  const userTrades = await db
+    .select()
+    .from(tradesTable)
+    .where(eq(tradesTable.userId, req.userId));
   const tradesBySymbol = new Map<string, { pnl: number; total: number; wins: number }>();
-  for (const t of allTrades) {
+  for (const t of userTrades) {
     const pnl = Number(t.pnl ?? 0);
     const existing = tradesBySymbol.get(t.symbol);
     if (existing) {

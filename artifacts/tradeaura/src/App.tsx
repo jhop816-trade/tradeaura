@@ -1826,6 +1826,7 @@ function PlaybookView({trades}: {trades:any[]}) {
 function ReviewView({trades}: {trades:any[]}) {
   const [period,setPeriod]=useState("week"),[cs,setCs]=useState(""),[ce,setCe]=useState("");
   const [tab,setTab]=useState("generate"),[review,setReview]=useState<any>(null),[loading,setLoading]=useState(false);
+  const [reviewError,setReviewError]=useState<string|null>(null);
   const [copied,setCopied]=useState(false),[paste,setPaste]=useState("");
   const [patterns,setPatterns]=useState<any[]>([]);
   const [aiPatternResult,setAiPatternResult]=useState<any>(null),[aiPatternLoading,setAiPatternLoading]=useState(false);
@@ -1837,7 +1838,7 @@ function ReviewView({trades}: {trades:any[]}) {
   const fTotal=ft.reduce((s,t)=>s+(t.pnl||0),0);
   function buildReport(ts: any[]){const wins=ts.filter(t=>(t.pnl||0)>0),total=ts.reduce((s,t)=>s+(t.pnl||0),0);const lines=["=== TRADING REPORT ===",`Period: ${rng.s} to ${rng.e}`,`Trades:${ts.length} Wins:${wins.length} Losses:${ts.length-wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${ts.length?(wins.length/ts.length*100).toFixed(1):0}%`,""];ts.forEach((t,i)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`Entry:${t.entry} Exit:${t.exit} P&L:$${(t.pnl||0).toFixed(2)}`);lines.push(`Setup:${t.setup} Mood:${t.mood}`);lines.push(`Notes:${t.notes||"—"}`);lines.push("");});return lines.join("\n");}
 
-  async function runReview(text: string){setLoading(true);setReview(null);try{const result=await callAI(`Professional futures trading coach. Analyze this log with honest feedback.\n\n${text}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setReview(result);setTab("result");}catch(e){console.error(e);}setLoading(false);}
+  async function runReview(text: string){setLoading(true);setReview(null);setReviewError(null);try{const result=await callAI(`Professional futures trading coach. Analyze this log with honest feedback.\n\n${text}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setReview(result);setTab("result");}catch(e:any){setReviewError(e?.message||"AI analysis failed. Please try again.");}setLoading(false);}
 
   function computePatterns(){
     if(!trades.length)return[];
@@ -1881,7 +1882,7 @@ function ReviewView({trades}: {trades:any[]}) {
     try{
       const result=await callAI(`You are an elite trading coach. Based on these trading patterns, give actionable insights.\n\n${summary}\n\nJSON: {"insights":["..."],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,1200);
       setAiPatternResult(result);
-    }catch(e){console.error(e);}
+    }catch(e:any){setAiPatternResult({_error:e?.message||"AI analysis failed. Please try again."});}
     setAiPatternLoading(false);
   }
 
@@ -1889,7 +1890,8 @@ function ReviewView({trades}: {trades:any[]}) {
 
   return(
     <div style={{padding:"16px 16px 20px"}}>
-      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());}}>{t.l}</Pill>)}</div>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());setReviewError(null);}}>{t.l}</Pill>)}</div>
+      {reviewError&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:14}}>{reviewError}</div>}
       {tab==="generate"&&(<div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:14}}>{[{id:"week",l:"This Week"},{id:"lastweek",l:"Last Week"},{id:"month",l:"This Month"},{id:"lastmonth",l:"Last Month"},{id:"custom",l:"Custom"}].map(p=><Pill key={p.id} active={period===p.id} color={C.purp} onClick={()=>setPeriod(p.id)}>{p.l}</Pill>)}</div>
         {period==="custom"&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>FROM</div><input type="date" value={cs} onChange={e=>setCs(e.target.value)} style={inp()}/></div><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>TO</div><input type="date" value={ce} onChange={e=>setCe(e.target.value)} style={inp()}/></div></div>)}
