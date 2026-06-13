@@ -20,13 +20,30 @@ export class SocialPoster {
     return { postId: tweet.data.id };
   }
 
+  private async getPageAccessToken(): Promise<string> {
+    const { data } = await axios.get(
+      `https://graph.facebook.com/v21.0/${process.env.META_PAGE_ID}`,
+      {
+        params: {
+          fields: 'access_token',
+          access_token: process.env.META_ACCESS_TOKEN,
+        },
+      },
+    );
+    if (!data.access_token) {
+      throw new Error(`Could not retrieve page access token. Response: ${JSON.stringify(data)}`);
+    }
+    return data.access_token as string;
+  }
+
   async postToFacebook(message: string): Promise<{ postId: string }> {
     this.logger.info('Posting to Facebook');
+    const pageToken = await this.getPageAccessToken();
     const { data } = await axios.post(
       `https://graph.facebook.com/v21.0/${process.env.META_PAGE_ID}/feed`,
       {
         message,
-        access_token: process.env.META_ACCESS_TOKEN,
+        access_token: pageToken,
       },
     );
     return { postId: data.id as string };
@@ -39,7 +56,7 @@ export class SocialPoster {
       throw new Error('No image URL provided and INSTAGRAM_DEFAULT_IMAGE_URL is not set');
     }
 
-    const { data: container } = await axios.post(
+    const containerRes = await axios.post(
       `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media`,
       {
         caption,
@@ -47,14 +64,19 @@ export class SocialPoster {
         access_token: process.env.META_ACCESS_TOKEN,
       },
     );
+    const container = containerRes.data;
+    if (!container.id) {
+      throw new Error(`Instagram media container failed: ${JSON.stringify(container)}`);
+    }
 
-    const { data: published } = await axios.post(
+    const publishRes = await axios.post(
       `https://graph.facebook.com/v21.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}/media_publish`,
       {
         creation_id: container.id,
         access_token: process.env.META_ACCESS_TOKEN,
       },
     );
+    const published = publishRes.data;
 
     return { postId: published.id as string };
   }
