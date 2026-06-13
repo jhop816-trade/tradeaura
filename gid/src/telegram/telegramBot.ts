@@ -376,12 +376,7 @@ export class TelegramBot {
 
     const results: string[] = [];
 
-    try {
-      await this.agent.postX('morning');
-      results.push('✅ X — posted');
-    } catch (err) {
-      results.push(`❌ X — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
-    }
+    results.push('⏭ X — skipped (Twitter API requires paid plan)');
 
     try {
       await this.agent.postInstagram();

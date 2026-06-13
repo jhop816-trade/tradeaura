@@ -29,19 +29,26 @@ export class SocialPoster {
   }
 
   private async getPageAccessToken(): Promise<string> {
-    const { data } = await axios.get(
-      `https://graph.facebook.com/v21.0/${process.env.META_PAGE_ID}`,
-      {
-        params: {
-          fields: 'access_token',
-          access_token: process.env.META_ACCESS_TOKEN,
-        },
-      },
-    );
-    if (!data.access_token) {
-      throw new Error(`Could not retrieve page access token. Response: ${JSON.stringify(data)}`);
+    let res;
+    try {
+      res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
+        params: { access_token: process.env.META_ACCESS_TOKEN },
+      });
+    } catch (err: unknown) {
+      const metaErr = (err as any)?.response?.data;
+      throw new Error(
+        `Failed to fetch page list from Meta: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
+      );
     }
-    return data.access_token as string;
+    const pages = (res.data?.data ?? []) as Array<{ id: string; access_token: string }>;
+    const page = pages.find((p) => p.id === process.env.META_PAGE_ID);
+    if (!page) {
+      const ids = pages.map((p) => p.id).join(', ') || 'none';
+      throw new Error(
+        `Page ${process.env.META_PAGE_ID ?? '(META_PAGE_ID not set)'} not found in Meta accounts. Found: ${ids}`,
+      );
+    }
+    return page.access_token;
   }
 
   async postToFacebook(message: string): Promise<{ postId: string }> {
