@@ -150,6 +150,9 @@ export class TelegramBot {
       case '/test':
         await this.cmdTest(chatId);
         break;
+      case '/metatoken':
+        await this.cmdMetaToken(chatId);
+        break;
       default:
         await this.sendMessage(
           chatId,
@@ -365,6 +368,30 @@ export class TelegramBot {
       chatId,
       `<b>Latest TikTok Draft</b> (${created})\n\n${preview}${data.content.length > 500 ? '...' : ''}`,
     );
+  }
+
+  private async cmdMetaToken(chatId: number): Promise<void> {
+    const token = process.env.META_ACCESS_TOKEN;
+    if (!token) {
+      await this.sendMessage(chatId, '❌ META_ACCESS_TOKEN is not set in environment');
+      return;
+    }
+    const preview = `${token.substring(0, 10)}...${token.substring(token.length - 6)}`;
+    try {
+      const { data } = await axios.get('https://graph.facebook.com/v21.0/me', {
+        params: { fields: 'id,name', access_token: token },
+      });
+      await this.sendMessage(
+        chatId,
+        `✅ Token valid\nToken preview: <code>${preview}</code>\nUser: ${String(data.name)} (${String(data.id)})`,
+      );
+    } catch (err: unknown) {
+      const metaErr = (err as any)?.response?.data;
+      await this.sendMessage(
+        chatId,
+        `❌ Token invalid\nToken preview: <code>${preview}</code>\nError: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
+      );
+    }
   }
 
   private async cmdTest(chatId: number): Promise<void> {
