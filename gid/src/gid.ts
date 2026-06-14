@@ -89,6 +89,11 @@ async function main(): Promise<void> {
   });
 
   logger.info({ supabaseUrl: process.env.SUPABASE_URL }, 'Supabase URL check');
+  logger.info({
+    META_ACCESS_TOKEN: process.env.META_ACCESS_TOKEN ? `set (${process.env.META_ACCESS_TOKEN.length} chars)` : 'NOT SET',
+    META_PAGE_ID: process.env.META_PAGE_ID ? 'set' : 'NOT SET',
+    INSTAGRAM_BUSINESS_ACCOUNT_ID: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID ? 'set' : 'NOT SET',
+  }, 'Meta env check');
   scheduler.registerAll();
   telegramBot.start();
   await alerter.send(AlertMessages.online());
