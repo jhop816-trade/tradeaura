@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberDeck Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Header -->
+    <div id="header" class="panel">
+      <h1 class="glow">[ CYBERDECK <span class="cursor"></span>]</h1>
+      <div id="header-meta" style="text-align:right; font-size:11px; color: var(--dim-green);">
+        <div id="hostname" style="color: var(--cyan);">loading...</div>
+        <div id="clock" style="color: var(--green); font-size:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div id="stats-panel" class="panel">
+      <div class="panel-title">// SYS STATS</div>
+
+      <div class="stat-row">
+        <div class="stat-label">CPU</div>
+        <div class="stat-bar" id="cpu-bar">░░░░░░░░░░░░░░░░░░░░</div>
+        <div class="stat-value" id="cpu-val">--.--%</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-label">RAM</div>
+        <div class="stat-bar" id="ram-bar">░░░░░░░░░░░░░░░░░░░░</div>
+        <div class="stat-value" id="ram-val">-- / -- GB</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-label">DISK</div>
+        <div class="stat-bar" id="disk-bar">░░░░░░░░░░░░░░░░░░░░</div>
+        <div class="stat-value" id="disk-val">-- / -- GB</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-label">TEMP</div>
+        <div class="stat-value" id="temp-val" style="font-size:18px; color: var(--yellow);">--°C</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-label">BATTERY</div>
+        <div class="stat-bar" id="bat-bar">░░░░░░░░░░░░░░░░░░░░</div>
+        <div class="stat-value" id="bat-val" style="color: var(--green);">--%</div>
+      </div>
+    </div>
+
+    <!-- Apps Panel -->
+    <div id="apps-panel" class="panel">
+      <div class="panel-title">// LAUNCH</div>
+      <div class="app-grid" id="app-grid">
+        <div style="color: var(--dim-green); font-size:11px;">loading apps...</div>
+      </div>
+    </div>
+
+    <!-- WiFi Panel -->
+    <div id="wifi-panel" class="panel">
+      <div class="panel-title">// NETWORK</div>
+      <button class="wifi-scan-btn" onclick="scanWifi()">[ SCAN NETWORKS ]</button>
+      <div id="wifi-list" style="max-height: 300px; overflow-y: auto;">
+        <div style="color: var(--dim-green); font-size:11px;">Press scan to list networks</div>
+      </div>
+    </div>
+
+    <!-- Footer / Status Bar -->
+    <div id="footer">
+      <span>UPTIME: <span id="uptime-val" style="color: var(--green);">--</span></span>
+      <span>IP: <span id="ip-val" style="color: var(--cyan);">--</span></span>
+      <span id="alert-zone"></span>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Clock ─────────────────────────────────────────────
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Hostname
+    try {
+      document.getElementById('hostname').textContent = window.location.hostname;
+    } catch(e) {}
+
+    // ── Progress bar builder ──────────────────────────────
+    function makeBar(pct, width) {
+      width = width || 20;
+      const filled = Math.round((pct / 100) * width);
+      const empty = width - filled;
+      return '█'.repeat(Math.max(0, filled)) + '░'.repeat(Math.max(0, empty));
+    }
+
+    function barColor(pct) {
+      if (pct > 80) return 'var(--red)';
+      if (pct > 60) return 'var(--yellow)';
+      return 'var(--green)';
+    }
+
+    // ── Stats polling ─────────────────────────────────────
+    function updateStats() {
+      fetch('/api/stats')
+        .then(r => r.json())
+        .then(d => {
+          // CPU
+          document.getElementById('cpu-bar').textContent = makeBar(d.cpu);
+          document.getElementById('cpu-bar').style.color = barColor(d.cpu);
+          document.getElementById('cpu-val').textContent = `${d.cpu}%`;
+
+          // RAM
+          document.getElementById('ram-bar').textContent = makeBar(d.ram);
+          document.getElementById('ram-bar').style.color = barColor(d.ram);
+          document.getElementById('ram-val').textContent = `${d.ram_used_gb} / ${d.ram_total_gb} GB`;
+
+          // Disk
+          document.getElementById('disk-bar').textContent = makeBar(d.disk);
+          document.getElementById('disk-bar').style.color = barColor(d.disk);
+          document.getElementById('disk-val').textContent = `${d.disk_used_gb} / ${d.disk_total_gb} GB`;
+
+          // Temp
+          document.getElementById('temp-val').textContent = d.temp;
+
+          // Battery
+          const batPct = parseInt(d.battery) || 0;
+          const batBar = document.getElementById('bat-bar');
+          if (d.battery !== 'N/A') {
+            batBar.textContent = makeBar(batPct);
+            batBar.style.color = batPct < 20 ? 'var(--red)' : 'var(--green)';
+            document.getElementById('bat-val').textContent = d.battery;
+          } else {
+            batBar.textContent = 'N/A';
+            document.getElementById('bat-val').textContent = 'N/A';
+          }
+
+          // Footer
+          document.getElementById('uptime-val').textContent = d.uptime;
+
+          // Alert
+          const alertZone = document.getElementById('alert-zone');
+          if (d.alert) {
+            if (d.alert === 'CRITICAL') {
+              alertZone.innerHTML = '<span class="alert">⚠ BATTERY CRITICAL — SHUTTING DOWN</span>';
+            } else if (d.alert.startsWith('LOW:')) {
+              const pct = d.alert.split(':')[1];
+              alertZone.innerHTML = `<span class="alert">⚠ BATTERY LOW: ${pct}%</span>`;
+            }
+          } else {
+            alertZone.innerHTML = '';
+          }
+        })
+        .catch(() => {});
+    }
+
+    // IP from hostname
+    fetch('/api/stats').then(r => r.json()).then(d => {
+      // We don't get IP from stats — use hostname-I via a workaround
+    }).catch(() => {});
+
+    // Get IP via a quick call
+    fetch('/api/wifi').then(r => r.json()).catch(() => {});
+
+    // Show local hostname as IP proxy
+    document.getElementById('ip-val').textContent = window.location.hostname;
+
+    updateStats();
+    setInterval(updateStats, 3000);
+
+    // ── App grid ──────────────────────────────────────────
+    function loadApps() {
+      fetch('/api/apps')
+        .then(r => r.json())
+        .then(apps => {
+          const grid = document.getElementById('app-grid');
+          grid.innerHTML = '';
+          apps.forEach(app => {
+            const btn = document.createElement('button');
+            btn.className = 'app-btn';
+            btn.innerHTML = `<span class="app-icon">${app.icon || '>'}</span><span class="app-name">${app.name}</span>`;
+            btn.style.borderColor = cssColor(app.color);
+            btn.style.color = cssColor(app.color);
+            btn.addEventListener('mouseenter', () => {
+              btn.style.boxShadow = `0 0 12px ${cssColor(app.color)}88`;
+            });
+            btn.addEventListener('mouseleave', () => {
+              btn.style.boxShadow = '';
+            });
+            btn.addEventListener('click', () => launchApp(app.name, btn));
+            grid.appendChild(btn);
+          });
+        })
+        .catch(() => {});
+    }
+
+    function cssColor(name) {
+      const map = {
+        green: '#00ff41', cyan: '#00ffff', yellow: '#ffff00',
+        magenta: '#ff00ff', blue: '#4488ff', red: '#ff0040',
+        white: '#ffffff'
+      };
+      return map[name] || '#00ff41';
+    }
+
+    function launchApp(name, btn) {
+      const orig = btn.textContent;
+      btn.style.opacity = '0.5';
+      fetch('/api/launch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+      })
+      .then(r => r.json())
+      .then(d => {
+        btn.style.opacity = '1';
+        if (d.launched) {
+          btn.style.borderColor = '#00ff41';
+          setTimeout(() => { btn.style.borderColor = ''; }, 1000);
+        }
+      })
+      .catch(() => { btn.style.opacity = '1'; });
+    }
+
+    loadApps();
+
+    // ── WiFi ─────────────────────────────────────────────
+    function scanWifi() {
+      const list = document.getElementById('wifi-list');
+      list.innerHTML = '<div style="color:var(--dim-green);font-size:11px;">scanning...</div>';
+      fetch('/api/wifi')
+        .then(r => r.json())
+        .then(networks => {
+          list.innerHTML = '';
+          if (!networks.length) {
+            list.innerHTML = '<div style="color:var(--dim-green);font-size:11px;">no networks found</div>';
+            return;
+          }
+          networks.forEach(net => {
+            if (!net.ssid) return;
+            const row = document.createElement('div');
+            row.className = 'wifi-network';
+            const sig = parseInt(net.signal) || 0;
+            const sigBar = sig > 75 ? '▓▓▓▓' : sig > 50 ? '▓▓▓░' : sig > 25 ? '▓▓░░' : '▓░░░';
+            const lock = net.security && net.security !== 'OPEN' && net.security !== '--' ? '🔒' : '  ';
+            row.innerHTML = `<span>${net.ssid}</span><span style="color:var(--dim-green)">${sigBar} ${lock}</span>`;
+            row.addEventListener('click', () => connectWifi(net.ssid, net.security));
+            list.appendChild(row);
+          });
+        })
+        .catch(() => {
+          list.innerHTML = '<div style="color:var(--red);font-size:11px;">scan failed</div>';
+        });
+    }
+
+    function connectWifi(ssid, security) {
+      let password = '';
+      const isOpen = !security || security === 'OPEN' || security === '--';
+      if (!isOpen) {
+        password = prompt(`Password for "${ssid}":`);
+        if (password === null) return;
+      }
+
+      const list = document.getElementById('wifi-list');
+      const statusDiv = document.createElement('div');
+      statusDiv.style.cssText = 'color:var(--yellow);font-size:11px;padding:4px 8px;';
+      statusDiv.textContent = `connecting to ${ssid}...`;
+      list.prepend(statusDiv);
+
+      fetch('/api/wifi/connect', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ssid, password})
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          statusDiv.style.color = 'var(--green)';
+          statusDiv.textContent = `connected to ${ssid}`;
+          document.getElementById('ip-val').textContent = 'reconnecting...';
+          setTimeout(() => {
+            document.getElementById('ip-val').textContent = window.location.hostname;
+          }, 3000);
+        } else {
+          statusDiv.style.color = 'var(--red)';
+          statusDiv.textContent = `failed: ${d.output || 'unknown error'}`;
+        }
+        setTimeout(() => statusDiv.remove(), 5000);
+      })
+      .catch(() => {
+        statusDiv.style.color = 'var(--red)';
+        statusDiv.textContent = 'connection error';
+        setTimeout(() => statusDiv.remove(), 3000);
+      });
+    }
+  </script>
+</body>
+</html>

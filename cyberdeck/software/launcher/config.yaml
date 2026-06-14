@@ -1,0 +1,37 @@
+apps:
+  - name: Terminal
+    icon: ">"
+    command: "lxterminal"
+    color: green
+  - name: Browser
+    icon: "@"
+    command: "chromium-browser"
+    color: cyan
+  - name: Files
+    icon: "/"
+    command: "pcmanfm"
+    color: yellow
+  - name: Editor
+    icon: "#"
+    command: "mousepad"
+    color: magenta
+  - name: Python
+    icon: "~"
+    command: "lxterminal -e python3"
+    color: blue
+  - name: Dashboard
+    icon: "*"
+    command: "chromium-browser http://localhost:5000"
+    color: red
+
+gpio_buttons:
+  17: {action: brightness_up, label: "BRT+"}
+  27: {action: brightness_down, label: "BRT-"}
+  22: {action: volume_toggle, label: "VOL"}
+  5:  {action: app_launch, label: "LAUNCH"}
+  6:  {action: screenshot, label: "SNAP"}
+  13: {action: power, label: "PWR"}
+
+settings:
+  refresh_interval: 2
+  battery_file: /tmp/battery.txt

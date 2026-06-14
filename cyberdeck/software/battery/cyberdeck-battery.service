@@ -1,0 +1,13 @@
+[Unit]
+Description=CyberDeck Battery Monitor
+After=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/opt/cyberdeck/venv/bin/python3 /opt/cyberdeck/battery/battery_monitor.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

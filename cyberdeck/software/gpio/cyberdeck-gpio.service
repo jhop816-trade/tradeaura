@@ -1,0 +1,14 @@
+[Unit]
+Description=CyberDeck GPIO Button Handler
+After=multi-user.target graphical.target
+
+[Service]
+Type=simple
+User=pi
+Environment=DISPLAY=:0
+ExecStart=/opt/cyberdeck/venv/bin/python3 /opt/cyberdeck/gpio/gpio_buttons.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

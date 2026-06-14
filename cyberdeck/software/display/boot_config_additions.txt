@@ -1,0 +1,24 @@
+# CyberDeck dual display configuration
+# Add these lines to /boot/config.txt (or /boot/firmware/config.txt on Pi 5)
+# The setup.sh script adds these automatically.
+
+# Force HDMI hotplug detection
+hdmi_force_hotplug=1
+hdmi_force_hotplug:1=1
+
+# Boost HDMI signal for longer cables
+config_hdmi_boost=4
+config_hdmi_boost:1=4
+
+# Set resolution for screen 0 (800x480)
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=800 480 60 6 0 0 0
+
+# Set resolution for screen 1 (800x480)
+hdmi_group:1=2
+hdmi_mode:1=87
+hdmi_cvt:1=800 480 60 6 0 0 0
+
+# Disable overscan (avoids black borders on small screens)
+disable_overscan=1
