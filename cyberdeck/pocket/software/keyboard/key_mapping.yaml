@@ -1,0 +1,32 @@
+# CyberDeck Pocket — Key Mapping
+# 4 rows × 11 columns QWERTY thumb keyboard layout
+#
+# Special key names: SPACE, ENTER, BACKSPACE, SHIFT, TAB, ESC
+# Single characters map directly to their keys.
+# Edit this file to customize your layout.
+
+keymap:
+  - ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "BACKSPACE"]
+  - ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "ESC"]
+  - ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "ENTER"]
+  - ["SHIFT", "z", "x", "c", "v", "b", "n", "m", ",", ".", "SPACE"]
+
+# Shift layer (what keys produce when SHIFT is held)
+shift_map:
+  - ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "BACKSPACE"]
+  - ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "ESC"]
+  - ["A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "ENTER"]
+  - ["SHIFT", "Z", "X", "C", "V", "B", "N", "M", "<", ">", "SPACE"]
+
+# Physical layout reference (for when building the key matrix):
+#
+#  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
+#  │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 0 │BSP│  Row 0
+#  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+#  │ q │ w │ e │ r │ t │ y │ u │ i │ o │ p │ESC│  Row 1
+#  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+#  │ a │ s │ d │ f │ g │ h │ j │ k │ l │ ; │ENT│  Row 2
+#  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
+#  │SFT│ z │ x │ c │ v │ b │ n │ m │ , │ . │SPC│  Row 3
+#  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
+#   Col: 0   1   2   3   4   5   6   7   8   9  10

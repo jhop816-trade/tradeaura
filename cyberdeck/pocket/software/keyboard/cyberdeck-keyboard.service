@@ -1,0 +1,15 @@
+[Unit]
+Description=CyberDeck Pocket Keyboard Matrix Driver (MCP23017)
+After=multi-user.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/opt/cyberdeck/venv/bin/python3 /opt/cyberdeck/keyboard/mcp23017_keyboard.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

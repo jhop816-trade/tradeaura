@@ -1,0 +1,32 @@
+# CyberDeck Pocket — Boot Configuration
+# For Raspberry Pi Zero 2 W with 3.5" SPI display (ILI9486)
+# pocket-setup.sh adds these lines to /boot/config.txt automatically.
+
+# ── SPI display (ILI9486 / Waveshare 3.5") ──────────────────
+# Uncomment the line that matches your exact screen model:
+dtoverlay=waveshare35a          # Waveshare 3.5" Type A (most common)
+# dtoverlay=waveshare35b        # Waveshare 3.5" Type B
+# dtoverlay=piscreen            # PiScreen 3.5"
+# dtoverlay=rpi-display         # Generic SPI display
+
+# Screen rotation (change to match your enclosure orientation)
+# 0=landscape, 1=portrait (90°), 2=landscape flipped, 3=portrait flipped
+display_rotate=0
+
+# ── SPI performance ──────────────────────────────────────────
+dtparam=spi=on
+core_freq=250
+
+# ── Pi Zero 2 W optimizations ───────────────────────────────
+# GPU memory — 64MB is enough for desktop use on a small screen
+gpu_mem=64
+
+# Disable audio (saves ~5MB RAM, re-enable if you need audio output)
+# dtparam=audio=off
+
+# ── USB OTG (for USB keyboard option) ───────────────────────
+dtoverlay=dwc2
+
+# ── Force HDMI off (we're using SPI display only) ───────────
+# Uncomment if you see a blank HDMI port consuming power
+# hdmi_blanking=2

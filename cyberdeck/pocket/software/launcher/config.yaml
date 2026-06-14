@@ -1,0 +1,48 @@
+# CyberDeck Pocket — Launcher Config
+# Optimized for Raspberry Pi Zero 2 W (512MB RAM, small 3.5" screen)
+# Lighter apps than the standard model to keep things snappy.
+
+apps:
+  - name: Terminal
+    icon: ">"
+    command: "lxterminal"
+    color: green
+
+  - name: Browser
+    icon: "@"
+    # --disable-gpu reduces RAM usage on Pi Zero
+    command: "chromium-browser --disable-gpu --memory-pressure-off"
+    color: cyan
+
+  - name: Files
+    icon: "/"
+    command: "pcmanfm"
+    color: yellow
+
+  - name: Editor
+    icon: "#"
+    command: "mousepad"
+    color: magenta
+
+  - name: Python
+    icon: "~"
+    command: "lxterminal -e python3"
+    color: blue
+
+  - name: Dashboard
+    icon: "*"
+    command: "chromium-browser --disable-gpu http://localhost:5000"
+    color: red
+
+gpio_buttons:
+  17: {action: volume_up,    label: "VOL+"}
+  27: {action: volume_down,  label: "VOL-"}
+  22: {action: screenshot,   label: "SNAP"}
+  13: {action: power,        label: "PWR"}
+
+settings:
+  refresh_interval: 3        # slightly slower refresh — saves CPU on Pi Zero
+  battery_file: /tmp/battery.txt
+  hostname_display: true
+  # Pi Zero 2 W runs warmer — show temp warning above 75°C
+  temp_warning_celsius: 75
