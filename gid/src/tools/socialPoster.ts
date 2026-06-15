@@ -3,21 +3,29 @@ import { TwitterApi } from 'twitter-api-v2';
 import type { Logger } from '../utils/logger.js';
 
 export class SocialPoster {
-  private xClient: TwitterApi;
+  private xClient: TwitterApi | null = null;
 
-  constructor(private readonly logger: Logger) {
-    this.xClient = new TwitterApi({
-      appKey: process.env.TWITTER_APP_KEY!,
-      appSecret: process.env.TWITTER_APP_SECRET!,
-      accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-      accessSecret: process.env.TWITTER_ACCESS_SECRET!,
-    });
+  constructor(private readonly logger: Logger) {}
+
+  private getXClient(): TwitterApi {
+    if (!this.xClient) {
+      if (!process.env.TWITTER_APP_KEY || !process.env.TWITTER_APP_SECRET) {
+        throw new Error('TWITTER_PAYMENT_REQUIRED');
+      }
+      this.xClient = new TwitterApi({
+        appKey: process.env.TWITTER_APP_KEY,
+        appSecret: process.env.TWITTER_APP_SECRET,
+        accessToken: process.env.TWITTER_ACCESS_TOKEN!,
+        accessSecret: process.env.TWITTER_ACCESS_SECRET!,
+      });
+    }
+    return this.xClient;
   }
 
   async postToX(text: string): Promise<{ postId: string }> {
     this.logger.info('Posting to X');
     try {
-      const tweet = await this.xClient.v2.tweet(text);
+      const tweet = await this.getXClient().v2.tweet(text);
       return { postId: tweet.data.id };
     } catch (err: unknown) {
       const status = (err as any)?.code ?? (err as any)?.status ?? (err as any)?.data?.status;
