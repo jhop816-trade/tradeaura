@@ -55,6 +55,8 @@ async function getAuthToken(): Promise<string> {
 
 async function apiCall(method: string, path: string, body?: unknown): Promise<any> {
   const token = await getAuthToken();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   let res: Response;
   try {
     res = await fetch(API_BASE + path, {
@@ -64,10 +66,16 @@ async function apiCall(method: string, path: string, body?: unknown): Promise<an
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: body != null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
   } catch (networkErr: any) {
+    clearTimeout(timeoutId);
+    if (networkErr?.name === "AbortError") {
+      throw new Error("Request timed out — please try again.");
+    }
     throw new Error(`Network error: ${networkErr?.message || networkErr?.toString() || "fetch failed"}`);
   }
+  clearTimeout(timeoutId);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     const errMsg = err.error != null
@@ -789,23 +797,24 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
 function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChange}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
   const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:"",option_type:"",strike:"",option_expiry:""});
   const [loading,setLoading]=useState(false);
+  const [formError,setFormError]=useState<string|null>(null);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
-  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
+  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch(e){console.warn("Failed to parse fav_symbols from localStorage",e);return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
-  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch{return [];}});
+  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch(e){console.warn("Failed to parse custom_setups from localStorage",e);return [];}});
   const [newSetup,setNewSetup]=useState("");
   function addCustomSetup(){if(!newSetup.trim())return;const s=newSetup.trim();if([...SETUPS,...customSetups].includes(s)){set("setup",s);setNewSetup("");return;}const next=[...customSetups,s];setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));set("setup",s);setNewSetup("");}
   function removeCustomSetup(s: string){const next=customSetups.filter(x=>x!==s);setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));}
   const allSetups=[...SETUPS,...customSetups.filter(s=>!SETUPS.includes(s))];
-  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch{return [];}});
+  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch(e){console.warn("Failed to parse custom_rules from localStorage",e);return [];}});
   const [newRule,setNewRule]=useState("");
   const [showRuleTemplates,setShowRuleTemplates]=useState(false);
   const [activeTemplate,setActiveTemplate]=useState<string|null>(null);
   const [expandEditor,setExpandEditor]=useState(false);
   const [checklistName,setChecklistName]=useState(()=>localStorage.getItem("checklist_name")||"");
-  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch{return [];}});
-  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch{return [];}});
+  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch(e){console.warn("Failed to parse saved_checklists from localStorage",e);return [];}});
+  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch(e){console.warn("Failed to parse hidden_rules from localStorage",e);return [];}});
   function saveHidden(next: string[]){setHiddenRules(next);localStorage.setItem("hidden_rules",JSON.stringify(next));}
   function saveRules(next: string[]){setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}
   function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();if(!allRules.includes(r))saveRules([...customRules,r]);setNewRule("");}
@@ -835,6 +844,13 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const pnlPreview=calcPnl({...form,manual_pnl:resolvedManualPnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
   async function submit() {
+    setFormError(null);
+    const entryVal = parseFloat(form.entry);
+    const exitVal = parseFloat(form.exit);
+    const contractsVal = parseFloat(form.contracts);
+    if (form.entry !== "" && (isNaN(entryVal) || entryVal <= 0)) { setFormError("Entry price must be a positive number."); return; }
+    if (form.exit !== "" && (isNaN(exitVal) || exitVal <= 0)) { setFormError("Exit price must be a positive number."); return; }
+    if (isNaN(contractsVal) || contractsVal <= 0) { setFormError("Quantity must be a positive number."); return; }
     let pnl=calcPnl({...form,manual_pnl:resolvedManualPnl}); if(pnl===null)pnl=0;
     setLoading(true); let grade=null;
     try {
@@ -1048,6 +1064,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
         </div>
       )}
 
+      {formError&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:10}}>{formError}</div>}
       <button onClick={submit} disabled={loading} style={{width:"100%",padding:14,background:loading?C.muted:C.blue,color:"#fff",border:"none",borderRadius:10,cursor:loading?"wait":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700}}>
         {loading?"🤖 Grading...":isEdit?"Save Changes":"Log Trade"}
       </button>
@@ -1707,7 +1724,7 @@ function StatsView({trades,account}: {trades:any[],account?:any}) {
 
 // ── PLAYBOOK ──────────────────────────────────────────────────────────────────
 function PlaybookView({trades}: {trades:any[]}) {
-  const [entries,setEntries]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("playbook")||"[]");}catch{return [];}});
+  const [entries,setEntries]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("playbook")||"[]");}catch(e){console.warn("Failed to parse playbook from localStorage",e);return [];}});
   const [showForm,setShowForm]=useState(false);
   const [formName,setFormName]=useState("");
   const [formDesc,setFormDesc]=useState("");
@@ -1809,6 +1826,7 @@ function PlaybookView({trades}: {trades:any[]}) {
 function ReviewView({trades}: {trades:any[]}) {
   const [period,setPeriod]=useState("week"),[cs,setCs]=useState(""),[ce,setCe]=useState("");
   const [tab,setTab]=useState("generate"),[review,setReview]=useState<any>(null),[loading,setLoading]=useState(false);
+  const [reviewError,setReviewError]=useState<string|null>(null);
   const [copied,setCopied]=useState(false),[paste,setPaste]=useState("");
   const [patterns,setPatterns]=useState<any[]>([]);
   const [aiPatternResult,setAiPatternResult]=useState<any>(null),[aiPatternLoading,setAiPatternLoading]=useState(false);
@@ -1820,7 +1838,7 @@ function ReviewView({trades}: {trades:any[]}) {
   const fTotal=ft.reduce((s,t)=>s+(t.pnl||0),0);
   function buildReport(ts: any[]){const wins=ts.filter(t=>(t.pnl||0)>0),total=ts.reduce((s,t)=>s+(t.pnl||0),0);const lines=["=== TRADING REPORT ===",`Period: ${rng.s} to ${rng.e}`,`Trades:${ts.length} Wins:${wins.length} Losses:${ts.length-wins.length} P&L:$${total.toFixed(2)}`,`WinRate:${ts.length?(wins.length/ts.length*100).toFixed(1):0}%`,""];ts.forEach((t,i)=>{lines.push(`#${i+1} ${t.date} | ${t.instrument} ${t.direction}`);lines.push(`Entry:${t.entry} Exit:${t.exit} P&L:$${(t.pnl||0).toFixed(2)}`);lines.push(`Setup:${t.setup} Mood:${t.mood}`);lines.push(`Notes:${t.notes||"—"}`);lines.push("");});return lines.join("\n");}
 
-  async function runReview(text: string){setLoading(true);setReview(null);try{const result=await callAI(`Professional futures trading coach. Analyze this log with honest feedback.\n\n${text}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setReview(result);setTab("result");}catch(e){console.error(e);}setLoading(false);}
+  async function runReview(text: string){setLoading(true);setReview(null);setReviewError(null);try{const result=await callAI(`Professional futures trading coach. Analyze this log with honest feedback.\n\n${text}\n\nJSON only: {"overallGrade":"A-F","overallScore":0,"verdict":"","topStrengths":[""],"criticalWeaknesses":[""],"riskManagement":"","psychologyInsights":"","bestTrade":"","worstTrade":"","actionItems":[""],"nextPeriodGoals":[""],"coachMessage":""}`,2000);setReview(result);setTab("result");}catch(e:any){setReviewError(e?.message||"AI analysis failed. Please try again.");}setLoading(false);}
 
   function computePatterns(){
     if(!trades.length)return[];
@@ -1864,7 +1882,7 @@ function ReviewView({trades}: {trades:any[]}) {
     try{
       const result=await callAI(`You are an elite trading coach. Based on these trading patterns, give actionable insights.\n\n${summary}\n\nJSON: {"insights":["..."],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,1200);
       setAiPatternResult(result);
-    }catch(e){console.error(e);}
+    }catch(e:any){setAiPatternResult({_error:e?.message||"AI analysis failed. Please try again."});}
     setAiPatternLoading(false);
   }
 
@@ -1872,7 +1890,8 @@ function ReviewView({trades}: {trades:any[]}) {
 
   return(
     <div style={{padding:"16px 16px 20px"}}>
-      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());}}>{t.l}</Pill>)}</div>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());setReviewError(null);}}>{t.l}</Pill>)}</div>
+      {reviewError&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:14}}>{reviewError}</div>}
       {tab==="generate"&&(<div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:14}}>{[{id:"week",l:"This Week"},{id:"lastweek",l:"Last Week"},{id:"month",l:"This Month"},{id:"lastmonth",l:"Last Month"},{id:"custom",l:"Custom"}].map(p=><Pill key={p.id} active={period===p.id} color={C.purp} onClick={()=>setPeriod(p.id)}>{p.l}</Pill>)}</div>
         {period==="custom"&&(<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>FROM</div><input type="date" value={cs} onChange={e=>setCs(e.target.value)} style={inp()}/></div><div><div style={{fontSize:9,color:C.muted,marginBottom:6}}>TO</div><input type="date" value={ce} onChange={e=>setCe(e.target.value)} style={inp()}/></div></div>)}
@@ -1995,7 +2014,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       ?`\n\nLIVE NEWS HEADLINES:\n${ctx.headlines.map((h:any)=>`- ${h.title} [${h.source}]`).join("\n")}`
       :"";
     const prompt=`You are an elite trading coach with access to today's live market data. Generate a morning market prep briefing.\nToday: ${dayName}, ${dateStr}${timeET?` at ${timeET} ET`:""}${priceBlock}${newsBlock}\nTrader: trades ${favInstruments} | sessions: ${favSessions} | setups: ${favSetups}\nRecent P&L (last 20 trades): $${recentPnl.toFixed(0)} | win rate: ${wr}%\n\nUse the live price data and headlines above. Reference actual price levels in your key levels section. JSON only: {"marketContext":"","keyLevels":[{"level":"","significance":""}],"tradingPlan":"","riskReminders":[""],"newsToWatch":[""],"mindset":"","sessionFocus":""}`;
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:1000});setPrep(r);setPrepDate(dateStr);}catch(e:any){setPrep({_error:e?.message||"Failed to generate prep. Try again."});}
     setPrepLoading(false);
   }
 
@@ -2033,7 +2052,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     }
     const apiMsgs=[...systemCtxRef.current,...chatMsgs.map(({role,content})=>({role,content})),{role:userMsg.role,content:userMsg.content}];
     setChatMsgs(prev=>[...prev,userMsg]);setChatInput("");setChatLoading(true);
-    try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e){console.error(e);}
+    try{const data=await apiFn("POST","/api/ai/chat",{messages:apiMsgs});setChatMsgs(prev=>[...prev,{role:"assistant",content:data.reply}]);}catch(e:any){setChatMsgs(prev=>[...prev,{role:"assistant",content:`Error: ${e?.message||"Failed to get response. Please try again."}`}]);}
     setChatLoading(false);
     setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
   }
@@ -2075,7 +2094,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
     const pts=computePatterns();if(!pts.length)return;
     setAiPL(true);setAiPR(null);
     const summary=pts.map(p=>`${p.label}: ${p.insight}`).join("\n");
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt:`Elite trading coach. Actionable insights from these patterns:\n\n${summary}\n\nJSON: {"insights":[""],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,maxTokens:1200});setAiPR(r);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt:`Elite trading coach. Actionable insights from these patterns:\n\n${summary}\n\nJSON: {"insights":[""],"topPattern":"","biggestWeakness":"","weeklyGoal":"","coachNote":""}`,maxTokens:1200});setAiPR(r);}catch(e:any){setAiPR({_error:e?.message||"AI analysis failed. Try again."});}
     setAiPL(false);
   }
 
@@ -2092,7 +2111,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
       :"";
     const prompt=`You are an elite market analyst. Today is ${dayName}, ${dateStr}.${priceBlock}${newsBlock}\n\nUsing the real price data above, provide a direct opinionated market outlook. Reference actual price levels from the data. Be specific — give exact levels for entries, targets, stops. JSON only:\n{"weekSummary":"2-3 sentence overall market sentiment with specific price context","markets":[{"symbol":"SPY","name":"S&P 500","bias":"bullish|bearish|neutral","analysis":"2-3 sentences referencing actual price levels from the data","playbook":"Specific entry/target/stop levels based on real data","watchLevel":"Exact price level"},{"symbol":"QQQ","name":"Nasdaq 100","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"BTC","name":"Bitcoin","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."},{"symbol":"GC","name":"Gold","bias":"bullish|bearish|neutral","analysis":"...","playbook":"...","watchLevel":"..."}],"macro":"Key macro theme with price context","topOpportunity":"Specific trade with levels","riskWarning":"Biggest risk with key level to watch"}`;
     setWeekLoading(true);setWeekReview(null);
-    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e){console.error(e);}
+    try{const r=await apiFn("POST","/api/ai/grade",{prompt,maxTokens:2000});setWeekReview(r);}catch(e:any){setWeekReview({_error:e?.message||"Market outlook failed. Try again."});}
     setWeekLoading(false);
   }
 
@@ -2599,7 +2618,7 @@ export default function App() {
         const created = await apiCall("POST","/api/trades",payload);
         setTrades(prev=>[fromApiTrade(created),...prev]);
       }
-    } catch(e: any){ setAppError("Save failed: "+e.message); return; }
+    } catch(e: any){ setAppError("Failed to save trade. Please try again."); return; }
     setShowNewTrade(false); setEditingTrade(null);
   }
 
@@ -2607,7 +2626,7 @@ export default function App() {
     try {
       await apiCall("DELETE",`/api/trades/${id}`);
       setTrades(prev=>prev.filter(t=>t.id!==id));
-    } catch(e: any){ setAppError("Delete failed: "+e.message); }
+    } catch(e: any){ setAppError("Failed to delete trade. Please try again."); }
   }
 
   // ── ACCOUNT ACTIONS ──

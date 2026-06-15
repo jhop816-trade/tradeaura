@@ -79,7 +79,8 @@ router.get("/trades", async (req, res): Promise<void> => {
     return;
   }
 
-  const { symbol, direction, outcome, accountId, limit = 50, offset = 0 } = query.data;
+  const { symbol, direction, outcome, accountId, offset = 0 } = query.data;
+  const limit = Math.min(query.data.limit ?? 50, 200);
 
   const conditions = [eq(tradesTable.userId, req.userId)];
   if (symbol) conditions.push(eq(tradesTable.symbol, symbol.toUpperCase()));
