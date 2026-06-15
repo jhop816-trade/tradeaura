@@ -37,6 +37,9 @@ export class SocialPoster {
   }
 
   private async getPageAccessToken(): Promise<string> {
+    if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
+      return process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+    }
     let res;
     try {
       res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
