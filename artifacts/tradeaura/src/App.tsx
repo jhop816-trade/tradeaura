@@ -800,21 +800,21 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const [formError,setFormError]=useState<string|null>(null);
   const fileRef=useRef<HTMLInputElement>(null);
   const set=(k: string,v: any)=>setForm((p: any)=>({...p,[k]:v}));
-  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch(e){console.warn("Failed to parse fav_symbols from localStorage",e);return [];}});
+  const [favSymbols,setFavSymbols]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("fav_symbols")||"[]");}catch{return [];}});
   function toggleFav(sym: string){if(!sym.trim())return;setFavSymbols(prev=>{const next=prev.includes(sym)?prev.filter(s=>s!==sym):[...prev,sym];localStorage.setItem("fav_symbols",JSON.stringify(next));return next;});}
-  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch(e){console.warn("Failed to parse custom_setups from localStorage",e);return [];}});
+  const [customSetups,setCustomSetups]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_setups")||"[]");}catch{return [];}});
   const [newSetup,setNewSetup]=useState("");
   function addCustomSetup(){if(!newSetup.trim())return;const s=newSetup.trim();if([...SETUPS,...customSetups].includes(s)){set("setup",s);setNewSetup("");return;}const next=[...customSetups,s];setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));set("setup",s);setNewSetup("");}
   function removeCustomSetup(s: string){const next=customSetups.filter(x=>x!==s);setCustomSetups(next);localStorage.setItem("custom_setups",JSON.stringify(next));}
   const allSetups=[...SETUPS,...customSetups.filter(s=>!SETUPS.includes(s))];
-  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch(e){console.warn("Failed to parse custom_rules from localStorage",e);return [];}});
+  const [customRules,setCustomRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("custom_rules")||"[]");}catch{return [];}});
   const [newRule,setNewRule]=useState("");
   const [showRuleTemplates,setShowRuleTemplates]=useState(false);
   const [activeTemplate,setActiveTemplate]=useState<string|null>(null);
   const [expandEditor,setExpandEditor]=useState(false);
   const [checklistName,setChecklistName]=useState(()=>localStorage.getItem("checklist_name")||"");
-  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch(e){console.warn("Failed to parse saved_checklists from localStorage",e);return [];}});
-  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch(e){console.warn("Failed to parse hidden_rules from localStorage",e);return [];}});
+  const [savedChecklists,setSavedChecklists]=useState<any[]>(()=>{try{return JSON.parse(localStorage.getItem("saved_checklists")||"[]");}catch{return [];}});
+  const [hiddenRules,setHiddenRules]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem("hidden_rules")||"[]");}catch{return [];}});
   function saveHidden(next: string[]){setHiddenRules(next);localStorage.setItem("hidden_rules",JSON.stringify(next));}
   function saveRules(next: string[]){setCustomRules(next);localStorage.setItem("custom_rules",JSON.stringify(next));}
   function addCustomRule(){if(!newRule.trim())return;const r=newRule.trim();if(!allRules.includes(r))saveRules([...customRules,r]);setNewRule("");}
@@ -856,7 +856,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
     try {
       const optStr=form.option_type?` | ${form.option_type} option${form.strike?` $${form.strike} strike`:""}${form.option_expiry?` exp ${form.option_expiry}`:""}`:"";
       grade=await callAI(`Expert trading coach. Analyze this trade briefly. ${form.instrument} ${form.direction}${optStr} | ${form.setup} | ${form.session} Entry:${form.entry} Exit:${form.exit} Contracts:${form.contracts} P&L:$${pnl.toFixed(2)} Stop:${form.stop_loss||"None"} Mood:${form.mood} Rules:${(form.rules_followed||[]).join(",")||"None"} Notes:${form.notes||"None"} JSON only: {"grade":"A/B/C/D/F","score":0,"strengths":[""],"weaknesses":[""],"lesson":"","verdict":""}`);
-    } catch(e){console.error("AI grade failed:",e);}
+    } catch{/* AI grading unavailable — trade still saves cleanly */}
     setLoading(false);
     onSave({...form,manual_pnl:resolvedManualPnl,id:form.id||makeId(),pnl,ai_grade:grade?.grade||null,ai_feedback:grade});
   }
@@ -2330,6 +2330,7 @@ function FeedbackView({user}: {user:any}) {
   const [rating,setRating]=useState(5);
   const [loading,setLoading]=useState(false);
   const [success,setSuccess]=useState(false);
+  const [submitError,setSubmitError]=useState<string|null>(null);
   const [submitted,setSubmitted]=useState<any[]>([]);
 
   useEffect(()=>{
@@ -2342,11 +2343,11 @@ function FeedbackView({user}: {user:any}) {
 
   async function submit(){
     if(!message.trim())return;
-    setLoading(true);
+    setLoading(true); setSubmitError(null);
     try{
       await supabase.from("feedback").insert({user_id:user.id,type,message,rating,created_at:new Date().toISOString()});
       setSuccess(true); setMessage(""); setTimeout(()=>setSuccess(false),3000);
-    }catch(e){console.error(e);}
+    }catch{setSubmitError("Failed to send feedback. Please try again.");}
     setLoading(false);
   }
 
@@ -2361,6 +2362,7 @@ function FeedbackView({user}: {user:any}) {
       </div>
 
       {success&&(<div style={{background:C.green+"18",border:`1px solid ${C.green}40`,borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.green,fontWeight:700}}>✓ Thanks for your feedback! We'll review it soon.</div>)}
+      {submitError&&(<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:10,padding:"12px 16px",marginBottom:16,fontSize:12,color:C.red,fontWeight:700}}>{submitError}</div>)}
 
       <div style={Object.assign({},CS,{marginBottom:16})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:10}}>FEEDBACK TYPE</div>
@@ -2558,7 +2560,7 @@ export default function App() {
         const data=await apiCall("GET","/api/billing/status");
         setSubStatus(data.status);
         if(data.daysLeft)setTrialDaysLeft(data.daysLeft);
-      }catch{setSubStatus("trial");}
+      }catch{/* keep whatever status was set previously; don't downgrade to trial on transient errors */}
     }
     loadBillingStatus();
     // Check for ?subscribed=true on return from Stripe
@@ -2603,7 +2605,7 @@ export default function App() {
     if(!activeAccountId)return;
     apiCall("GET",`/api/trades?accountId=${activeAccountId}&limit=500`)
       .then((data: any[])=>setTrades(data.map(fromApiTrade)))
-      .catch(e=>console.error("Failed to load trades:",e));
+      .catch(()=>setAppError("Failed to load trades. Please refresh the page."));
   },[activeAccountId]);
 
   // ── TRADE ACTIONS ──
