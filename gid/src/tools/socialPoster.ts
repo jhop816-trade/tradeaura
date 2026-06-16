@@ -108,6 +108,9 @@ export class SocialPoster {
       throw new Error(`Instagram media container failed: ${JSON.stringify(container)}`);
     }
 
+    // Instagram needs a few seconds to process the image before it can be published
+    await new Promise(resolve => setTimeout(resolve, 8000));
+
     let publishRes;
     try {
       publishRes = await axios.post(
