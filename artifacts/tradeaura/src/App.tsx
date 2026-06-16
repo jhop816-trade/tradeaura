@@ -2577,7 +2577,7 @@ export default function App() {
 
   function handleOnboardingNext(stepView: string|null){
     if(stepView)setView(stepView);
-    if(onboardingStep<5){setOnboardingStep(s=>s+1);}
+    if(onboardingStep<7){setOnboardingStep(s=>s+1);}
     else{completeOnboarding();}
   }
 

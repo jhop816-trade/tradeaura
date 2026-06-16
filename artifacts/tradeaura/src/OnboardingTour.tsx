@@ -32,6 +32,18 @@ const STEPS = [
     view: "playbook",
   },
   {
+    icon: "🤖",
+    title: "Your AI Analyst",
+    body: "Get a daily market prep briefing, chat with your AI coach about any trade, and let it spot patterns in your performance you'd never catch on your own.",
+    view: "ai",
+  },
+  {
+    icon: "🎓",
+    title: "Learn While You Trade",
+    body: "Not sure what a concept means? The Education Center has courses on stocks, futures, options, and trading psychology — free to start, built for real traders.",
+    view: "learn",
+  },
+  {
     icon: "🚀",
     title: "You're All Set",
     body: "Start by logging your first trade. The more consistent you are, the more powerful your data becomes. Let's get to work.",
