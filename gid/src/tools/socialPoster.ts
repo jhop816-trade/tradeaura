@@ -37,29 +37,31 @@ export class SocialPoster {
   }
 
   private async getPageAccessToken(): Promise<string> {
+    // Direct page token takes priority
     if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
       return process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
     }
-    let res;
+
+    const userToken = process.env.META_ACCESS_TOKEN;
+    if (!userToken) throw new Error('META_ACCESS_TOKEN is not set');
+
+    // Try to exchange user token for a never-expiring page token via /me/accounts
     try {
-      res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
-        params: { access_token: process.env.META_ACCESS_TOKEN },
+      const res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
+        params: { access_token: userToken },
       });
+      const pages = (res.data?.data ?? []) as Array<{ id: string; access_token: string }>;
+      const page = pages.find((p) => p.id === process.env.META_PAGE_ID);
+      if (page) return page.access_token;
+      this.logger.warn({ found: pages.map((p) => p.id) }, '/me/accounts returned pages but META_PAGE_ID not found — falling back to user token');
     } catch (err: unknown) {
-      const metaErr = (err as any)?.response?.data;
-      throw new Error(
-        `Failed to fetch page list from Meta: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
-      );
+      // /me/accounts failed (e.g. missing pages_show_list) — fall through to user token
+      this.logger.warn({ err: (err as any)?.response?.data ?? String(err) }, '/me/accounts failed — using user token directly');
     }
-    const pages = (res.data?.data ?? []) as Array<{ id: string; access_token: string }>;
-    const page = pages.find((p) => p.id === process.env.META_PAGE_ID);
-    if (!page) {
-      const ids = pages.map((p) => p.id).join(', ') || 'none';
-      throw new Error(
-        `Page ${process.env.META_PAGE_ID ?? '(META_PAGE_ID not set)'} not found in Meta accounts. Found: ${ids}`,
-      );
-    }
-    return page.access_token;
+
+    // Fall back: use the user token directly. Works if the token has
+    // pages_manage_posts + instagram_content_publish and the user is a page admin.
+    return userToken;
   }
 
   async postToFacebook(message: string): Promise<{ postId: string }> {
