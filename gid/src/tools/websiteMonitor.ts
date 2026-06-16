@@ -20,7 +20,7 @@ export class WebsiteMonitor {
     try {
       const response = await axios.get(url, {
         timeout: 10_000,
-        validateStatus: (s) => s < 500,
+        validateStatus: () => true,
         headers: { 'User-Agent': 'TradeAura-Monitor/1.0' },
       });
 
