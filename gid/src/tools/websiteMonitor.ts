@@ -21,6 +21,7 @@ export class WebsiteMonitor {
       const response = await axios.get(url, {
         timeout: 10_000,
         validateStatus: (s) => s < 500,
+        headers: { 'User-Agent': 'TradeAura-Monitor/1.0' },
       });
 
       if (response.status >= 500) throw new Error(`HTTP ${response.status}`);

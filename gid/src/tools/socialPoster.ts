@@ -29,26 +29,26 @@ export class SocialPoster {
   }
 
   private async getPageAccessToken(): Promise<string> {
-    let res;
+    if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
+      return process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+    }
+
+    const userToken = process.env.META_ACCESS_TOKEN;
+    if (!userToken) throw new Error('META_ACCESS_TOKEN is not set');
+
     try {
-      res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
-        params: { access_token: process.env.META_ACCESS_TOKEN },
+      const res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
+        params: { access_token: userToken },
       });
+      const pages = (res.data?.data ?? []) as Array<{ id: string; access_token: string }>;
+      const page = pages.find((p) => p.id === process.env.META_PAGE_ID);
+      if (page) return page.access_token;
+      this.logger.warn({ found: pages.map((p) => p.id) }, '/me/accounts returned pages but META_PAGE_ID not found — falling back to user token');
     } catch (err: unknown) {
-      const metaErr = (err as any)?.response?.data;
-      throw new Error(
-        `Failed to fetch page list from Meta: ${metaErr ? JSON.stringify(metaErr) : String(err)}`,
-      );
+      this.logger.warn({ err: (err as any)?.response?.data ?? String(err) }, '/me/accounts failed — using user token directly');
     }
-    const pages = (res.data?.data ?? []) as Array<{ id: string; access_token: string }>;
-    const page = pages.find((p) => p.id === process.env.META_PAGE_ID);
-    if (!page) {
-      const ids = pages.map((p) => p.id).join(', ') || 'none';
-      throw new Error(
-        `Page ${process.env.META_PAGE_ID ?? '(META_PAGE_ID not set)'} not found in Meta accounts. Found: ${ids}`,
-      );
-    }
-    return page.access_token;
+
+    return userToken;
   }
 
   async postToFacebook(message: string): Promise<{ postId: string }> {
@@ -94,6 +94,8 @@ export class SocialPoster {
     if (!container.id) {
       throw new Error(`Instagram media container failed: ${JSON.stringify(container)}`);
     }
+
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     let publishRes;
     try {
