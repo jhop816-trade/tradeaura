@@ -7,6 +7,7 @@ import type { Logger } from '../utils/logger.js';
 
 export class WebsiteMonitor {
   private consecutiveFailures = 0;
+  private outageAlerted = false;
 
   constructor(
     private readonly supabase: SupabaseClient,
@@ -27,6 +28,7 @@ export class WebsiteMonitor {
       if (response.status >= 500) throw new Error(`HTTP ${response.status}`);
 
       this.consecutiveFailures = 0;
+      this.outageAlerted = false;
       await this.memory.upsert('website-monitor', 'site-status', {
         up: true,
         checkedAt: new Date().toISOString(),
@@ -45,7 +47,7 @@ export class WebsiteMonitor {
 
       this.logger.warn({ url, statusCode, consecutiveFailures: this.consecutiveFailures }, 'Site check failed');
 
-      if (this.consecutiveFailures >= 2) {
+      if (this.consecutiveFailures >= 2 && !this.outageAlerted) {
         const time = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York' });
         await this.alerter.send(AlertMessages.siteDown(statusCode, time));
         await this.supabase.from('system_alerts').insert({
@@ -53,7 +55,7 @@ export class WebsiteMonitor {
           message: `TradeAura returned ${statusCode} at ${time}`,
           resolved: false,
         });
-        this.consecutiveFailures = 0;
+        this.outageAlerted = true;
       }
     }
   }
