@@ -622,7 +622,7 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────────
-function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEditBalance:(v:number)=>void}) {
+function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],account:any,onEditBalance:(v:number)=>void,onNavigate:(v:string)=>void}) {
   const [editingBal,setEditingBal]=useState(false);
   const [balInput,setBalInput]=useState("");
   const wins=trades.filter(t=>(t.pnl||0)>0);
@@ -688,7 +688,16 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
         </div>
       </div>
 
-      <div style={Object.assign({},CS,{marginBottom:12})}>
+      {trades.length===0&&(
+        <div style={{background:'#1a1f2e',borderRadius:16,padding:'40px 24px',textAlign:'center',margin:'24px 0'}}>
+          <div style={{fontSize:52}}>📈</div>
+          <div style={{color:'#fff',fontSize:20,fontWeight:700,marginTop:16}}>Start tracking your edge</div>
+          <div style={{color:'#9ca3af',fontSize:14,lineHeight:1.6,marginTop:10}}>Log your first trade to start seeing your win rate, P&L curve, and AI grades.</div>
+          <button onClick={()=>onNavigate('journal')} style={{background:'#3b82f6',color:'#fff',border:'none',borderRadius:8,padding:'12px 24px',fontSize:15,fontWeight:700,cursor:'pointer',marginTop:24,fontFamily:'inherit'}}>Log First Trade</button>
+        </div>
+      )}
+
+      {trades.length>0&&<div style={Object.assign({},CS,{marginBottom:12})}>
         <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>TODAY</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div style={{padding:"12px 14px",borderRadius:10,background:dailyPnl>=0?C.green+"18":C.red+"18",border:`1px solid ${dailyPnl>=0?C.green+"30":C.red+"30"}`}}>
@@ -700,16 +709,16 @@ function HomeView({trades,account,onEditBalance}: {trades:any[],account:any,onEd
             <div style={{fontSize:22,fontWeight:800,color:C.txt}}>{todayTrades.length}<span style={{fontSize:12,color:C.muted}}>/{account?.max_daily_trades||5}</span></div>
           </div>
         </div>
-      </div>
+      </div>}
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+      {trades.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
         {[{l:"WIN RATE",v:`${winRate}%`,c:parseFloat(winRate as string)>=50?C.green:C.red},{l:"PROFIT FACTOR",v:pfDisplay,c:pfColor},{l:"STREAK",v:`${streak}${sType?"W":"L"}`,c:sType?C.green:C.red},{l:"TRADES",v:String(trades.length),c:C.txt},{l:"AVG WIN",v:`$${avgWin.toFixed(0)}`,c:C.green},{l:"AVG LOSS",v:`$${avgLoss.toFixed(0)}`,c:C.red},{l:"NET P&L",v:`${totalPnl>=0?"+":""}$${totalPnl.toFixed(0)}`,c:tpClr},{l:"CONSISTENCY",v:`${consistencyScore}`,c:consColor}].map(s=>(
           <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"11px 8px",textAlign:"center"}}>
             <div style={{fontSize:8,color:C.muted,letterSpacing:"0.1em",marginBottom:5}}>{s.l}</div>
             <div style={{fontSize:15,fontWeight:700,color:s.c}}>{s.v}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
       {chartData.length>1&&(
         <div style={CS}>
@@ -1598,6 +1607,7 @@ function CalendarView({trades}: {trades:any[]}) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:12}}>
           {[{l:"MONTH P&L",v:`${monthPnl>=0?"+":""}$${monthPnl.toFixed(0)}`,c:monthPnl>=0?C.green:C.red},{l:"WIN RATE",v:`${monthWinRate}%`,c:parseFloat(monthWinRate as string)>=50?C.green:C.red},{l:"GREEN",v:greenDays,c:C.green},{l:"RED",v:redDays,c:C.red}].map(s=>(<div key={s.l} style={{background:C.bg,borderRadius:8,padding:"8px 4px",textAlign:"center",border:`1px solid ${C.bord}`}}><div style={{fontSize:7,color:C.muted,letterSpacing:"0.06em",marginBottom:3}}>{s.l}</div><div style={{fontSize:13,fontWeight:700,color:s.c}}>{s.v}</div></div>))}
         </div>
+        {trades.length===0&&<div style={{textAlign:'center',padding:'32px 0',color:'#6b7280',fontSize:14}}>📅 No trades logged yet — your calendar fills in as you trade.</div>}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:8}}>
           {["S","M","T","W","T","F","S"].map((d,i)=>(<div key={i} style={{textAlign:"center",fontSize:9,color:C.muted,padding:"4px 0",fontWeight:700}}>{d}</div>))}
           {cells.map((d,i)=>{
@@ -2747,7 +2757,7 @@ export default function App() {
 
       {/* CONTENT */}
       <div style={{paddingBottom:80}}>
-        {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance}/>}
+        {view==="home"&&<HomeView trades={trades} account={activeAccount} onEditBalance={updateBalance} onNavigate={setView}/>}
         {view==="journal"&&(<div>{(showNewTrade||editingTrade)&&<div style={{padding:"16px 16px 0"}}><TradeForm initial={editingTrade||undefined} isEdit={!!editingTrade} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode} onSave={saveTrade} onCancel={()=>{setShowNewTrade(false);setEditingTrade(null);}}/></div>}<JournalView trades={trades} onSave={saveTrade} onDelete={deleteTrade} onImport={()=>setShowImport(true)} balance={activeAccount?.starting_balance} pnlMode={pnlMode} onPnlModeChange={changePnlMode}/></div>)}
         {view==="calendar"&&<CalendarView trades={trades}/>}
         {view==="stats"&&<StatsView trades={trades} account={activeAccount}/>}
