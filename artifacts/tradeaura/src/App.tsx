@@ -471,19 +471,6 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           </button>
         </div>
 
-        {/* SOCIAL PROOF STATS */}
-        <div style={{display:"flex",justifyContent:"center",gap:0,position:"relative",marginBottom:44,background:C.surf,border:`1px solid ${C.bord}`,borderRadius:14,overflow:"hidden",maxWidth:380,marginLeft:"auto",marginRight:"auto"}}>
-          {([
-            {num:"1,000+",label:"traders tracking their edge"},
-            {num:"50K+",label:"trades analyzed"},
-            {num:"A–F",label:"grading on every trade"},
-          ]).map((s,i,arr)=>(
-            <div key={s.num} style={{flex:1,textAlign:"center",padding:"16px 8px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
-              <div className="ta-stat-num" style={{fontSize:20,fontWeight:900,letterSpacing:"-0.02em",marginBottom:4}}>{s.num}</div>
-              <div style={{fontSize:10,color:C.muted,lineHeight:1.4,fontWeight:500}}>{s.label}</div>
-            </div>
-          ))}
-        </div>
 
         {/* Mock trade card */}
         <div style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:16,padding:"14px 16px",maxWidth:340,margin:"0 auto",textAlign:"left",position:"relative",boxShadow:`0 8px 32px #00000066`,animation:"ta-float 4.5s ease-in-out infinite"}}>
