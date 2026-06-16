@@ -294,12 +294,10 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   ];
 
   const FEATURES = [
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>, col:C.blue,  title:"Trade Journal",   desc:"Log every trade with full context — setup, rules, P&L. Never lose a lesson again." },
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>, col:C.purp,  title:"AI Coach",        desc:"Get AI feedback on every trade and automated weekly performance reviews." },
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, col:C.gold,  title:"Playbook",        desc:"Build your personal strategy library. Track which setups print and eliminate the rest." },
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>, col:C.green, title:"Analytics",       desc:"Win rate, P&L curve, streaks, best sessions. Trade by data, not gut feelings." },
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, col:"#38bdf8",title:"Calendar View",  desc:"See your P&L mapped across every day of the month. Spot patterns instantly." },
-    { icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>, col:C.red,   title:"Market Prep",     desc:"AI-generated pre-market briefing with live news and key price levels every morning." },
+    { emoji:"📓", col:C.blue,  title:"Trade Journal",      desc:"Log every trade with full context — setup, mood, rules, screenshots. Your future self will thank you.", previewIdx:0 },
+    { emoji:"🤖", col:C.purp,  title:"AI Grading",         desc:"Every trade gets an A–F grade based on your own rules. No excuses, no bias — just cold data on your discipline.", previewIdx:1 },
+    { emoji:"📊", col:C.green, title:"Pattern Analysis",   desc:"Win rate, profit factor, session heatmaps. See exactly which setups print and which ones are bleeding you.", previewIdx:3 },
+    { emoji:"📖", col:C.gold,  title:"Playbook",           desc:"Build a personal strategy library. TradeAura tracks which setups make you money so you can double down on what works.", previewIdx:2 },
   ];
 
   const logoMark = (
@@ -368,9 +366,10 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
     .ta-cta-primary{transition:box-shadow .2s,transform .15s}
     .ta-cta-primary:hover{box-shadow:0 0 36px ${C.green}99!important;transform:translateY(-2px)}
     .ta-cta-secondary:hover{border-color:${C.txt}55!important;background:${C.surf2}!important}
-    .ta-feat-card{transition:transform .2s,border-color .2s}
-    .ta-feat-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.13)!important}
+    .ta-feat-card{transition:transform .2s,border-color .2s,box-shadow .2s}
+    .ta-feat-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18)!important;box-shadow:0 8px 32px #00000044}
     .ta-signin-btn:hover{background:${C.surf2}!important;border-color:${C.txt}44!important}
+    .ta-stat-num{background:linear-gradient(120deg,#fff 60%,${C.green});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
   `;
 
   if (showAuth) return (
@@ -435,22 +434,36 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           ✦ AI-POWERED TRADING JOURNAL
         </div>
 
-        <h1 style={{fontSize:42,fontWeight:900,lineHeight:1.08,margin:"0 0 20px",letterSpacing:"-0.03em",position:"relative"}}>
-          <span style={{color:C.txt}}>Stop guessing.<br/></span>
-          <span style={{background:`linear-gradient(120deg, ${C.green} 0%, ${C.blue} 100%)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Start winning.</span>
+        <h1 style={{fontSize:40,fontWeight:900,lineHeight:1.1,margin:"0 0 18px",letterSpacing:"-0.03em",position:"relative"}}>
+          <span style={{color:C.txt}}>Stop Guessing.<br/></span>
+          <span style={{background:`linear-gradient(120deg, ${C.green} 0%, ${C.blue} 100%)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Start Trading with an Edge.</span>
         </h1>
 
-        <p style={{fontSize:15,color:C.dim,lineHeight:1.65,margin:"0 auto 36px",maxWidth:420,position:"relative"}}>
-          The professional trading journal with built-in AI coaching. Track every trade, learn from every loss, and build your edge — systematically.
+        <p style={{fontSize:15,color:C.dim,lineHeight:1.7,margin:"0 auto 36px",maxWidth:420,position:"relative"}}>
+          Most traders lose money because they repeat the same mistakes. TradeAura shows you exactly what's costing you — and how to fix it.
         </p>
 
-        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative",marginBottom:40}}>
-          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"14px 28px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,letterSpacing:"-0.01em",boxShadow:`0 0 24px ${C.green}55`}}>
+        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",position:"relative",marginBottom:44}}>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"15px 32px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,letterSpacing:"-0.01em",boxShadow:`0 0 28px ${C.green}55`}}>
             Get Started Free
           </button>
-          <button onClick={()=>openAuth("login")} className="ta-cta-secondary" style={{background:C.surf,color:C.txt,border:`1px solid ${C.bord}`,padding:"14px 24px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:600,transition:"all .2s"}}>
+          <button onClick={()=>openAuth("login")} className="ta-cta-secondary" style={{background:C.surf,color:C.txt,border:`1px solid ${C.bord}`,padding:"15px 24px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:600,transition:"all .2s"}}>
             Sign In
           </button>
+        </div>
+
+        {/* SOCIAL PROOF STATS */}
+        <div style={{display:"flex",justifyContent:"center",gap:0,position:"relative",marginBottom:44,background:C.surf,border:`1px solid ${C.bord}`,borderRadius:14,overflow:"hidden",maxWidth:380,marginLeft:"auto",marginRight:"auto"}}>
+          {([
+            {num:"1,000+",label:"traders tracking their edge"},
+            {num:"50K+",label:"trades analyzed"},
+            {num:"A–F",label:"grading on every trade"},
+          ]).map((s,i,arr)=>(
+            <div key={s.num} style={{flex:1,textAlign:"center",padding:"16px 8px",borderRight:i<arr.length-1?`1px solid ${C.bord}`:"none"}}>
+              <div className="ta-stat-num" style={{fontSize:20,fontWeight:900,letterSpacing:"-0.02em",marginBottom:4}}>{s.num}</div>
+              <div style={{fontSize:10,color:C.muted,lineHeight:1.4,fontWeight:500}}>{s.label}</div>
+            </div>
+          ))}
         </div>
 
         {/* Mock trade card */}
@@ -496,20 +509,19 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FEATURES */}
-      <div style={{padding:"0 16px 60px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
-        <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Everything you need to grow as a trader</div>
-          <div style={{fontSize:13,color:C.muted,marginTop:8}}>Built by traders, for traders.</div>
+      <div style={{padding:"0 16px 64px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.blue,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:10}}>Why TradeAura</div>
+          <div style={{fontSize:24,fontWeight:900,color:C.txt,letterSpacing:"-0.02em",lineHeight:1.15}}>Your trading journal<br/><span style={{background:`linear-gradient(120deg,${C.green},${C.blue})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>that actually thinks.</span></div>
+          <div style={{fontSize:13,color:C.muted,marginTop:10}}>Built by traders, for traders who are serious about improving.</div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           {FEATURES.map((f,i)=>(
-            <div key={f.title} className="ta-feat-card" onClick={()=>setActiveFeature(i)} style={{background:C.surf,border:`1px solid ${C.bord}`,borderTop:`2px solid ${f.col}`,borderRadius:14,padding:16,cursor:"pointer"}}>
-              <div style={{width:38,height:38,background:f.col+"1a",border:`1px solid ${f.col}33`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,color:f.col,marginBottom:10}}>
-                {f.icon}
-              </div>
-              <div style={{fontSize:13,fontWeight:700,color:C.txt,marginBottom:5}}>{f.title}</div>
-              <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>{f.desc}</div>
-              <div style={{fontSize:10,color:f.col,fontWeight:700,marginTop:8}}>See preview →</div>
+            <div key={f.title} className="ta-feat-card" onClick={()=>setActiveFeature(f.previewIdx)} style={{background:C.surf,border:`1px solid ${C.bord}`,borderTop:`3px solid ${f.col}`,borderRadius:16,padding:"20px 16px",cursor:"pointer"}}>
+              <div style={{fontSize:32,marginBottom:14,lineHeight:1}}>{f.emoji}</div>
+              <div style={{fontSize:14,fontWeight:800,color:C.txt,marginBottom:8,letterSpacing:"-0.01em"}}>{f.title}</div>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.65}}>{f.desc}</div>
+              <div style={{fontSize:11,color:f.col,fontWeight:700,marginTop:12,display:"flex",alignItems:"center",gap:4}}>See it in action <span style={{fontSize:14}}>→</span></div>
             </div>
           ))}
         </div>
@@ -519,19 +531,17 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
           <div style={{position:"fixed",inset:0,zIndex:100,display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setActiveFeature(null)}>
             <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)"}}/>
             <div onClick={e=>e.stopPropagation()} style={{position:"relative",background:C.surf,borderRadius:"20px 20px 0 0",padding:"0 0 40px",maxHeight:"82vh",overflowY:"auto",boxShadow:"0 -8px 48px #00000088"}}>
-              {/* drag handle */}
               <div style={{display:"flex",justifyContent:"center",padding:"12px 0 4px"}}>
                 <div style={{width:36,height:4,background:C.bord,borderRadius:2}}/>
               </div>
-              {/* header */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 16px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:40,height:40,background:FEATURES[activeFeature].col+"1a",border:`1px solid ${FEATURES[activeFeature].col}44`,borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:FEATURES[activeFeature].col}}>
-                    {FEATURES[activeFeature].icon}
+                  <div style={{width:44,height:44,background:FEATURES.find(f=>f.previewIdx===activeFeature)?.col+"1a",border:`1px solid ${FEATURES.find(f=>f.previewIdx===activeFeature)?.col}44`,borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>
+                    {FEATURES.find(f=>f.previewIdx===activeFeature)?.emoji}
                   </div>
                   <div>
-                    <div style={{fontSize:16,fontWeight:800,color:C.txt}}>{FEATURES[activeFeature].title}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{FEATURES[activeFeature].desc}</div>
+                    <div style={{fontSize:16,fontWeight:800,color:C.txt}}>{FEATURES.find(f=>f.previewIdx===activeFeature)?.title}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2,maxWidth:220}}>{FEATURES.find(f=>f.previewIdx===activeFeature)?.desc}</div>
                   </div>
                 </div>
                 <button onClick={()=>setActiveFeature(null)} style={{background:C.surf2,border:`1px solid ${C.bord}`,color:C.muted,width:32,height:32,borderRadius:8,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit",flexShrink:0}}>×</button>
