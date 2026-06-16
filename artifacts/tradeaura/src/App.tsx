@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { Analytics } from "@vercel/analytics/react";
 const EducationCenter = lazy(() => import("./EducationCenter"));
+import OnboardingTour from "./OnboardingTour";
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const supabase = createClient(
@@ -2538,6 +2539,8 @@ export default function App() {
   const [appError,setAppError]=useState<string|null>(null);
   const [subStatus,setSubStatus]=useState<"trial"|"active"|"past_due"|"expired"|"canceled"|null>(null);
   const [trialDaysLeft,setTrialDaysLeft]=useState(0);
+  const [showOnboarding,setShowOnboarding]=useState(false);
+  const [onboardingStep,setOnboardingStep]=useState(0);
 
   // ── AUTH CHECK ──
   useEffect(()=>{
@@ -2549,6 +2552,24 @@ export default function App() {
     });
     return()=>subscription.unsubscribe();
   },[]);
+
+  // ── ONBOARDING ──
+  useEffect(()=>{
+    if(!user)return;
+    if(!localStorage.getItem("onboarding_complete")){setOnboardingStep(0);setShowOnboarding(true);}
+  },[user]);
+
+  function completeOnboarding(nextView?: string){
+    localStorage.setItem("onboarding_complete","true");
+    setShowOnboarding(false);
+    if(nextView)setView(nextView);
+  }
+
+  function handleOnboardingNext(stepView: string|null){
+    if(stepView)setView(stepView);
+    if(onboardingStep<5){setOnboardingStep(s=>s+1);}
+    else{completeOnboarding();}
+  }
 
   // ── BILLING STATUS ──
   useEffect(()=>{
@@ -2690,6 +2711,7 @@ export default function App() {
 
   return(
     <>
+    {showOnboarding&&<OnboardingTour step={onboardingStep} onNext={handleOnboardingNext} onSkip={()=>completeOnboarding()}/>}
     <div style={{minHeight:"100vh",background:C.bg,color:C.txt,fontFamily:"'Space Grotesk',sans-serif",maxWidth:480,margin:"0 auto"}}>
       {/* TRIAL BANNER */}
       {subStatus==="trial"&&(
