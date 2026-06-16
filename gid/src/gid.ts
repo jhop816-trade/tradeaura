@@ -90,6 +90,21 @@ async function main(): Promise<void> {
 
   logger.info({ supabaseUrl: process.env.SUPABASE_URL }, 'Supabase URL check');
 
+  // Test Supabase connectivity at startup
+  const sbUrl = process.env.SUPABASE_URL ?? '';
+  console.log(`[GID] SUPABASE_URL: "${sbUrl}" (${sbUrl.length} chars)`);
+  try {
+    const sbCheck = await axios.get(`${sbUrl}/rest/v1/content_calendar?limit=1`, {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''}`,
+      },
+    });
+    console.log(`[GID] Supabase REACHABLE — status: ${sbCheck.status}, rows: ${Array.isArray(sbCheck.data) ? sbCheck.data.length : '?'}`);
+  } catch (err: unknown) {
+    console.log(`[GID] Supabase UNREACHABLE — ${String((err as any)?.message ?? err)}`);
+  }
+
   // Validate Meta token at startup so Railway logs show the exact problem
   const metaToken = process.env.META_ACCESS_TOKEN;
   if (metaToken) {
