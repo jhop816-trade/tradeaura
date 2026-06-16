@@ -176,21 +176,8 @@ export class MarketingAgent {
   }
 
   async postFacebook(): Promise<void> {
-    if (await this.isPostingPaused()) {
-      this.logger.info('Posting paused — skipping Facebook post');
-      return;
-    }
-    try {
-      const recentTopics = await this.getRecentTopics();
-      const { message } = await this.contentGenerator.generateFacebookPost(recentTopics);
-      const { postId } = await withRetry(() => this.socialPoster.postToFacebook(message));
-      await this.logPost('facebook', message, postId);
-      await this.incrementDailyCounter('fb');
-      await this.addRecentTopic(message.substring(0, 60));
-      this.logger.info({ postId }, 'Facebook post published');
-    } catch (err) {
-      await this.handlePostError('facebook', err);
-    }
+    // Facebook handled via Instagram cross-post — skipped here
+    this.logger.info('Facebook skipped — using Instagram cross-post instead');
   }
 
   async generateTikTokDraft(): Promise<void> {

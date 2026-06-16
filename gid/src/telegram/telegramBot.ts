@@ -412,12 +412,7 @@ export class TelegramBot {
       results.push(`❌ Instagram — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
     }
 
-    try {
-      await this.agent.postFacebook();
-      results.push('✅ Facebook — posted');
-    } catch (err) {
-      results.push(`❌ Facebook — ${String(err instanceof Error ? err.message : err).substring(0, 100)}`);
-    }
+    results.push('⏭ Facebook — skipped (cross-posted from Instagram)');
 
     await this.sendMessage(chatId, `<b>Test Results</b>\n\n${results.join('\n')}`);
   }
