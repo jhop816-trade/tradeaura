@@ -89,9 +89,26 @@ async function main(): Promise<void> {
   });
 
   logger.info({ supabaseUrl: process.env.SUPABASE_URL }, 'Supabase URL check');
-  console.log('[GID] META_ACCESS_TOKEN:', process.env.META_ACCESS_TOKEN ? `SET (${process.env.META_ACCESS_TOKEN.length} chars)` : 'NOT SET');
+
+  // Validate Meta token at startup so Railway logs show the exact problem
+  const metaToken = process.env.META_ACCESS_TOKEN;
+  if (metaToken) {
+    console.log(`[GID] META_ACCESS_TOKEN: SET (${metaToken.length} chars, starts: ${metaToken.slice(0, 12)}..., ends: ...${metaToken.slice(-6)})`);
+    try {
+      const metaCheck = await axios.get('https://graph.facebook.com/v21.0/me', {
+        params: { access_token: metaToken, fields: 'id,name' },
+      });
+      console.log(`[GID] Meta token VALID — user: ${metaCheck.data.name} (${metaCheck.data.id})`);
+    } catch (err: unknown) {
+      const e = (err as any)?.response?.data?.error;
+      console.log(`[GID] Meta token INVALID — code: ${e?.code ?? '?'}, type: ${e?.type ?? '?'}, msg: ${e?.message ?? String(err)}`);
+    }
+  } else {
+    console.log('[GID] META_ACCESS_TOKEN: NOT SET');
+  }
   console.log('[GID] META_PAGE_ID:', process.env.META_PAGE_ID ? 'SET' : 'NOT SET');
   console.log('[GID] INSTAGRAM_BUSINESS_ACCOUNT_ID:', process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID ? 'SET' : 'NOT SET');
+
   scheduler.registerAll();
   telegramBot.start();
   await alerter.send(AlertMessages.online());
