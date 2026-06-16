@@ -2138,12 +2138,9 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
         {marketCtx?.hasPrices&&<Tag color={C.green}>📈 Live Prices</Tag>}
         {marketCtx?.hasNews&&<Tag color={C.blue}>🔴 Live News</Tag>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
-        {[{id:"prep",icon:"📋",l:"Market Prep"},{id:"chat",icon:"💬",l:"Chat"},{id:"patterns",icon:"🔍",l:"Patterns"},{id:"report",icon:"📊",l:"Weekly"}].map(t=>(
-          <button key={t.id} onClick={()=>{setTab(t.id);if(t.id==="patterns"&&!patterns.length)setPatterns(computePatterns());}} style={{background:tab===t.id?C.blue+"22":C.surf2,border:`1px solid ${tab===t.id?C.blue+"66":C.bord}`,borderRadius:10,padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer",fontFamily:"inherit",transition:"all 0.15s"}}>
-            <span style={{fontSize:20}}>{t.icon}</span>
-            <span style={{fontSize:10,fontWeight:700,color:tab===t.id?C.blue:C.muted,letterSpacing:"0.03em"}}>{t.l}</span>
-          </button>
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+        {[{id:"prep",l:"📋 Market Prep"},{id:"chat",l:"💬 Chat"},{id:"patterns",l:"🔍 Patterns"},{id:"report",l:"📊 Weekly"}].map(t=>(
+          <Pill key={t.id} active={tab===t.id} color={C.blue} onClick={()=>{setTab(t.id);if(t.id==="patterns"&&!patterns.length)setPatterns(computePatterns());}}>{t.l}</Pill>
         ))}
       </div>
 
