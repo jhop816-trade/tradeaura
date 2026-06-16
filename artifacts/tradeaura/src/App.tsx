@@ -43,6 +43,19 @@ const inp = (x: React.CSSProperties = {}): React.CSSProperties => ({ width:"100%
 
 function Tag({color,children}: {color:string,children:React.ReactNode}){ return <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:color+"22",color,fontWeight:600}}>{children}</span>; }
 function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
+function HowItWorks({points}: {points: string[]}){
+  return (
+    <div style={{background:"#1a2235",border:"1px solid #1e3a5f",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#3b82f6",letterSpacing:"0.06em",marginBottom:8}}>HOW IT WORKS</div>
+      {points.map((p,i)=>(
+        <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:i<points.length-1?6:0}}>
+          <span style={{color:"#3b82f6",fontSize:12,marginTop:1,flexShrink:0}}>→</span>
+          <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.5}}>{p}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ── API CLIENT ────────────────────────────────────────────────────────────────
 // Set VITE_API_URL in Vercel env vars to the api-server deployment URL.
@@ -1770,6 +1783,10 @@ function PlaybookView({trades}: {trades:any[]}) {
         <div style={{fontSize:16,fontWeight:800,color:C.txt}}>📖 PLAYBOOK</div>
         <button onClick={()=>setShowForm(s=>!s)} style={{padding:"8px 14px",background:C.blue+"22",border:`1px solid ${C.blue}50`,color:C.blue,borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700}}>+ Add Setup</button>
       </div>
+      <HowItWorks points={[
+        "Add your go-to setups and tag each trade with which one you used.",
+        "TradeAura tracks win rate and average R per setup so you know what's actually working.",
+      ]}/>
 
       {showForm&&(
         <div style={Object.assign({},CS,{marginBottom:16,border:`1px solid ${C.blue}30`})}>
@@ -1901,6 +1918,10 @@ function ReviewView({trades}: {trades:any[]}) {
 
   return(
     <div style={{padding:"16px 16px 20px"}}>
+      <HowItWorks points={[
+        "AI scans your recent trades to detect patterns — overtrading, revenge trading, session bias.",
+        "Get a performance score and specific rules to tighten up your edge.",
+      ]}/>
       <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>{[{id:"generate",l:"Generate"},{id:"paste",l:"Paste"},{id:"patterns",l:"Patterns"},{id:"result",l:"Results"}].map(t=><Pill key={t.id} active={tab===t.id} color={C.purp} onClick={()=>{setTab(t.id);if(t.id==="patterns")setPatterns(computePatterns());setReviewError(null);}}>{t.l}</Pill>)}</div>
       {reviewError&&<div style={{background:C.red+"18",border:`1px solid ${C.red}40`,borderRadius:8,padding:"10px 14px",fontSize:12,color:C.red,marginBottom:14}}>{reviewError}</div>}
       {tab==="generate"&&(<div>
@@ -2138,6 +2159,11 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
         {marketCtx?.hasPrices&&<Tag color={C.green}>📈 Live Prices</Tag>}
         {marketCtx?.hasNews&&<Tag color={C.blue}>🔴 Live News</Tag>}
       </div>
+      <HowItWorks points={[
+        "Market Prep gives you an AI briefing every morning with key price levels and news.",
+        "Chat lets you ask your AI coach anything — paste a trade, upload a chart, get feedback.",
+        "Patterns auto-analyzes your journal to surface your best sessions, setups, and habits.",
+      ]}/>
       <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
         {[{id:"prep",l:"📋 Market Prep"},{id:"chat",l:"💬 Chat"},{id:"patterns",l:"🔍 Patterns"},{id:"report",l:"📊 Weekly"}].map(t=>(
           <Pill key={t.id} active={tab===t.id} color={C.blue} onClick={()=>{setTab(t.id);if(t.id==="patterns"&&!patterns.length)setPatterns(computePatterns());}}>{t.l}</Pill>

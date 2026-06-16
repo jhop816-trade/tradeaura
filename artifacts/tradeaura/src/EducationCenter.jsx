@@ -684,6 +684,20 @@ export default function EducationCenter({ userPlan = "free", apiCall }) {
           <div style={{ marginLeft: "auto", color: C.purp, fontSize: 16 }}>→</div>
         </button>
 
+        <div style={{background:"#1a2235",border:"1px solid #1e3a5f",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#3b82f6",letterSpacing:"0.06em",marginBottom:8}}>HOW IT WORKS</div>
+          {[
+            "Work through structured courses on stocks, futures, options, and trading psychology.",
+            "Each lesson ends with a quiz to lock in what you learned.",
+            "Free courses to start — more unlocked with Pro.",
+          ].map((p,i,arr)=>(
+            <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:i<arr.length-1?6:0}}>
+              <span style={{color:"#3b82f6",fontSize:12,marginTop:1,flexShrink:0}}>→</span>
+              <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.5}}>{p}</span>
+            </div>
+          ))}
+        </div>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {COURSES.map(course => {
             const { completed, total, pct } = getCourseProgress(course);
