@@ -153,6 +153,9 @@ export class TelegramBot {
       case '/metatoken':
         await this.cmdMetaToken(chatId);
         break;
+      case '/dbcheck':
+        await this.cmdDbCheck(chatId);
+        break;
       default:
         await this.sendMessage(
           chatId,
@@ -368,6 +371,23 @@ export class TelegramBot {
       chatId,
       `<b>Latest TikTok Draft</b> (${created})\n\n${preview}${data.content.length > 500 ? '...' : ''}`,
     );
+  }
+
+  private async cmdDbCheck(chatId: number): Promise<void> {
+    const { Intl: _I } = globalThis;
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const { data, error, count } = await this.supabase
+      .from('content_calendar')
+      .select('scheduled_date, platform, status, title', { count: 'exact' })
+      .eq('scheduled_date', today)
+      .eq('platform', 'instagram');
+    if (error) {
+      await this.sendMessage(chatId, `❌ DB error: ${error.message}`);
+      return;
+    }
+    const lines = [`<b>DB Check — Instagram rows for ${today}</b>\n`, `Total: ${count ?? 0}`];
+    (data ?? []).forEach((r: any) => lines.push(`• ${String(r.status)} — ${String(r.title ?? 'no title')}`));
+    await this.sendMessage(chatId, lines.join('\n'));
   }
 
   private async cmdMetaToken(chatId: number): Promise<void> {
