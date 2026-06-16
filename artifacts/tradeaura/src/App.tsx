@@ -862,7 +862,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
   const allRules=[...RULES.filter(r=>!hiddenRules.includes(r)),...customRules.filter(r=>!RULES.includes(r))];
   const acctBal=balance||25000;
   function fmtPnl(v: number){if(pnlMode==="%"){const pct=(v/acctBal)*100;return `${pct>=0?"+":""}${pct.toFixed(2)}%`;}return `${v>=0?"+":""}$${v.toFixed(2)}`;}
-  const resolvedManualPnl=form.manual_pnl!==""&&pnlMode==="%"?String((parseFloat(form.manual_pnl)/100)*acctBal):form.manual_pnl;
+  const resolvedManualPnl=form.manual_pnl;
   const pnlPreview=calcPnl({...form,manual_pnl:resolvedManualPnl,stopLoss:form.stop_loss,rulesFollowed:form.rules_followed});
 
   async function submit() {
@@ -939,13 +939,11 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
       </div>
 
       <div style={{marginBottom:10}}>
-        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span>PROFIT / LOSS {pnlMode} <span style={{fontWeight:400,fontSize:10}}>(override)</span></span>
-          <div style={{display:"flex",gap:4}}>
-            {(["$","%"] as const).map(m=><button key={m} onClick={()=>onPnlModeChange(m)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",minHeight:32,background:pnlMode===m?C.blue+"33":"transparent",color:pnlMode===m?C.blue:C.muted,border:`1px solid ${pnlMode===m?C.blue+"55":C.bord}`}}>{m}</button>)}
-          </div>
+        <div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>
+          <span>PROFIT / LOSS $ <span style={{fontWeight:400,fontSize:10}}>(override — enter dollar amount)</span></span>
         </div>
-        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder={pnlMode==="%"?"Enter % e.g. 5 for +5%":"Enter dollar amount e.g. 250"} style={inp()}/>
+        <input type="number" value={form.manual_pnl} onChange={e=>set("manual_pnl",e.target.value)} placeholder="Enter dollar amount e.g. 300" style={inp()}/>
+        {form.manual_pnl!==""&&!isNaN(parseFloat(form.manual_pnl))&&<div style={{fontSize:11,color:C.muted,marginTop:4}}>= {((parseFloat(form.manual_pnl)/acctBal)*100).toFixed(2)}% of ${acctBal.toLocaleString()} account</div>}
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
