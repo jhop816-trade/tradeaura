@@ -1,24 +1,12 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import { pinoHttp } from 'pino-http';
-import rateLimit from "express-rate-limit";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { generalLimiter } from "./lib/limiters";
 
-export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 200,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-});
-
-export const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 30,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  message: { error: "Too many AI requests — please wait before trying again." },
-});
+export { generalLimiter } from "./lib/limiters";
+export { aiLimiter } from "./lib/limiters";
 
 const app: Express = express();
 

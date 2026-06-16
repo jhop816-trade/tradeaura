@@ -5,7 +5,7 @@ import instrumentsRouter from "./instruments";
 import aiRouter from "./ai";
 import { billingPublicRouter, billingRouter } from "./billing";
 import { requireAuth } from "../middlewares/auth";
-import { aiLimiter } from "../app";
+import { aiLimiter } from "../lib/limiters";
 
 const router: IRouter = Router();
 
