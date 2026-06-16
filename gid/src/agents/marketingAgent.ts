@@ -202,12 +202,11 @@ export class MarketingAgent {
 
       await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', { calendarId, caption, imageUrl });
 
-      const captionPreview = caption.length > 200 ? `${caption.substring(0, 200)}...` : caption;
       const imageLabel = imageUrl ?? 'default image';
       const notification = [
         '📸 Instagram post ready',
         '',
-        captionPreview,
+        caption,
         '',
         `🖼 Image: ${imageLabel}`,
         '',
