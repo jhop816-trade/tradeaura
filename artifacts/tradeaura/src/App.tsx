@@ -1,4 +1,23 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense, Component, type ReactNode, type ErrorInfo } from "react";
+
+class ErrorBoundary extends Component<{children:ReactNode},{hasError:boolean,error:string|null}> {
+  constructor(props:{children:ReactNode}){super(props);this.state={hasError:false,error:null};}
+  static getDerivedStateFromError(e:Error){return{hasError:true,error:e.message};}
+  componentDidCatch(e:Error,info:ErrorInfo){console.error("App error:",e,info);}
+  render(){
+    if(this.state.hasError)return(
+      <div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{textAlign:"center",maxWidth:320}}>
+          <div style={{fontSize:32,marginBottom:12}}>⚠️</div>
+          <div style={{fontSize:18,fontWeight:700,color:"#fff",marginBottom:8}}>Something went wrong</div>
+          <div style={{fontSize:13,color:"#888",marginBottom:24,lineHeight:1.6}}>{this.state.error||"An unexpected error occurred."}</div>
+          <button onClick={()=>window.location.reload()} style={{padding:"12px 24px",background:"#3b82f6",color:"#fff",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer"}}>Reload App</button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { Analytics } from "@vercel/analytics/react";
@@ -2769,7 +2788,7 @@ export default function App() {
       )}
 
       {showModal&&<AccountModal accounts={accounts} activeId={activeAccountId} onSelect={id=>{setActiveAccountId(id);setShowModal(false);}} onAdd={addAccount} onDelete={deleteAccount} onUpdateLimit={updateDailyLimit} onClose={()=>setShowModal(false)}/>}
-      {showImport&&activeAccountId&&<ImportModal accountId={activeAccountId} onClose={()=>setShowImport(false)} onImported={()=>{setShowImport(false);apiCall("GET",`/api/trades?accountId=${activeAccountId}&limit=500`).then((data:any[])=>setTrades(data.map(fromApiTrade))).catch(e=>console.error(e));}}/>}
+      {showImport&&activeAccountId&&<ImportModal accountId={activeAccountId} onClose={()=>setShowImport(false)} onImported={()=>{setShowImport(false);apiCall("GET",`/api/trades?accountId=${activeAccountId}&limit=500`).then((data:any[])=>setTrades(data.map(fromApiTrade))).catch(()=>setAppError("Trades imported but failed to refresh. Please reload."));}}/>}
 
       {/* ERROR TOAST */}
       {appError&&(
@@ -2784,3 +2803,5 @@ export default function App() {
     </>
   );
 }
+
+export function WrappedApp(){return <ErrorBoundary><App/></ErrorBoundary>;}

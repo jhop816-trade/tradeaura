@@ -29,6 +29,9 @@ router.post("/ai/chat", async (req, res) => {
     return;
   }
 
+  // Cap conversation history to last 20 messages to prevent token abuse
+  const cappedMessages = messages.slice(-20);
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     res.status(500).json({ error: "AI not configured" });
@@ -50,7 +53,7 @@ router.post("/ai/chat", async (req, res) => {
         model: "claude-haiku-4-5-20251001",
         max_tokens: 800,
         system: TUTOR_SYSTEM,
-        messages,
+        messages: cappedMessages,
       }),
       signal: controller.signal,
     }) as unknown as FetchResponse;
@@ -79,7 +82,8 @@ router.post("/ai/chat", async (req, res) => {
 });
 
 router.post("/ai/grade", async (req, res) => {
-  const { prompt, maxTokens = 600 } = req.body as { prompt: string; maxTokens?: number };
+  const { prompt, maxTokens: rawMaxTokens = 600 } = req.body as { prompt: string; maxTokens?: number };
+  const maxTokens = Math.min(Math.max(Number(rawMaxTokens) || 600, 100), 2000);
 
   if (!prompt || typeof prompt !== "string") {
     res.status(400).json({ error: "prompt is required" });
