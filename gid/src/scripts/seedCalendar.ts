@@ -66,7 +66,7 @@ async function main(): Promise<void> {
           slot: null,
           title,
           content: igContent,
-          image_url: `https://tradeauraapp.com/ig/d${day}${slot}.jpg`,
+          image_url: `https://sjpltlbuxycwgehgxsul.supabase.co/storage/v1/object/public/Images/d${day}${slot}.jpg`,
           status: 'scheduled',
         });
       }
