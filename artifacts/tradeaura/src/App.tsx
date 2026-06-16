@@ -558,30 +558,30 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* HOW IT WORKS */}
-      <div style={{padding:"0 16px 64px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
-        <div style={{textAlign:"center",marginBottom:36}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>How It Works</div>
-          <div style={{fontSize:22,fontWeight:800,color:C.txt,letterSpacing:"-0.02em"}}>Three steps to a sharper edge</div>
+      <div style={{padding:"0 16px 72px",maxWidth:520,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{textAlign:"center",marginBottom:40}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.green,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:10}}>How It Works</div>
+          <div style={{fontSize:24,fontWeight:900,color:C.txt,letterSpacing:"-0.02em",lineHeight:1.15}}>Three steps to a<br/>sharper edge.</div>
         </div>
         {([
-          {n:"01",col:C.green,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,title:"Log your trade",body:"Enter your trade in seconds — ticker, direction, P&L, and which rules you followed. Manual entry or paste from your broker."},
-          {n:"02",col:C.blue,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 4v2M15 4v2M9 18v2M15 18v2M4 9h2M4 15h2M18 9h2M18 15h2"/></svg>,title:"AI reviews it instantly",body:"Your AI coach analyzes every trade, scores your discipline, and calls out exactly what you did right and what to fix."},
-          {n:"03",col:C.purp,icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,title:"Your patterns surface",body:"Over time your Playbook builds itself — your best setups, worst habits, and the rules that actually make you money."},
+          {n:"01",col:C.green,emoji:"✏️",title:"Log your trade (30 seconds)",body:"Enter ticker, direction, P&L, and which rules you followed. Fast enough that you'll actually do it every time."},
+          {n:"02",col:C.blue,emoji:"🤖",title:"AI grades it instantly",body:"Your AI coach scores your discipline A–F and calls out exactly what you did right and what to fix — no sugarcoating."},
+          {n:"03",col:C.purp,emoji:"📈",title:"Your patterns surface over time",body:"Your Playbook builds itself — best setups, worst habits, the rules that actually make you money. Data beats guesswork."},
         ]).map((step,i)=>(
-          <div key={step.n} style={{display:"flex",gap:16,marginBottom:i<2?28:0}}>
+          <div key={step.n} style={{display:"flex",gap:16,marginBottom:i<2?32:0,alignItems:"flex-start"}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
-              <div style={{width:44,height:44,borderRadius:12,background:step.col+"1a",border:`1.5px solid ${step.col}55`,display:"flex",alignItems:"center",justifyContent:"center",color:step.col}}>{step.icon}</div>
-              {i<2&&<div style={{width:2,flex:1,marginTop:8,background:`linear-gradient(${step.col}44,transparent)`,minHeight:20}}/>}
+              <div style={{width:52,height:52,borderRadius:14,background:step.col+"18",border:`1.5px solid ${step.col}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{step.emoji}</div>
+              {i<2&&<div style={{width:2,height:32,marginTop:6,background:`linear-gradient(${step.col}55,transparent)`,flexShrink:0}}/>}
             </div>
-            <div style={{paddingTop:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:step.col,letterSpacing:"0.1em",marginBottom:4}}>STEP {step.n}</div>
-              <div style={{fontSize:15,fontWeight:700,color:C.txt,marginBottom:5}}>{step.title}</div>
-              <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{step.body}</div>
+            <div style={{paddingTop:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:step.col,letterSpacing:"0.1em",marginBottom:5}}>STEP {step.n}</div>
+              <div style={{fontSize:16,fontWeight:800,color:C.txt,marginBottom:6,letterSpacing:"-0.01em"}}>{step.title}</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.65}}>{step.body}</div>
             </div>
           </div>
         ))}
-        <div style={{marginTop:32,textAlign:"center"}}>
-          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"13px 32px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,boxShadow:`0 0 20px ${C.green}44`}}>
+        <div style={{marginTop:40,textAlign:"center"}}>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"15px 36px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,boxShadow:`0 0 24px ${C.green}44`}}>
             Start for free →
           </button>
         </div>
@@ -624,13 +624,15 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
       </div>
 
       {/* FINAL CTA */}
-      <div style={{margin:"0 16px 52px",position:"relative",zIndex:1,borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}44,${C.blue}33,${C.purp}22)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
-        <div style={{background:C.surf,borderRadius:18,padding:"40px 24px",textAlign:"center"}}>
-          <div style={{fontSize:28,fontWeight:900,letterSpacing:"-0.02em",marginBottom:10,background:`linear-gradient(120deg,${C.txt} 60%,${C.green})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>Ready to level up?</div>
-          <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.55}}>Join traders who use TradeAura to track performance, sharpen their edge, and grow their accounts.</div>
-          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"14px 36px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:15,fontWeight:700,boxShadow:`0 0 24px ${C.green}55`}}>
-            Start Free Today
+      <div style={{margin:"0 16px 60px",position:"relative",zIndex:1,borderRadius:20,padding:2,background:`linear-gradient(135deg,${C.green}55,${C.blue}44,${C.purp}33)`,maxWidth:488,marginLeft:"auto",marginRight:"auto"}}>
+        <div style={{background:C.surf,borderRadius:18,padding:"48px 28px",textAlign:"center"}}>
+          <div style={{fontSize:14,fontWeight:700,color:C.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:14}}>Ready to find your edge?</div>
+          <div style={{fontSize:30,fontWeight:900,letterSpacing:"-0.025em",marginBottom:14,color:C.txt,lineHeight:1.15}}>Stop guessing.<br/>Start growing.</div>
+          <div style={{fontSize:14,color:C.muted,marginBottom:32,lineHeight:1.65,maxWidth:320,marginLeft:"auto",marginRight:"auto"}}>Join traders who stopped guessing and started growing. Free to start, no credit card required.</div>
+          <button onClick={()=>openAuth("signup")} className="ta-cta-primary" style={{background:C.green,color:"#000",border:"none",padding:"16px 44px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:16,fontWeight:700,boxShadow:`0 0 32px ${C.green}66`,letterSpacing:"-0.01em"}}>
+            Get Started Free
           </button>
+          <div style={{fontSize:12,color:C.muted,marginTop:14}}>No credit card required · Free forever plan</div>
         </div>
       </div>
 
