@@ -2819,6 +2819,7 @@ export default function App() {
             ):(subStatus==="trial"||subStatus==="expired"||subStatus==="canceled")&&(
               <button onClick={()=>{setShowMenu(false);goToCheckout();}} style={{width:"100%",padding:"12px",background:C.green,color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800,marginBottom:10}}>⚡ Upgrade to Pro — $25/mo</button>
             )}
+            <button onClick={()=>{localStorage.removeItem("onboarding_complete");setOnboardingStep(0);setShowOnboarding(true);setShowMenu(false);}} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.blue}40`,color:C.blue,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:10}}>🗺️ Take the Tour</button>
             <button onClick={signOut} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.red}30`,color:C.red,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>Sign Out</button>
           </div>
         </div>
