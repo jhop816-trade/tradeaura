@@ -156,6 +156,12 @@ export class TelegramBot {
       case '/dbcheck':
         await this.cmdDbCheck(chatId);
         break;
+      case '/approve':
+        await this.cmdApprove(chatId);
+        break;
+      case '/skip':
+        await this.cmdSkip(chatId);
+        break;
       default:
         await this.sendMessage(
           chatId,
@@ -522,6 +528,57 @@ export class TelegramBot {
     await this.sendMessage(chatId, lines.join('\n'));
   }
 
+  private async cmdApprove(chatId: number): Promise<void> {
+    if (!this.agent) {
+      await this.sendMessage(chatId, 'Agent not ready yet.');
+      return;
+    }
+
+    const pending = await this.memory.get<{ calendarId: string | null; caption: string; imageUrl: string | null }>(
+      AGENT_NAME,
+      'pending-instagram-post',
+    );
+
+    if (!pending) {
+      await this.sendMessage(chatId, 'No pending Instagram post.');
+      return;
+    }
+
+    try {
+      await this.agent.postInstagramNow(pending.caption, pending.imageUrl, pending.calendarId);
+      await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+      await this.sendMessage(chatId, '✅ Posted to Instagram!');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.sendMessage(chatId, `❌ Failed to post: ${msg.substring(0, 200)}`);
+    }
+  }
+
+  private async cmdSkip(chatId: number): Promise<void> {
+    const pending = await this.memory.get<{ calendarId: string | null; caption: string; imageUrl: string | null }>(
+      AGENT_NAME,
+      'pending-instagram-post',
+    );
+
+    if (!pending) {
+      await this.sendMessage(chatId, 'No pending Instagram post.');
+      return;
+    }
+
+    if (pending.calendarId) {
+      const { error } = await this.supabase
+        .from('content_calendar')
+        .update({ status: 'posted' })
+        .eq('id', pending.calendarId);
+      if (error) {
+        this.logger.error({ error, calendarId: pending.calendarId }, 'Failed to mark calendar row as posted during /skip');
+      }
+    }
+
+    await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+    await this.sendMessage(chatId, '⏭ Skipped — marked as done.');
+  }
+
   private async cmdHelp(chatId: number): Promise<void> {
     const help = [
       '<b>GID Marketing Bot — Commands</b>\n',
@@ -540,6 +597,9 @@ export class TelegramBot {
       '/pause — Pause all scheduled posting',
       '/resume — Resume scheduled posting',
       '/test — Run a test post to all platforms',
+      '',
+      '/approve — Post the pending Instagram content now',
+      '/skip — Skip the pending Instagram post (mark as done)',
       '',
       'You can also send a free-text message to ask GID a question.',
     ];

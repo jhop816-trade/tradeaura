@@ -175,6 +175,64 @@ export class MarketingAgent {
     }
   }
 
+  async prepareInstagramPost(): Promise<void> {
+    if (await this.isPostingPaused()) {
+      this.logger.info('Posting paused — skipping Instagram post preparation');
+      return;
+    }
+    try {
+      let caption: string;
+      let imageUrl: string | null;
+      let calendarId: string | null;
+
+      const calendarResult = await this.getCalendarContent('instagram');
+
+      if (calendarResult) {
+        caption = calendarResult.row.content;
+        imageUrl = calendarResult.row.image_url;
+        calendarId = calendarResult.row.id;
+        this.logger.info({ id: calendarId }, 'Prepared Instagram post from calendar');
+      } else {
+        const recentTopics = await this.getRecentTopics();
+        ({ caption } = await this.contentGenerator.generateInstagramPost(recentTopics));
+        imageUrl = process.env.INSTAGRAM_DEFAULT_IMAGE_URL ?? null;
+        calendarId = null;
+        this.logger.info('Prepared Instagram post from Claude generation');
+      }
+
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', { calendarId, caption, imageUrl });
+
+      const captionPreview = caption.length > 200 ? `${caption.substring(0, 200)}...` : caption;
+      const imageLabel = imageUrl ?? 'default image';
+      const notification = [
+        '📸 Instagram post ready',
+        '',
+        captionPreview,
+        '',
+        `🖼 Image: ${imageLabel}`,
+        '',
+        'Reply /approve to auto-post, or post manually in Instagram with music then /skip to mark done.',
+      ].join('\n');
+
+      await this.alerter.send(notification);
+    } catch (err) {
+      await this.handlePostError('instagram', err);
+    }
+  }
+
+  async postInstagramNow(caption: string, imageUrl: string | null, calendarId: string | null): Promise<void> {
+    const { postId } = await withRetry(() =>
+      this.socialPoster.postToInstagram(caption, imageUrl ?? undefined),
+    );
+    await this.logPost('instagram', caption, postId);
+    if (calendarId) {
+      await this.markCalendarRowPosted(calendarId);
+    }
+    await this.incrementDailyCounter('ig');
+    await this.addRecentTopic(caption.substring(0, 60));
+    this.logger.info({ postId }, 'Instagram post published via /approve');
+  }
+
   async postFacebook(): Promise<void> {
     // Facebook handled via Instagram cross-post — skipped here
     this.logger.info('Facebook skipped — using Instagram cross-post instead');
