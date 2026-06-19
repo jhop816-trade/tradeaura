@@ -134,6 +134,7 @@ function toApiPayload(trade: any, accountId: string | null) {
     entryDate: `${dateStr}T12:00:00Z`,
     exitDate: `${dateStr}T12:00:00Z`,
     stopLoss: n(trade.stop_loss),
+    takeProfit: n(trade.take_profit),
     manualPnl: n(trade.manual_pnl),
     setup: trade.setup || null,
     session: trade.session || null,
@@ -161,6 +162,7 @@ function fromApiTrade(t: any) {
     exit: t.exitPrice != null ? String(t.exitPrice) : "",
     contracts: t.quantity != null ? String(t.quantity) : "1",
     stop_loss: t.stopLoss != null ? String(t.stopLoss) : "",
+    take_profit: t.takeProfit != null ? String(t.takeProfit) : "",
     manual_pnl: t.manualPnl != null ? String(t.manualPnl) : "",
     pnl: t.pnl ?? 0,
     session: t.session ?? null,
@@ -836,7 +838,7 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
 
 // ── TRADE FORM ────────────────────────────────────────────────────────────────
 function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChange}: {initial?:any,isEdit?:boolean,onSave:(t:any)=>void,onCancel?:()=>void,balance?:number,pnlMode:"$"|"%",onPnlModeChange:(m:"$"|"%")=>void}) {
-  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:"",option_type:"",strike:"",option_expiry:""});
+  const [form,setForm]=useState(initial||{date:new Date().toISOString().slice(0,10),instrument:"",session:"New York",direction:"Long",entry:"",exit:"",contracts:"1",stop_loss:"",take_profit:"",setup:"BOS + Retest",mood:"Focused",rules_followed:[],notes:"",screenshot:null,ai_grade:null,ai_feedback:null,account_type:"Live",manual_pnl:"",option_type:"",strike:"",option_expiry:""});
   const [loading,setLoading]=useState(false);
   const [formError,setFormError]=useState<string|null>(null);
   const fileRef=useRef<HTMLInputElement>(null);
@@ -955,6 +957,7 @@ function TradeForm({initial,isEdit,onSave,onCancel,balance,pnlMode,onPnlModeChan
         <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>EXIT</div><input type="number" value={form.exit} onChange={e=>set("exit",e.target.value)} placeholder="7300.00" style={inp()}/></div>
         <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>CONTRACTS</div><input type="number" value={form.contracts} onChange={e=>set("contracts",e.target.value)} placeholder="1" style={inp()}/></div>
         <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>STOP LOSS</div><input type="number" value={form.stop_loss} onChange={e=>set("stop_loss",e.target.value)} placeholder="7280.00" style={inp()}/></div>
+        <div><div style={{fontSize:11,color:C.muted,letterSpacing:"0.12em",marginBottom:6}}>TAKE PROFIT</div><input type="number" value={form.take_profit} onChange={e=>set("take_profit",e.target.value)} placeholder="7320.00" style={inp()}/></div>
       </div>
 
       <div style={{marginBottom:10}}>
@@ -1559,7 +1562,7 @@ function JournalView({trades,onSave,onDelete,onImport,balance,pnlMode,onPnlModeC
             {exp&&(
               <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.bord}`}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12,marginBottom:10}}>
-                  {([["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length} ✓`],...(trade.option_type?[["Strike",trade.strike?`$${trade.strike}`:"—"],["Expiry",trade.option_expiry||"—"]]:[])] as [string,string][]).map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
+                  {([["Entry",trade.entry||"—"],["Exit",trade.exit||"—"],["Contracts",trade.contracts],["Stop",trade.stop_loss||"—"],["TP",trade.take_profit||"—"],["Mood",trade.mood],["Rules",`${(trade.rules_followed||[]).length} ✓`],...(trade.option_type?[["Strike",trade.strike?`$${trade.strike}`:"—"],["Expiry",trade.option_expiry||"—"]]:[])] as [string,string][]).map(([l,v])=>(<div key={l}><span style={{color:C.muted}}>{l}: </span><span style={{color:C.txt}}>{v}</span></div>))}
                 </div>
                 {trade.notes&&<div style={{fontSize:12,color:C.dim,fontStyle:"italic",padding:"10px 12px",background:C.bg,borderRadius:8,marginBottom:10}}>"{trade.notes}"</div>}
                 {trade.screenshot&&<img src={trade.screenshot} alt="chart" style={{width:"100%",borderRadius:8,marginBottom:10,border:`1px solid ${C.bord}`}}/>}
