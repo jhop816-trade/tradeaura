@@ -1,0 +1,94 @@
+{
+  "name": "Sunset Dental",
+  "slug": "sunset-dental",
+  "tagline": "Your smile is our priority",
+  "phone": "(619) 555-0182",
+  "email": "hello@sunsetdental.com",
+  "address": "421 Ocean View Blvd, San Diego, CA 92101",
+  "hours": {
+    "Monday–Friday": "8:00 AM – 5:00 PM",
+    "Saturday": "9:00 AM – 2:00 PM",
+    "Sunday": "Closed"
+  },
+  "services": [
+    {
+      "name": "Teeth Cleaning",
+      "description": "Professional plaque and tartar removal for a healthier, brighter smile.",
+      "price": "From $89"
+    },
+    {
+      "name": "Teeth Whitening",
+      "description": "In-office whitening treatment that brightens your smile up to 8 shades in one visit.",
+      "price": "From $299"
+    },
+    {
+      "name": "Dental Implants",
+      "description": "Permanent tooth replacements that look, feel, and function just like natural teeth.",
+      "price": "From $1,800"
+    },
+    {
+      "name": "Invisalign",
+      "description": "Clear aligner therapy to straighten your teeth discreetly — no metal brackets or wires.",
+      "price": "From $3,500"
+    },
+    {
+      "name": "Emergency Care",
+      "description": "Same-day appointments for toothaches, broken teeth, and other urgent dental needs.",
+      "price": "From $99"
+    },
+    {
+      "name": "Pediatric Dentistry",
+      "description": "Gentle, fun dental care designed specifically for children to build lifelong healthy habits.",
+      "price": "From $69"
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Do you accept insurance?",
+      "answer": "Yes, we accept most major PPO dental insurance plans including Delta Dental, Cigna, Aetna, and United Concordia. Call us to verify your specific coverage before your visit."
+    },
+    {
+      "question": "How do I book an appointment?",
+      "answer": "You can request an appointment using the form on our Contact page, call us at (619) 555-0182, or chat with our assistant below. We'll confirm your appointment within one business day."
+    },
+    {
+      "question": "What are your hours?",
+      "answer": "We're open Monday through Friday from 8:00 AM to 5:00 PM, and Saturday from 9:00 AM to 2:00 PM. We are closed on Sundays."
+    },
+    {
+      "question": "Do you offer emergency dental care?",
+      "answer": "Yes! We reserve same-day slots for dental emergencies. If you're experiencing a toothache, broken tooth, or other urgent issue, call us first thing in the morning."
+    },
+    {
+      "question": "Is teeth whitening safe?",
+      "answer": "Absolutely. Our professional whitening treatments are safe, effective, and supervised by our dentists. Over-the-counter products can cause sensitivity — our in-office treatment minimizes that risk."
+    },
+    {
+      "question": "Do you see children?",
+      "answer": "Yes, we welcome patients of all ages. Our pediatric dental care is designed to make kids feel comfortable and build good habits early."
+    }
+  ],
+  "about": "Founded in 2008 by Dr. Maria Santos, Sunset Dental has been serving the San Diego community with compassionate, high-quality dental care for over 15 years. Our state-of-the-art Ocean View Boulevard facility combines the latest dental technology with a warm, welcoming environment — because we believe great dental care should never feel intimidating. Whether you're coming in for a routine cleaning or a complete smile transformation, our team is here to make you feel at home.",
+  "team": [
+    {
+      "name": "Dr. Maria Santos",
+      "role": "Lead Dentist & Founder",
+      "bio": "Dr. Santos completed her dental degree at UCSF School of Dentistry and brings over 18 years of experience in general and cosmetic dentistry. She founded Sunset Dental with a simple mission: treat every patient like family."
+    },
+    {
+      "name": "Dr. James Park",
+      "role": "Associate Dentist",
+      "bio": "Specializing in implants and oral surgery, Dr. Park brings precision and a gentle touch to even the most complex procedures. He completed his residency at UC San Diego Medical Center."
+    },
+    {
+      "name": "Lisa Nguyen",
+      "role": "Dental Hygienist",
+      "bio": "With 10 years of experience and a genuine passion for patient education, Lisa helps every patient leave with a healthier smile and the knowledge to maintain it."
+    }
+  ],
+  "brand": {
+    "accentColor": "#0EA5E9",
+    "accentColorDark": "#0284C7",
+    "accentColorLight": "#E0F2FE"
+  }
+}
