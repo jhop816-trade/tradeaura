@@ -2552,6 +2552,40 @@ function PaywallScreen({onCheckout,onSignOut,onActivate,apiCall}: {onCheckout:()
   );
 }
 
+// ── IOS INSTALL BANNER ───────────────────────────────────────────────────────
+function IOSInstallBanner() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = (window.navigator as any).standalone === true;
+  const dismissed = localStorage.getItem("pwa_banner_dismissed") === "1";
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!isIOS || isStandalone || dismissed) return;
+    const t = setTimeout(() => setVisible(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!visible) return null;
+
+  function dismiss() {
+    localStorage.setItem("pwa_banner_dismissed", "1");
+    setVisible(false);
+  }
+
+  return (
+    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:200,background:"#0f1520",borderTop:"1px solid #1e2c42",padding:"14px 16px 28px",display:"flex",alignItems:"center",gap:12,boxShadow:"0 -4px 24px rgba(0,0,0,0.5)"}}>
+      <div style={{width:40,height:40,flexShrink:0,borderRadius:10,overflow:"hidden",background:"#0a0d14",border:"1px solid #22c55e30",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <img src="/icons/icon-180.png" alt="" style={{width:40,height:40}} />
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#e2e8f0",marginBottom:2}}>Install TradeAura</div>
+        <div style={{fontSize:11,color:"#64748b",lineHeight:1.4}}>Tap <span style={{color:"#4f8ef7"}}>Share</span> then <span style={{color:"#4f8ef7"}}>"Add to Home Screen"</span></div>
+      </div>
+      <button onClick={dismiss} style={{background:"transparent",border:"none",color:"#64748b",cursor:"pointer",fontSize:20,padding:"4px 8px",lineHeight:1,flexShrink:0}}>×</button>
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [user,setUser]=useState<any>(null);
@@ -2835,6 +2869,7 @@ export default function App() {
       )}
     </div>
     <Analytics />
+    <IOSInstallBanner />
     </>
   );
 }
