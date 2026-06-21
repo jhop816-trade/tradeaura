@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { VitePWA } from "vite-plugin-pwa";
 
 const rawPort = process.env.PORT;
 const port = rawPort ? Number(rawPort) : 3000;
@@ -17,6 +18,20 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: false,
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
+      manifest: false,
+      injectManifest: {
+        injectionPoint: undefined,
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
     ...(!isProductionBuild && process.env.REPL_ID !== undefined
       ? [
           await import("@replit/vite-plugin-cartographer").then((m) =>
