@@ -48,3 +48,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Capital Creator build artifacts (deployed via docs/)
+artifacts/capitalcreator/dist/
+artifacts/capitalcreator/dist.zip
+artifacts/capitalcreator/node_modules/
