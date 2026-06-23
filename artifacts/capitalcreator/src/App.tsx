@@ -16,6 +16,8 @@ interface Student {
   pillarMentorNotes: Record<string, string>;
   messages: DirectMsg[];
   personalUpdates: PersonalUpdate[];
+  mentorPrivateNotes?: string;
+  unlockedResources?: string[];
 }
 interface Announcement { id: string; title: string; body: string; date: string; pinned?: boolean; }
 interface Resource { id: string; title: string; category: string; desc: string; locked: boolean; size?: string; }
@@ -159,7 +161,7 @@ const MOCK_RESOURCES: Resource[] = [
 function loadStudents(): Student[] {
   const raw = localStorage.getItem("cc_students");
   const base: Student[] = raw ? JSON.parse(raw) : MOCK_STUDENTS;
-  return base.map(s => ({ ...s, checkIns: s.checkIns ?? [], pillarNotes: s.pillarNotes ?? {}, pillarMentorNotes: s.pillarMentorNotes ?? {}, messages: s.messages ?? [], personalUpdates: s.personalUpdates ?? [] }));
+  return base.map(s => ({ ...s, checkIns: s.checkIns ?? [], pillarNotes: s.pillarNotes ?? {}, pillarMentorNotes: s.pillarMentorNotes ?? {}, messages: s.messages ?? [], personalUpdates: s.personalUpdates ?? [], mentorPrivateNotes: s.mentorPrivateNotes ?? "", unlockedResources: s.unlockedResources ?? [] }));
 }
 function saveStudents(students: Student[]) { localStorage.setItem("cc_students", JSON.stringify(students)); }
 function loadResources(): Resource[] { const raw = localStorage.getItem("cc_resources"); return raw ? JSON.parse(raw) : MOCK_RESOURCES; }
@@ -391,7 +393,7 @@ function HomeworkTab({ student, allStudents, setToast }: { student: Student; all
 }
 
 // ── RESOURCES TAB ──────────────────────────────────────────────────────────────
-function ResourcesTab({ resources }: { resources: Resource[] }) {
+function ResourcesTab({ resources, student }: { resources: Resource[]; student?: Student }) {
   const [filter, setFilter] = useState("All");
   const FILTERS = ["All", "Free", "Pillars", "Tools", "Bonus"];
   const filtered = resources.filter(r => {
@@ -423,21 +425,24 @@ function ResourcesTab({ resources }: { resources: Resource[] }) {
         <div style={{ textAlign: "center", color: C.muted, fontSize: 14, paddingTop: 40 }}>No resources in this category.</div>
       )}
 
-      {filtered.map(r => (
-        <div key={r.id} className={r.locked ? "" : "card-hover"} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10, opacity: r.locked ? 0.5 : 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 5 }}>{r.category.toUpperCase()}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{r.title}</div>
-              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 4 }}>{r.desc}</div>
-              {r.size && <div style={{ fontSize: 11, color: C.muted }}>{r.size}</div>}
+      {filtered.map(r => {
+        const isLocked = r.locked && !(student?.unlockedResources ?? []).includes(r.id);
+        return (
+          <div key={r.id} className={isLocked ? "" : "card-hover"} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10, opacity: isLocked ? 0.5 : 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 5 }}>{r.category.toUpperCase()}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{r.title}</div>
+                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 4 }}>{r.desc}</div>
+                {r.size && <div style={{ fontSize: 11, color: C.muted }}>{r.size}</div>}
+              </div>
+              <button style={{ flexShrink: 0, padding: "9px 16px", background: isLocked ? "transparent" : C.blue, border: `1px solid ${isLocked ? C.bord : C.blue}`, color: isLocked ? C.muted : "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: isLocked ? "default" : "pointer" }}>
+                {isLocked ? "Locked" : "Download"}
+              </button>
             </div>
-            <button style={{ flexShrink: 0, padding: "9px 16px", background: r.locked ? "transparent" : C.blue, border: `1px solid ${r.locked ? C.bord : C.blue}`, color: r.locked ? C.muted : "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: r.locked ? "default" : "pointer" }}>
-              {r.locked ? "Locked" : "Download"}
-            </button>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -577,6 +582,23 @@ function CurriculumTab({ student, allStudents }: { student: Student; allStudents
         );
       })}
 
+      {/* My Notes summary */}
+      {Object.keys(student.pillarNotes).filter(k => student.pillarNotes[k]).length > 0 && (
+        <div style={{ marginTop: 28, borderTop: `1px solid ${C.bord}`, paddingTop: 24 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>My Notes</div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>Notes you've saved across all pillars.</div>
+          {Object.entries(student.pillarNotes).filter(([, v]) => v).map(([k, v]) => {
+            const pillar = PILLARS.find(p => String(p.n) === k);
+            return (
+              <div key={k} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
+                <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 6 }}>PILLAR 0{k} — {pillar?.title?.toUpperCase() ?? ""}</div>
+                <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{v}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* 1:1 MESSAGE THREAD */}
       <CurriculumMessages student={student} allStudents={allStudents} />
     </div>
@@ -612,6 +634,32 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
   const pct = Math.round((student.pillarsComplete.length / 8) * 100);
   const hwDone = student.homework.filter(h => h.done).length;
   const thisWeekCI = student.checkIns.find(c => c.week === student.week);
+
+  // Derived unread count — how many mentor messages the student hasn't "seen" yet
+  const mentorMsgCount = student.messages.filter(m => m.from === "mentor").length;
+  const seenCount = parseInt(localStorage.getItem(`cc_read_count_${student.id}`) ?? "0");
+  const unreadMsgs = Math.max(0, mentorMsgCount - seenCount);
+
+  // Mark messages as read when on home tab (chat is there)
+  useEffect(() => {
+    if (tab === "home") {
+      const current = loadStudents().find(s => s.id === student.id);
+      const count = (current?.messages ?? student.messages).filter(m => m.from === "mentor").length;
+      localStorage.setItem(`cc_read_count_${student.id}`, String(count));
+    }
+  }, [tab, student.id, homeMsgTick]); // homeMsgTick already exists in state
+
+  // Pillar milestone celebration toast on login/load
+  useEffect(() => {
+    const key = `cc_pillars_seen_${student.id}`;
+    const seen = parseInt(localStorage.getItem(key) ?? "0");
+    if (student.pillarsComplete.length > seen && seen > 0) {
+      const newPillarN = student.pillarsComplete[student.pillarsComplete.length - 1];
+      const pillar = PILLARS.find(p => p.n === newPillarN);
+      setToast(`✦ Pillar 0${newPillarN} — ${pillar?.title ?? ""} complete!`);
+    }
+    localStorage.setItem(key, String(student.pillarsComplete.length));
+  }, []); // intentionally runs only on mount
 
   function submitCheckIn() {
     if (!ciWorkedOn || !ciChallenged || !ciQuestions) return;
@@ -704,6 +752,26 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
                 </div>
               )}
             </div>
+
+            {/* Overdue homework alert */}
+            {(() => {
+              const today = new Date().toISOString().slice(0, 10);
+              const overdue = student.homework.filter(h => !h.done && h.dueDate < today);
+              if (overdue.length === 0) return null;
+              return (
+                <div style={{ background: `${C.red}0d`, border: `1px solid ${C.red}40`, borderLeft: `3px solid ${C.red}`, borderRadius: "0 12px 12px 0", padding: 14, marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, color: C.red, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 8 }}>OVERDUE — {overdue.length} ASSIGNMENT{overdue.length > 1 ? "S" : ""}</div>
+                  {overdue.slice(0, 3).map(h => (
+                    <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, color: C.dim }}>{h.title}</span>
+                      <span style={{ fontSize: 11, color: C.red, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>Due {h.dueDate}</span>
+                    </div>
+                  ))}
+                  {overdue.length > 3 && <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>+{overdue.length - 3} more</div>}
+                  <button onClick={() => setTab("homework")} style={{ marginTop: 10, width: "100%", padding: "8px 0", background: "transparent", border: `1px solid ${C.red}55`, borderRadius: 7, color: C.red, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>VIEW HOMEWORK →</button>
+                </div>
+              );
+            })()}
 
             {/* Weekly check-in */}
             {!thisWeekCI ? (
@@ -853,7 +921,7 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
 
         {/* RESOURCES TAB */}
         {tab === "resources" && (
-          <ResourcesTab resources={loadResources()} />
+          <ResourcesTab resources={loadResources()} student={student} />
         )}
 
         {/* UPDATES TAB */}
@@ -908,7 +976,12 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: `${C.bg}f2`, backdropFilter: "blur(20px)", borderTop: `1px solid ${C.bord}`, display: "flex", padding: "10px 0 max(18px, env(safe-area-inset-bottom))" }}>
         {NAV.map(n => (
           <button key={n.id} onClick={() => setTab(n.id as typeof tab)} className="nav-item" style={{ flex: 1, background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: tab === n.id ? C.blue : C.muted, padding: "4px 0" }}>
-            {n.svg}
+            <div style={{ position: "relative" }}>
+              {n.svg}
+              {n.id === "home" && unreadMsgs > 0 && (
+                <div style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: C.blue, border: `1.5px solid ${C.bg}` }} />
+              )}
+            </div>
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" as const }}>{n.label}</span>
           </button>
         ))}
@@ -938,7 +1011,7 @@ function MentorReplyInput({ sel, updateStudent, onSent }: { sel: Student; update
 function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   const [tab, setTab] = useState<"students"|"announce"|"library"|"schedule">("students");
   const [selected, setSelected] = useState<Student | null>(null);
-  const [detailTab, setDetailTab] = useState<"overview"|"homework"|"checkins"|"messages"|"notes"|"updates">("overview");
+  const [detailTab, setDetailTab] = useState<"overview"|"homework"|"checkins"|"messages"|"notes"|"updates"|"resources">("overview");
   const [annTitle, setAnnTitle] = useState(""); const [annBody, setAnnBody] = useState(""); const [toast, setToast] = useState("");
   const [editingNotes, setEditingNotes] = useState(false); const [notesVal, setNotesVal] = useState("");
   const [addHwOpen, setAddHwOpen] = useState(false); const [hwSendAll, setHwSendAll] = useState(false);
@@ -946,6 +1019,10 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
   const [feedbackOpen, setFeedbackOpen] = useState<string | null>(null); const [feedbackVal, setFeedbackVal] = useState("");
   const [addPuOpen, setAddPuOpen] = useState(false); const [puTitle, setPuTitle] = useState(""); const [puBody, setPuBody] = useState("");
   const [replyOpen, setReplyOpen] = useState<string | null>(null); const [replyVal, setReplyVal] = useState("");
+  const [quickReply, setQuickReply] = useState<string | null>(null);
+  const [quickReplyText, setQuickReplyText] = useState("");
+  const [editPrivateNotes, setEditPrivateNotes] = useState(false);
+  const [privateNotesVal, setPrivateNotesVal] = useState("");
 
   const students = loadStudents();
   const resources = loadResources();
