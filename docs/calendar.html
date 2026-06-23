@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capital Creator — 21-Day Instagram Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#080c14;--surf:#0f1520;--card:#0d1525;--border:#1e2c42;--blue:#1A6BFF;--gold:#d4a843;--green:#34d399;--red:#f87171;--text:#e2e8f0;--muted:#64748b;}
+html{scroll-behavior:smooth;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px 20px 60px;}
+.header{text-align:center;margin-bottom:40px;}
+.logo{font-size:22px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;}
+.logo b{color:var(--blue);}
+.header h1{font-size:clamp(26px,4vw,40px);font-weight:800;letter-spacing:-.02em;margin:12px 0 6px;}
+.header p{color:var(--muted);font-size:14px;}
+.grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:28px;}
+
+/* ── POST CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s,transform .15s;}
+.card:hover{border-color:var(--blue);transform:translateY(-3px);}
+.card-meta{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 0;}
+.day-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.pillar-pill{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
+
+/* ── POST GRAPHIC ── */
+.graphic{width:100%;aspect-ratio:4/5;position:relative;overflow:hidden;font-family:'Space Grotesk',sans-serif;}
+.graphic .glow{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.graphic .inner{position:absolute;inset:0;padding:36px 32px;display:flex;flex-direction:column;}
+.g-logo{font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#fff;margin-bottom:auto;}
+.g-logo span{color:var(--blue);}
+.g-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:20px 0;}
+.g-foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;}
+.g-handle{font-size:12px;color:var(--muted);letter-spacing:.03em;}
+.g-tag{font-size:10px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;}
+
+/* statement */
+.g-accent{height:4px;width:56px;border-radius:4px;margin-bottom:20px;}
+.g-kicker{font-size:11px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;margin-bottom:14px;}
+.g-headline{font-size:clamp(32px,5vw,44px);font-weight:800;line-height:1.08;letter-spacing:-.02em;}
+.g-sub{font-size:16px;font-weight:400;color:#aebbd4;line-height:1.4;margin-top:18px;}
+
+/* quote */
+.g-qmark{font-family:'Playfair Display',serif;font-style:italic;font-size:160px;line-height:.55;color:var(--gold);height:80px;overflow:hidden;}
+.g-quote{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(26px,4vw,36px);font-weight:600;line-height:1.2;}
+.g-attr{font-size:14px;color:var(--gold);font-weight:500;margin-top:18px;}
+
+/* list */
+.g-items{display:flex;flex-direction:column;gap:12px;margin-top:10px;}
+.g-item{display:flex;align-items:flex-start;gap:12px;}
+.g-num{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;}
+.g-item-text{font-size:clamp(14px,2vw,17px);font-weight:500;line-height:1.25;padding-top:8px;}
+
+/* lifestyle */
+.g-time{display:inline-block;font-size:20px;font-weight:700;letter-spacing:.06em;border:2px solid #34d39966;padding:8px 18px;border-radius:10px;color:var(--green);margin-bottom:14px;align-self:flex-start;}
+.g-steps{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.g-step{display:flex;align-items:center;gap:12px;font-size:clamp(13px,2vw,16px);font-weight:500;}
+.g-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;}
+
+/* promo */
+.g-cta{margin-top:22px;background:linear-gradient(135deg,var(--blue),#0d4dcc);border-radius:12px;padding:18px;text-align:center;font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+
+/* ── CAPTION AREA ── */
+.caption-area{padding:16px;}
+.caption-text{font-size:13px;line-height:1.65;color:#c8d3e8;margin-bottom:14px;white-space:pre-wrap;word-wrap:break-word;}
+.copy-btn{width:100%;background:var(--blue);color:#fff;border:none;padding:10px;font-size:12px;font-weight:700;letter-spacing:.06em;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .2s;}
+.copy-btn:hover{background:#1555e0;}
+.copy-btn.copied{background:var(--gold);color:#000;}
+
+@media(max-width:600px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CAPITAL<b>CREATOR</b></div>
+  <h1>21-Day Instagram Content Calendar</h1>
+  <p>Day Trading Mentor · Discipline · Systems · Results</p>
+</div>
+
+<div class="grid">
+
+<!-- ─── DAY 1 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 1</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Mindset</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-150px;right:-100px;opacity:.22;"></div>
+    <div class="glow" style="width:300px;height:300px;background:#d4a843;bottom:-150px;left:-80px;opacity:.10;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#1A6BFF;"></div>
+        <div class="g-kicker" style="color:#1A6BFF;">THE FOUNDATION</div>
+        <div class="g-headline">Most traders fail before they open a chart.</div>
+        <div class="g-sub">They skip the foundation.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Mindset</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Most traders fail before they even open a chart.
+
+They skip the foundation.
+
+You can't build a profitable system on quicksand. You need to know: are you a scalper? Swing trader? Position trader? Each requires different rules, different timeframes, different risk.
+
+Most traders jump straight to "what's the setup?" without answering "who am I as a trader?"
+
+Define your foundation first. Everything else builds from there.
+
+What's YOUR trading archetype? 👇
+
+#trading #daytrading #capitalcreator #disciplineovereverything #tradingmindset</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 2 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 2</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:350px;height:350px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="glow" style="width:300px;height:300px;background:#1A6BFF;bottom:-120px;left:-60px;opacity:.12;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-qmark">&ldquo;</div>
+        <div class="g-quote">A mentor saves you years of expensive mistakes.</div>
+        <div class="g-attr">— Why guidance changes everything</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Without a mentor: trial and error for years.
+
+With a mentor: someone shows you exactly what works — immediately.
+
+You don't need to lose $20k figuring out position sizing. You don't need to blow up three accounts learning risk management. Someone already did that so you don't have to.
+
+A good mentor compresses your learning curve from 5 years to 5 months.
+
+Worth it every time.
+
+#trading #daytrading #mentorship #capitalcreator #tradingmentor #learntrading</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 3 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 3</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-120px;right:-100px;opacity:.20;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-kicker" style="color:#1A6BFF;">MARKET STRUCTURE</div>
+        <div class="g-headline" style="font-size:38px;margin-bottom:20px;">Read any chart in 4 steps.</div>
+        <div class="g-items">
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">1</div><div class="g-item-text">Mark the higher highs & higher lows</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">2</div><div class="g-item-text">Identify the trend direction</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">3</div><div class="g-item-text">Find key support & resistance</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">4</div><div class="g-item-text">Wait for price to react</div></div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Read any chart in 4 steps 📊
+
+1. Mark the higher highs & higher lows
+2. Identify the trend direction
+3. Find key support & resistance
+4. Wait for price to react at those levels
+
+Stop guessing. Structure tells you who's in control — buyers or sellers. Trade WITH the structure, not against it.
+
+Most traders add 15 indicators. You need 1: price structure.
+
+Save this 🔖
+
+#trading #daytrading #priceaction #capitalcreator #marketstructure #tradingtips</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 4 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 4</span>
+    <span class="pillar-pill" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#34d399;top:-120px;right:-80px;opacity:.15;"></div>
+    <div class="glow" style="width:280px;height:280px;background:#1A6BFF;bottom:-100px;left:-60px;opacity:.12;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-time">5:30 AM</div>
+        <div class="g-kicker" style="color:#34d399;">NO SNOOZE</div>
+        <div class="g-headline" style="font-size:36px;margin-bottom:18px;">The routine before the open.</div>
+        <div class="g-steps">
+          <div class="g-step"><span class="g-dot"></span>Read overnight news</div>
+          <div class="g-step"><span class="g-dot"></span>Map market structure</div>
+          <div class="g-step"><span class="g-dot"></span>Identify daily bias</div>
+          <div class="g-step"><span class="g-dot"></span>Write 3 setups I want</div>
+          <div class="g-step"><span class="g-dot"></span>Set risk per trade</div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">5:30 AM. No snooze.
+
+Before the market opens, this is the routine:
+→ Read overnight news
+→ Map market structure
+→ Identify bias (bullish? bearish? choppy?)
+→ Write 3 setups I'm looking for
+→ Set risk per trade
+
+30 minutes. Every. Single. Day.
+
+This is why I'm calm during the open. No panic. No FOMO. I already know what I'm hunting for.
+
+Prep or get chopped up. Your choice.
+
+#trading #morningroutine #daytrading #capitalcreator #discipline #tradingroutine</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 5 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 5</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-150px;right:-120px;opacity:.22;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#1A6BFF;"></div>
+        <div class="g-kicker" style="color:#1A6BFF;">RISK FIRST</div>
+        <div class="g-headline">Protect capital. Profit comes second.</div>
+        <div class="g-sub">You can't trade with an empty account.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Protect capital. Profit comes second.
+
+New traders ask "how much can I make?" Pros ask "how much can I lose?"
+
+Risk 1% per trade. Survive the losing streaks. Stay in the game long enough for your edge to play out.
+
+The day you break your own risk rules is the day you blow up.
+
+Discipline means keeping your word to yourself — even when the market looks perfect.
+
+What % do you risk per trade? 👇
+
+#trading #riskmanagement #daytrading #capitalcreator #disciplineovereverything</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 6 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 6</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#d4a843;"></div>
+        <div class="g-kicker" style="color:#d4a843;">ACCOUNTABILITY</div>
+        <div class="g-headline">Trading alone is the hardest way to learn.</div>
+        <div class="g-sub">No feedback. No accountability. Just your worst habits compounding.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Trading alone is the hardest way to learn.
+
+No feedback. No accountability. Just you, your screen, and your worst habits compounding.
+
+The fastest growth happens around traders who push you, call out your mistakes, and celebrate your discipline.
+
+A mentor isn't there to give you signals. A mentor is there to give you structure — then hold you to it.
+
+When's the last time someone reviewed your trades and told you what you're doing wrong?
+
+#trading #daytrading #mentorship #capitalcreator #tradingcommunity</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 7 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 7</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-130px;right:-100px;opacity:.20;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-kicker" style="color:#1A6BFF;">YOUR SYSTEM</div>
+        <div class="g-headline" style="font-size:38px;margin-bottom:20px;">A system needs only 5 things.</div>
+        <div class="g-items">
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">1</div><div class="g-item-text">What you trade</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">2</div><div class="g-item-text">When you enter</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">3</div><div class="g-item-text">Where you exit winners</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">4</div><div class="g-item-text">Where you exit losers</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">5</div><div class="g-item-text">How much you risk</div></div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">A trading system needs only 5 things 🧱
+
+1. What you trade
+2. When you enter
+3. Where you exit winners
+4. Where you exit losers
+5. How much you risk
+
+That's it.
+
+Complexity is the enemy. If you can't explain your system in 5 lines, it's too complicated to follow under pressure.
+
+Pros don't use 15 indicators. They use one setup, applied with discipline, over and over.
+
+Save this 🔖
+
+#trading #tradingsystem #daytrading #capitalcreator #priceaction</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 8 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 8</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="glow" style="width:300px;height:300px;background:#1A6BFF;bottom:-120px;left:-60px;opacity:.12;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-qmark">&ldquo;</div>
+        <div class="g-quote">The market doesn't care about your timeline.</div>
+        <div class="g-attr">Patience is your most profitable weapon.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">The market doesn't care about your timeline.
+
+You set a goal: make $1,000 this week. The market doesn't know. It doesn't reward urgency. It punishes it.
+
+When you remove the pressure of "I need money TODAY" your decision-making gets cleaner. You see more setups. You exit with clarity instead of fear.
+
+The traders who make consistent money? They're the ones willing to sit and wait.
+
+Are you patient enough to skip today's trade for tomorrow's better one?
+
+#trading #daytrading #patience #capitalcreator #tradingmindset #discipline</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 9 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 9</span>
+    <span class="pillar-pill" style="background:#f8717122;color:#f87171;">Promo</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#f87171;top:-130px;right:-100px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#f87171;"></div>
+        <div class="g-kicker" style="color:#f87171;">MENTORSHIP</div>
+        <div class="g-headline">You're not failing because you're stupid.</div>
+        <div class="g-sub">You're failing because you don't have a system.</div>
+        <div class="g-cta" style="background:linear-gradient(135deg,#f87171,#c0392b);box-shadow:0 16px 40px #f8717133;">APPLY — SPOTS LIMITED</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#f8717122;color:#f87171;">Promo</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">You're not failing because you're stupid.
+
+You're failing because you don't have a system. Or worse — you have a system but you don't follow it.
+
+The traders in my mentorship don't trade "harder." They trade smarter. They follow the system. They log every trade. They refine it weekly.
+
+No emotion. No guesswork. Just results.
+
+Ready to stop leaving money on the table?
+
+Apply below. Spots limited. 🔗 Link in bio.
+
+#trading #daytrading #mentorship #capitalcreator #tradingmentor #applytoday</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 10 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 10</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:420px;height:420px;background:#1A6BFF;top:-150px;right:-110px;opacity:.22;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#1A6BFF;"></div>
+        <div class="g-kicker" style="color:#1A6BFF;">JOURNAL YOUR TRADES</div>
+        <div class="g-headline">You can't improve what you don't track.</div>
+        <div class="g-sub">Your journal is your roadmap to profit.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">You can't improve what you don't track.
+
+Log every trade:
+→ Entry reason
+→ Exit reason
+→ Emotion you felt
+→ What you'd do different
+
+Review it every Sunday. Patterns appear fast.
+
+The mistake you made on Tuesday? You'll see it in your data — and you won't make it again.
+
+Your journal is your edge. Most traders are too lazy to keep one. That's your advantage.
+
+Start today.
+
+#trading #tradingjournal #daytrading #capitalcreator #discipline #improvement</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 11 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 11</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:360px;height:360px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-qmark" style="color:#d4a843;">&ldquo;</div>
+        <div class="g-quote">A mentor has already failed in every way you're about to.</div>
+        <div class="g-attr">Learn from their losses. Not yours.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">A mentor has already failed in every way you're about to.
+
+They know the traps:
+→ Over-trading out of boredom
+→ Adding to losing positions
+→ Wrong timeframe for your personality
+→ Emotional decisions after a loss streak
+
+You don't need to pay tuition to the market when someone already paid it for you.
+
+That's the real value of a mentor — not the signals, not the setups — it's the mistakes they already made so you don't have to.
+
+#trading #daytrading #mentorship #capitalcreator #learntrading #tradingmentor</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 12 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 12</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-130px;right:-100px;opacity:.20;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-kicker" style="color:#1A6BFF;">DAILY BIAS</div>
+        <div class="g-headline" style="font-size:38px;margin-bottom:20px;">Know your bias before you click buy.</div>
+        <div class="g-items">
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">1</div><div class="g-item-text">What did price do yesterday?</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">2</div><div class="g-item-text">Where's the HTF trend?</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">3</div><div class="g-item-text">Are we at a key level?</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">4</div><div class="g-item-text">Bullish, bearish, or flat?</div></div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Know your bias before you click buy 🧭
+
+Every morning, answer 4 questions:
+1. What did price do yesterday?
+2. Where's the higher-timeframe trend?
+3. Are we at a key level?
+4. Bullish, bearish, or flat?
+
+No bias = no trade. Context is everything.
+
+Trading without a bias is like driving blindfolded. You'll hit something eventually.
+
+5 minutes every morning. Saves you thousands in bad trades.
+
+#trading #daytrading #tradingbias #capitalcreator #marketcontext #strategy</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 13 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 13</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-110px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#d4a843;"></div>
+        <div class="g-kicker" style="color:#d4a843;">EGO</div>
+        <div class="g-headline">The market will humble you.</div>
+        <div class="g-sub">Trade the chart. Not your ego.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">The market will humble you.
+
+The second you think you've "figured it out," it takes it back.
+
+Ego is the most expensive thing you'll ever bring to a chart. You think you know where price is going. Price goes the opposite direction. Now you hold the loser because admitting you're wrong feels worse than the loss.
+
+Being right doesn't pay. Being profitable does.
+
+Cut the loser. Take the L. Move to the next setup.
+
+Trade the chart. Not your ego.
+
+#trading #tradingmindset #daytrading #capitalcreator #discipline #ego</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 14 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 14</span>
+    <span class="pillar-pill" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#34d399;top:-100px;right:-80px;opacity:.14;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-time">SUNDAY</div>
+        <div class="g-kicker" style="color:#34d399;">WEEKLY RESET</div>
+        <div class="g-headline" style="font-size:36px;margin-bottom:18px;">How I prep for the week.</div>
+        <div class="g-steps">
+          <div class="g-step"><span class="g-dot"></span>Review every trade I took</div>
+          <div class="g-step"><span class="g-dot"></span>Tag the mistakes</div>
+          <div class="g-step"><span class="g-dot"></span>Mark levels for next week</div>
+          <div class="g-step"><span class="g-dot"></span>Set my watchlist</div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Sunday = the weekly reset.
+
+While most people dread Monday, I'm building my edge:
+→ Review every trade from the week
+→ Tag the mistakes (there are always some)
+→ Mark the key levels for next week
+→ Set my watchlist for Monday
+
+This routine is why I'm calm when the market opens Monday. I've already prepared.
+
+The trades you take Monday are decided Sunday.
+
+Take your Sunday seriously. Your Monday results depend on it.
+
+#trading #sundayprep #daytrading #capitalcreator #tradingroutine #weeklyreset</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 15 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 15</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-140px;right:-100px;opacity:.22;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#1A6BFF;"></div>
+        <div class="g-kicker" style="color:#1A6BFF;">POSITION SIZING</div>
+        <div class="g-headline">Your size should let you sleep.</div>
+        <div class="g-sub">If a loss ruins your night, you're trading too big.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Discipline</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Your position size should let you sleep at night.
+
+If a loss ruins your night, you're trading too big. Period.
+
+When you're overleveraged, every tick feels like life or death. You make emotional decisions. You cut winners early. You hold losers too long.
+
+Proper sizing keeps your emotions flat. A small, calculated loss doesn't move you. You stay calm. You execute the next trade cleanly.
+
+Size down. Think clearer. Last longer.
+
+#trading #positionsizing #riskmanagement #capitalcreator #daytrading #discipline</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 16 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 16</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-qmark" style="color:#d4a843;">&ldquo;</div>
+        <div class="g-quote">The goal of a mentor is to make you independent.</div>
+        <div class="g-attr">You should need me less over time. Not more.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">The goal of a mentor is to make you independent.
+
+Stop asking the comments "is this a buy?" If you need someone else to validate every trade, you don't have a system — you have a habit of outsourcing your conviction.
+
+By the end of our mentorship you should be able to:
+→ Look at a chart and know your bias immediately
+→ Identify entries and exits on your own
+→ Execute your system without needing approval
+
+Autonomy. Clarity. Confidence in your own read. That's the finish line.
+
+#trading #daytrading #mentorship #capitalcreator #independence #tradingmentor</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 17 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 17</span>
+    <span class="pillar-pill" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#1A6BFF;top:-130px;right:-100px;opacity:.20;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-kicker" style="color:#1A6BFF;">STOP LOSSES</div>
+        <div class="g-headline" style="font-size:40px;margin-bottom:20px;">Why you keep getting stopped out.</div>
+        <div class="g-items">
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">1</div><div class="g-item-text">You stop at obvious levels</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">2</div><div class="g-item-text">Big players see those stops</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">3</div><div class="g-item-text">Price sweeps them out</div></div>
+          <div class="g-item"><div class="g-num" style="background:#1A6BFF22;color:#1A6BFF;">4</div><div class="g-item-text">Reverses right after</div></div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#1A6BFF22;color:#1A6BFF;">Strategy</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Ever get stopped out right before price reverses? 🎯
+
+That's not bad luck. That's liquidity.
+
+Big players need liquidity to fill orders. Your stops ARE that liquidity.
+
+What happens:
+→ Price approaches a key level
+→ Retail stops pile up right below it
+→ Big money sweeps those stops
+→ Price immediately reverses up
+
+You got liquidated at the worst possible point.
+
+Stop placing stops where everyone else does. Think differently.
+
+#trading #stoploss #daytrading #capitalcreator #liquidity #smartmoney</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 18 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 18</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#d4a843;"></div>
+        <div class="g-kicker" style="color:#d4a843;">CONSISTENCY</div>
+        <div class="g-headline">Boring trader. Boring system. Money.</div>
+        <div class="g-sub">Exciting trader. Chasing trends. Broke.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mindset</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Boring trader + boring system = money.
+
+Exciting trader + chasing trends = broke.
+
+The winning trader does the same thing every single day:
+→ Prep
+→ Wait for setup
+→ Execute
+→ Review
+
+Repeat for months. The math wins.
+
+You'll have days where nothing clicks. Setups don't form. Price is choppy. You sit in cash. That's the routine too.
+
+Boring is profitable. Exciting is broke.
+
+#trading #consistency #daytrading #capitalcreator #discipline #tradingmindset</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 19 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 19</span>
+    <span class="pillar-pill" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#34d399;top:-100px;right:-80px;opacity:.14;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-time">THE GOAL</div>
+        <div class="g-kicker" style="color:#34d399;">WHY I TRADE</div>
+        <div class="g-headline" style="font-size:36px;margin-bottom:18px;">Freedom over a flashy car.</div>
+        <div class="g-steps">
+          <div class="g-step"><span class="g-dot"></span>Time with people I love</div>
+          <div class="g-step"><span class="g-dot"></span>Work from anywhere</div>
+          <div class="g-step"><span class="g-dot"></span>No boss. No alarm.</div>
+          <div class="g-step"><span class="g-dot"></span>A skill that compounds for life</div>
+        </div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#34d39922;color:#34d399;">Lifestyle</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">People think traders want the flashy car.
+
+What I actually want:
+→ Time with people I love
+→ Work from anywhere
+→ No boss, no alarm
+→ A skill that compounds for life
+
+Trading isn't about the money. It's about what the money buys back: your time.
+
+Most people spend their best years chasing money. Then they retire and realize they wasted them.
+
+I'd rather make less and live more.
+
+What's YOUR why? 👇
+
+#trading #freedom #daytrading #capitalcreator #tradinglifestyle #financialfreedom</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 20 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 20</span>
+    <span class="pillar-pill" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:380px;height:380px;background:#d4a843;top:-100px;right:-80px;opacity:.18;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#d4a843;"></div>
+        <div class="g-kicker" style="color:#d4a843;">ONE YEAR IN</div>
+        <div class="g-headline">Real results come from real structure.</div>
+        <div class="g-sub">Not signals. Not tips. A repeatable, tested system.</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#d4a84322;color:#d4a843;">Mentor</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">Real results come from real structure.
+
+Not signals. Not tips. Not "hot picks."
+
+A repeatable, tested system that you follow regardless of emotion — that's what changes your account.
+
+The traders I work with don't get lucky. They build process:
+→ Same prep every morning
+→ Same rules every trade
+→ Same review every week
+
+After 3 months, the results speak for themselves.
+
+Structure beats talent every time.
+
+#trading #daytrading #mentorship #capitalcreator #tradingresults #process</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+<!-- ─── DAY 21 ─── -->
+<div class="card">
+  <div class="card-meta">
+    <span class="day-label">Day 21</span>
+    <span class="pillar-pill" style="background:#f8717122;color:#f87171;">Promo</span>
+  </div>
+  <div class="graphic" style="background:#050508;">
+    <div class="glow" style="width:400px;height:400px;background:#f87171;top:-130px;right:-100px;opacity:.18;"></div>
+    <div class="glow" style="width:300px;height:300px;background:#1A6BFF;bottom:-100px;left:-60px;opacity:.12;"></div>
+    <div class="inner">
+      <div class="g-logo">CAPITAL<span>CREATOR</span></div>
+      <div class="g-body">
+        <div class="g-accent" style="background:#f87171;"></div>
+        <div class="g-kicker" style="color:#f87171;">21 DAYS IN</div>
+        <div class="g-headline">You've seen the process. Now live it.</div>
+        <div class="g-sub">Discipline over emotion — every single day.</div>
+        <div class="g-cta" style="background:linear-gradient(135deg,#f87171,#c0392b);box-shadow:0 16px 40px #f8717133;">START YOUR JOURNEY</div>
+      </div>
+      <div class="g-foot">
+        <span class="g-handle">@capitalcreator</span>
+        <span class="g-tag" style="background:#f8717122;color:#f87171;">Promo</span>
+      </div>
+    </div>
+  </div>
+  <div class="caption-area">
+    <div class="caption-text">21 days of content. One message: discipline over emotion.
+
+If these posts hit home, that's the signal — you're ready to stop guessing and start building a real process.
+
+The mentorship gives you the system, the accountability, and the community to make it stick.
+
+You've seen the process. Now live it.
+
+→ DM "READY"
+→ Or apply via link in bio
+
+We're taking a limited number of traders this quarter. Spots are filling fast.
+
+The difference between successful traders and broke ones? They took action. They applied. They committed.
+
+Your turn.
+
+#trading #daytrading #mentorship #capitalcreator #disciplineovereverything #applytoday</div>
+    <button class="copy-btn" onclick="copyCaption(this)">📋 Copy Caption</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+function copyCaption(btn){
+  const caption = btn.previousElementSibling.innerText;
+  navigator.clipboard.writeText(caption).then(()=>{
+    const orig = btn.innerText;
+    btn.innerText = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.innerText = orig; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>
