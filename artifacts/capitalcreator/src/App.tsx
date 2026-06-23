@@ -1392,7 +1392,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
             </p>
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" as const }}>
-              <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 28px", borderRadius: 8, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, boxShadow: "0 0 30px rgba(26,107,255,0.4), 0 4px 20px rgba(26,107,255,0.25)" }}>
+              <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 28px", borderRadius: 8, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, background: "#1A6BFF", color: "#fff", textDecoration: "none", cursor: "pointer", boxShadow: "0 0 30px rgba(26,107,255,0.4), 0 4px 20px rgba(26,107,255,0.25)", position: "relative" as const, zIndex: 20 }}>
                 Apply for Private Advisory <span style={{ fontSize: 16 }}>→</span>
               </a>
               <button className="btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
