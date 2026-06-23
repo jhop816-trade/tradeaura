@@ -1149,6 +1149,8 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
               const pct = Math.round((s.pillarsComplete.length / 8) * 100);
               const hwDone = s.homework.filter(h => h.done).length;
               const pendingCI = s.checkIns.filter(c => !c.mentorReply).length;
+              const unreadFromStudent = s.messages.filter(m => m.from === "student").length -
+                parseInt(localStorage.getItem(`cc_mentor_read_${s.id}`) ?? "0");
               return (
                 <div key={s.id} className="card-hover" onClick={() => { setSelected(s); setDetailTab("overview"); }} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginBottom: 10, cursor: "pointer" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -1158,6 +1160,11 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     </div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" as const, justifyContent: "flex-end" }}>
                       {pendingCI > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: C.gold, background: `${C.gold}18`, border: `1px solid ${C.gold}40`, borderRadius: 8, padding: "3px 8px" }}>{pendingCI} check-in</span>}
+                      {unreadFromStudent > 0 && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: C.blue, background: `${C.blue}18`, border: `1px solid ${C.blue}40`, borderRadius: 8, padding: "3px 8px" }}>
+                          {unreadFromStudent} msg
+                        </span>
+                      )}
                       <span style={{ fontSize: 11, fontWeight: 700, color: status.color, background: `${status.color}18`, border: `1px solid ${status.color}30`, borderRadius: 8, padding: "4px 10px", whiteSpace: "nowrap" as const }}>{status.label}</span>
                     </div>
                   </div>
@@ -1169,6 +1176,41 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     <span style={{ fontSize: 11, color: hwDone === s.homework.length ? C.green : C.muted }}>{hwDone}/{s.homework.length} hw done</span>
                     {s.nextCall && <span style={{ fontSize: 11, color: C.blue }}>Call: {s.nextCall}</span>}
                   </div>
+                  {/* Quick reply expand */}
+                  {quickReply === s.id ? (
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                      <input
+                        value={quickReplyText}
+                        onChange={e => setQuickReplyText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            const msg: DirectMsg = { id: `msg_${Date.now()}`, from: "mentor", text: quickReplyText.trim(), date: new Date().toISOString().slice(0, 10) };
+                            updateStudent(s.id, { messages: [...s.messages, msg] });
+                            setQuickReplyText(""); setQuickReply(null); setToast("✓ Message sent");
+                          }
+                          if (e.key === "Escape") { setQuickReply(null); setQuickReplyText(""); }
+                        }}
+                        placeholder={`Message ${s.name.split(" ")[0]}…`}
+                        autoFocus
+                        style={{ ...inp(), padding: "9px 12px", fontSize: 13, flex: 1 }}
+                      />
+                      <button
+                        onClick={() => {
+                          if (!quickReplyText.trim()) return;
+                          const msg: DirectMsg = { id: `msg_${Date.now()}`, from: "mentor", text: quickReplyText.trim(), date: new Date().toISOString().slice(0, 10) };
+                          updateStudent(s.id, { messages: [...s.messages, msg] });
+                          setQuickReplyText(""); setQuickReply(null); setToast("✓ Message sent");
+                        }}
+                        className="btn-blue" style={{ padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, border: "none", opacity: quickReplyText.trim() ? 1 : 0.4, flexShrink: 0 }}>
+                        Send
+                      </button>
+                    </div>
+                  ) : (
+                    <div onClick={e => { e.stopPropagation(); setQuickReply(s.id); setQuickReplyText(""); }} style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, color: C.muted, fontSize: 11, cursor: "pointer" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      Quick reply
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1192,8 +1234,14 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
 
             {/* Detail sub-nav */}
             <div style={{ display: "flex", gap: 0, background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 10, padding: 3, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none" }}>
-              {(["overview", "homework", "checkins", "messages", "notes", "updates"] as const).map(t => (
-                <button key={t} onClick={() => setDetailTab(t)} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.03em", background: detailTab === t ? C.surf2 : "transparent", color: detailTab === t ? C.white : C.muted, border: "none", cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap", textTransform: "capitalize" }}>
+              {(["overview", "homework", "checkins", "messages", "notes", "updates", "resources"] as const).map(t => (
+                <button key={t} onClick={() => {
+                  setDetailTab(t);
+                  if (t === "messages" && sel) {
+                    const count = sel.messages.filter(m => m.from === "student").length;
+                    localStorage.setItem(`cc_mentor_read_${sel.id}`, String(count));
+                  }
+                }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.03em", background: detailTab === t ? C.surf2 : "transparent", color: detailTab === t ? C.white : C.muted, border: "none", cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap", textTransform: "capitalize" }}>
                   {t === "checkins" ? "Check-Ins" : t.charAt(0).toUpperCase() + t.slice(1)}
                   {t === "checkins" && sel.checkIns.filter(c => !c.mentorReply).length > 0 && <span style={{ marginLeft: 4, background: C.gold, color: "#000", borderRadius: "50%", fontSize: 9, padding: "1px 5px", fontWeight: 800 }}>{sel.checkIns.filter(c => !c.mentorReply).length}</span>}
                 </button>
@@ -1387,6 +1435,24 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     : <div style={{ fontSize: 14, color: C.dim, lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{sel.notes || "No notes yet. Click Edit to add."}</div>
                   }
                 </div>
+                {/* Private notes — not visible to students */}
+                <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginTop: 12, marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em" }}>PRIVATE NOTES</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Not visible to the student</div>
+                    </div>
+                    {!editPrivateNotes
+                      ? <button onClick={() => { setEditPrivateNotes(true); setPrivateNotesVal(sel.mentorPrivateNotes ?? ""); }} style={{ fontSize: 12, color: C.gold, fontWeight: 700, background: `${C.gold}18`, border: `1px solid ${C.gold}35`, borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Edit</button>
+                      : <button onClick={() => { updateStudent(sel.id, { mentorPrivateNotes: privateNotesVal }); setEditPrivateNotes(false); setToast("✓ Private notes saved"); }} className="btn-blue" style={{ fontSize: 12, padding: "5px 14px", borderRadius: 6, fontWeight: 700, border: "none" }}>Save</button>
+                    }
+                  </div>
+                  {editPrivateNotes
+                    ? <textarea value={privateNotesVal} onChange={e => setPrivateNotesVal(e.target.value)} rows={5} style={{ ...inp({ fontSize: 14 }), resize: "none", lineHeight: 1.75 } as React.CSSProperties} />
+                    : <div style={{ fontSize: 14, color: C.dim, lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{sel.mentorPrivateNotes || "No private notes yet. Click Edit to add."}</div>
+                  }
+                </div>
+
                 <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginTop: 12 }}>
                   <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 12 }}>STUDENT INFO</div>
                   {[{ l: "Joined", v: sel.joinDate }, { l: "Current Week", v: `Week ${sel.week}` }, { l: "Pillars", v: `${sel.pillarsComplete.length}/8 complete` }, { l: "Next Call", v: sel.nextCall ?? "Not scheduled" }].map(r => (
@@ -1430,6 +1496,41 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.7 }}>{u.body}</div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* RESOURCES SUB-TAB */}
+            {detailTab === "resources" && (
+              <div style={{ animation: "fadeUp .3s ease" }}>
+                <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 16 }}>RESOURCE ACCESS — TAP TO TOGGLE FOR THIS STUDENT</div>
+                {loadResources().map(r => {
+                  const isPersonallyUnlocked = (sel.unlockedResources ?? []).includes(r.id);
+                  const effectivelyUnlocked = !r.locked || isPersonallyUnlocked;
+                  return (
+                    <div key={r.id} style={{ background: C.surf, border: `1px solid ${effectivelyUnlocked ? C.green + "40" : C.bord}`, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 3 }}>{r.category.toUpperCase()}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>{r.title}</div>
+                          {!effectivelyUnlocked && <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Locked globally — override below</div>}
+                          {isPersonallyUnlocked && <div style={{ fontSize: 11, color: C.green, marginTop: 2, fontWeight: 600 }}>Unlocked for {sel.name.split(" ")[0]}</div>}
+                        </div>
+                        <button
+                          onClick={() => {
+                            const current = sel.unlockedResources ?? [];
+                            const updated = isPersonallyUnlocked
+                              ? current.filter(id => id !== r.id)
+                              : [...current, r.id];
+                            updateStudent(sel.id, { unlockedResources: updated });
+                            setToast(isPersonallyUnlocked ? "✓ Resource removed for student" : `✓ Unlocked for ${sel.name.split(" ")[0]}`);
+                          }}
+                          style={{ fontSize: 11, fontWeight: 700, color: isPersonallyUnlocked ? C.red : effectivelyUnlocked ? C.muted : C.blue, background: isPersonallyUnlocked ? `${C.red}18` : effectivelyUnlocked ? "#1a264022" : `${C.blue}18`, border: `1px solid ${isPersonallyUnlocked ? C.red + "40" : effectivelyUnlocked ? C.bord : C.blue + "40"}`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", transition: "all .15s", flexShrink: 0 }}>
+                          {isPersonallyUnlocked ? "Remove" : effectivelyUnlocked ? "Global" : "Unlock"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
