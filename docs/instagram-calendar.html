@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adrian Capital Creator — 21-Day Instagram Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#080c14;--card:#0d1525;--border:#1e2c42;--blue:#1A6BFF;--gold:#d4a843;--green:#34d399;--red:#f87171;--text:#e2e8f0;--muted:#64748b;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);padding:40px 20px 60px;}
+.header{text-align:center;margin-bottom:40px;}
+.logo{font-size:22px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;}
+.logo b{color:var(--blue);}
+.header h1{font-size:clamp(26px,4vw,40px);font-weight:800;letter-spacing:-.02em;margin:12px 0 6px;}
+.header p{color:var(--muted);font-size:14px;}
+.grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:28px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s,transform .15s;}
+.card:hover{border-color:var(--blue);transform:translateY(-3px);}
+.card-meta{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 0;}
+.day-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.pillar-pill{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
+.post-img{width:100%;aspect-ratio:4/5;display:block;object-fit:cover;}
+.caption-area{padding:16px;}
+.caption-text{font-size:13px;line-height:1.65;color:#c8d3e8;margin-bottom:12px;white-space:pre-wrap;word-wrap:break-word;}
+.btns{display:flex;gap:8px;}
+.copy-btn{flex:1;background:var(--blue);color:#fff;border:none;padding:10px;font-size:12px;font-weight:700;letter-spacing:.06em;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .2s;}
+.copy-btn:hover{background:#1555e0;}
+.copy-btn.copied{background:var(--gold);color:#000;}
+.dl-btn{background:#1e2c42;color:#e2e8f0;border:none;padding:10px 14px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;text-decoration:none;display:flex;align-items:center;gap:6px;transition:background .2s;}
+.dl-btn:hover{background:#2a3d5a;}
+@media(max-width:600px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">CAPITAL<b>CREATOR</b></div>
+  <h1>Adrian Capital Creator</h1>
+  <p>21-Day Instagram Content Calendar · Day Trading Mentor · Discipline · Systems</p>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const posts = [
+  { day:1, pillar:'Mindset', pillarcol:'#1A6BFF', caption:`Most traders fail before they even open a chart.\n\nThey skip the foundation.\n\nYou can't build a profitable system on quicksand. You need to know: are you a scalper? Swing trader? Position trader? Each requires different rules, different timeframes, different risk.\n\nMost traders jump straight to "what's the setup?" without answering "who am I as a trader?"\n\nDefine your foundation first. Everything else builds from there.\n\nWhat's YOUR trading archetype? 👇\n\n#trading #daytrading #capitalcreator #disciplineovereverything #tradingmindset` },
+  { day:2, pillar:'Mentor', pillarcol:'#d4a843', caption:`Without a mentor: trial and error for years.\n\nWith a mentor: someone shows you exactly what works — immediately.\n\nYou don't need to lose $20k figuring out position sizing. You don't need to blow up three accounts learning risk management. Someone already did that so you don't have to.\n\nA good mentor compresses your learning curve from 5 years to 5 months.\n\nWorth it every time.\n\n#trading #daytrading #mentorship #capitalcreator #tradingmentor #learntrading` },
+  { day:3, pillar:'Strategy', pillarcol:'#1A6BFF', caption:`Read any chart in 4 steps 📊\n\n1. Mark the higher highs & higher lows\n2. Identify the trend direction\n3. Find key support & resistance\n4. Wait for price to react at those levels\n\nStop guessing. Structure tells you who's in control — buyers or sellers. Trade WITH the structure, not against it.\n\nMost traders add 15 indicators. You need 1: price structure.\n\nSave this 🔖\n\n#trading #daytrading #priceaction #capitalcreator #marketstructure #tradingtips` },
+  { day:4, pillar:'Lifestyle', pillarcol:'#34d399', caption:`5:30 AM. No snooze.\n\nBefore the market opens, this is the routine:\n→ Read overnight news\n→ Map market structure\n→ Identify bias (bullish? bearish? choppy?)\n→ Write 3 setups I'm looking for\n→ Set risk per trade\n\n30 minutes. Every. Single. Day.\n\nThis is why I'm calm during the open. No panic. No FOMO. I already know what I'm hunting for.\n\nPrep or get chopped up. Your choice.\n\n#trading #morningroutine #daytrading #capitalcreator #discipline #tradingroutine` },
+  { day:5, pillar:'Discipline', pillarcol:'#1A6BFF', caption:`Protect capital. Profit comes second.\n\nNew traders ask "how much can I make?" Pros ask "how much can I lose?"\n\nRisk 1% per trade. Survive the losing streaks. Stay in the game long enough for your edge to play out.\n\nThe day you break your own risk rules is the day you blow up.\n\nDiscipline means keeping your word to yourself — even when the market looks perfect.\n\nWhat % do you risk per trade? 👇\n\n#trading #riskmanagement #daytrading #capitalcreator #disciplineovereverything` },
+  { day:6, pillar:'Mentor', pillarcol:'#d4a843', caption:`Trading alone is the hardest way to learn.\n\nNo feedback. No accountability. Just you, your screen, and your worst habits compounding.\n\nThe fastest growth happens around traders who push you, call out your mistakes, and celebrate your discipline.\n\nA mentor isn't there to give you signals. A mentor is there to give you structure — then hold you to it.\n\nWhen's the last time someone reviewed your trades and told you what you're doing wrong?\n\n#trading #daytrading #mentorship #capitalcreator #tradingcommunity` },
+  { day:7, pillar:'Strategy', pillarcol:'#1A6BFF', caption:`A trading system needs only 5 things 🧱\n\n1. What you trade\n2. When you enter\n3. Where you exit winners\n4. Where you exit losers\n5. How much you risk\n\nThat's it.\n\nComplexity is the enemy. If you can't explain your system in 5 lines, it's too complicated to follow under pressure.\n\nPros don't use 15 indicators. They use one setup, applied with discipline, over and over.\n\nSave this 🔖\n\n#trading #tradingsystem #daytrading #capitalcreator #priceaction` },
+  { day:8, pillar:'Mindset', pillarcol:'#d4a843', caption:`The market doesn't care about your timeline.\n\nYou set a goal: make $1,000 this week. The market doesn't know. It doesn't reward urgency. It punishes it.\n\nWhen you remove the pressure of "I need money TODAY" your decision-making gets cleaner. You see more setups. You exit with clarity instead of fear.\n\nThe traders who make consistent money? They're the ones willing to sit and wait.\n\nAre you patient enough to skip today's trade for tomorrow's better one?\n\n#trading #daytrading #patience #capitalcreator #tradingmindset #discipline` },
+  { day:9, pillar:'Promo', pillarcol:'#f87171', caption:`You're not failing because you're stupid.\n\nYou're failing because you don't have a system. Or worse — you have a system but you don't follow it.\n\nThe traders in my mentorship don't trade "harder." They trade smarter. They follow the system. They log every trade. They refine it weekly.\n\nNo emotion. No guesswork. Just results.\n\nReady to stop leaving money on the table?\n\nApply below. Spots limited. 🔗 Link in bio.\n\n#trading #daytrading #mentorship #capitalcreator #tradingmentor #applytoday` },
+  { day:10, pillar:'Discipline', pillarcol:'#1A6BFF', caption:`You can't improve what you don't track.\n\nLog every trade:\n→ Entry reason\n→ Exit reason\n→ Emotion you felt\n→ What you'd do different\n\nReview it every Sunday. Patterns appear fast.\n\nThe mistake you made on Tuesday? You'll see it in your data — and you won't make it again.\n\nYour journal is your edge. Most traders are too lazy to keep one. That's your advantage.\n\nStart today.\n\n#trading #tradingjournal #daytrading #capitalcreator #discipline #improvement` },
+  { day:11, pillar:'Mentor', pillarcol:'#d4a843', caption:`A mentor has already failed in every way you're about to.\n\nThey know the traps:\n→ Over-trading out of boredom\n→ Adding to losing positions\n→ Wrong timeframe for your personality\n→ Emotional decisions after a loss streak\n\nYou don't need to pay tuition to the market when someone already paid it for you.\n\nThat's the real value of a mentor — not the signals, not the setups — it's the mistakes they already made so you don't have to.\n\n#trading #daytrading #mentorship #capitalcreator #learntrading #tradingmentor` },
+  { day:12, pillar:'Strategy', pillarcol:'#1A6BFF', caption:`Know your bias before you click buy 🧭\n\nEvery morning, answer 4 questions:\n1. What did price do yesterday?\n2. Where's the higher-timeframe trend?\n3. Are we at a key level?\n4. Bullish, bearish, or flat?\n\nNo bias = no trade. Context is everything.\n\nTrading without a bias is like driving blindfolded. You'll hit something eventually.\n\n5 minutes every morning. Saves you thousands in bad trades.\n\n#trading #daytrading #tradingbias #capitalcreator #marketcontext #strategy` },
+  { day:13, pillar:'Mindset', pillarcol:'#d4a843', caption:`The market will humble you.\n\nThe second you think you've "figured it out," it takes it back.\n\nEgo is the most expensive thing you'll ever bring to a chart. You think you know where price is going. Price goes the opposite direction. Now you hold the loser because admitting you're wrong feels worse than the loss.\n\nBeing right doesn't pay. Being profitable does.\n\nCut the loser. Take the L. Move to the next setup.\n\nTrade the chart. Not your ego.\n\n#trading #tradingmindset #daytrading #capitalcreator #discipline #ego` },
+  { day:14, pillar:'Lifestyle', pillarcol:'#34d399', caption:`Sunday = the weekly reset.\n\nWhile most people dread Monday, I'm building my edge:\n→ Review every trade from the week\n→ Tag the mistakes (there are always some)\n→ Mark the key levels for next week\n→ Set my watchlist for Monday\n\nThis routine is why I'm calm when the market opens Monday. I've already prepared.\n\nThe trades you take Monday are decided Sunday.\n\nTake your Sunday seriously. Your Monday results depend on it.\n\n#trading #sundayprep #daytrading #capitalcreator #tradingroutine #weeklyreset` },
+  { day:15, pillar:'Discipline', pillarcol:'#1A6BFF', caption:`Your position size should let you sleep at night.\n\nIf a loss ruins your night, you're trading too big. Period.\n\nWhen you're overleveraged, every tick feels like life or death. You make emotional decisions. You cut winners early. You hold losers too long.\n\nProper sizing keeps your emotions flat. A small, calculated loss doesn't move you. You stay calm. You execute the next trade cleanly.\n\nSize down. Think clearer. Last longer.\n\n#trading #positionsizing #riskmanagement #capitalcreator #daytrading #discipline` },
+  { day:16, pillar:'Mentor', pillarcol:'#d4a843', caption:`The goal of a mentor is to make you independent.\n\nStop asking the comments "is this a buy?" If you need someone else to validate every trade, you don't have a system — you have a habit of outsourcing your conviction.\n\nBy the end of our mentorship you should be able to:\n→ Look at a chart and know your bias immediately\n→ Identify entries and exits on your own\n→ Execute your system without needing approval\n\nAutonomy. Clarity. Confidence in your own read. That's the finish line.\n\n#trading #daytrading #mentorship #capitalcreator #independence #tradingmentor` },
+  { day:17, pillar:'Strategy', pillarcol:'#1A6BFF', caption:`Ever get stopped out right before price reverses? 🎯\n\nThat's not bad luck. That's liquidity.\n\nBig players need liquidity to fill orders. Your stops ARE that liquidity.\n\nWhat happens:\n→ Price approaches a key level\n→ Retail stops pile up right below it\n→ Big money sweeps those stops\n→ Price immediately reverses up\n\nYou got liquidated at the worst possible point.\n\nStop placing stops where everyone else does. Think differently.\n\n#trading #stoploss #daytrading #capitalcreator #liquidity #smartmoney` },
+  { day:18, pillar:'Mindset', pillarcol:'#d4a843', caption:`Boring trader + boring system = money.\n\nExciting trader + chasing trends = broke.\n\nThe winning trader does the same thing every single day:\n→ Prep\n→ Wait for setup\n→ Execute\n→ Review\n\nRepeat for months. The math wins.\n\nYou'll have days where nothing clicks. Setups don't form. Price is choppy. You sit in cash. That's the routine too.\n\nBoring is profitable. Exciting is broke.\n\n#trading #consistency #daytrading #capitalcreator #discipline #tradingmindset` },
+  { day:19, pillar:'Lifestyle', pillarcol:'#34d399', caption:`People think traders want the flashy car.\n\nWhat I actually want:\n→ Time with people I love\n→ Work from anywhere\n→ No boss, no alarm\n→ A skill that compounds for life\n\nTrading isn't about the money. It's about what the money buys back: your time.\n\nMost people spend their best years chasing money. Then they retire and realize they wasted them.\n\nI'd rather make less and live more.\n\nWhat's YOUR why? 👇\n\n#trading #freedom #daytrading #capitalcreator #tradinglifestyle #financialfreedom` },
+  { day:20, pillar:'Mentor', pillarcol:'#d4a843', caption:`Real results come from real structure.\n\nNot signals. Not tips. Not "hot picks."\n\nA repeatable, tested system that you follow regardless of emotion — that's what changes your account.\n\nThe traders I work with don't get lucky. They build process:\n→ Same prep every morning\n→ Same rules every trade\n→ Same review every week\n\nAfter 3 months, the results speak for themselves.\n\nStructure beats talent every time.\n\n#trading #daytrading #mentorship #capitalcreator #tradingresults #process` },
+  { day:21, pillar:'Promo', pillarcol:'#f87171', caption:`21 days of content. One message: discipline over emotion.\n\nIf these posts hit home, that's the signal — you're ready to stop guessing and start building a real process.\n\nThe mentorship gives you the system, the accountability, and the community to make it stick.\n\nYou've seen the process. Now live it.\n\n→ DM "READY"\n→ Or apply via link in bio\n\nWe're taking a limited number of traders this quarter. Spots are filling fast.\n\nThe difference between successful traders and broke ones? They took action. They applied. They committed.\n\nYour turn.\n\n#trading #daytrading #mentorship #capitalcreator #disciplineovereverything #applytoday` },
+];
+
+const grid = document.getElementById('grid');
+posts.forEach(p => {
+  const n = String(p.day).padStart(2,'0');
+  grid.innerHTML += `
+  <div class="card">
+    <div class="card-meta">
+      <span class="day-label">Day ${p.day}</span>
+      <span class="pillar-pill" style="background:${p.pillarcol}22;color:${p.pillarcol};">${p.pillar}</span>
+    </div>
+    <img class="post-img" src="./ig/post-${n}.png" alt="Day ${p.day} post">
+    <div class="caption-area">
+      <div class="caption-text" id="cap-${p.day}">${p.caption}</div>
+      <div class="btns">
+        <button class="copy-btn" onclick="copyCaption(this, ${p.day})">📋 Copy Caption</button>
+        <a class="dl-btn" href="./ig/post-${n}.png" download="capitalcreator-day${p.day}.png">⬇ Image</a>
+      </div>
+    </div>
+  </div>`;
+});
+
+function copyCaption(btn, day) {
+  const text = document.getElementById('cap-'+day).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerText;
+    btn.innerText = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerText = orig; btn.classList.remove('copied'); }, 1500);
+  });
+}
+</script>
+</body>
+</html>
