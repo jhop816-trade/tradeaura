@@ -1082,6 +1082,7 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
   const [editPrivateNotes, setEditPrivateNotes] = useState(false);
   const [privateNotesVal, setPrivateNotesVal] = useState("");
   const [uploadTitle, setUploadTitle] = useState(""); const [uploadCategory, setUploadCategory] = useState("Bonus");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const students = loadStudents();
   const resources = loadResources();
@@ -1676,10 +1677,10 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     <option>Pillar 05</option>
                   </select>
                 </div>
-                <label style={{ cursor: "pointer" }}>
-                  <input type="file" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])} style={{ display: "none" }} />
-                  <button style={{ width: "100%", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 700, background: C.blue, color: "#fff", border: "none", cursor: "pointer" }}>+ Upload</button>
-                </label>
+                <div>
+                  <input ref={fileInputRef} type="file" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])} style={{ display: "none" }} />
+                  <button onClick={() => fileInputRef.current?.click()} style={{ width: "100%", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 700, background: C.blue, color: "#fff", border: "none", cursor: "pointer" }}>+ Upload</button>
+                </div>
               </div>
             </div>
             {loadResources().map(r => (
