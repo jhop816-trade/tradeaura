@@ -196,7 +196,15 @@ function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () =>
     const role: Role = email.toLowerCase() === MENTOR_EMAIL ? "mentor" : "student";
     const users: User[] = JSON.parse(localStorage.getItem("cc_users") || "[]");
     if (mode === "login") {
-      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      // Auto-create account for students already on the roster
+      if (!found) {
+        const onRoster = loadStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
+        if (onRoster) {
+          found = { id: `u_${Date.now()}`, email: onRoster.email, name: onRoster.name, role: "student" };
+          localStorage.setItem("cc_users", JSON.stringify([...users, found]));
+        }
+      }
       if (!found) { setError("No account found. Sign up first."); return; }
       localStorage.setItem("cc_session", JSON.stringify(found)); onAuth(found);
     } else {
