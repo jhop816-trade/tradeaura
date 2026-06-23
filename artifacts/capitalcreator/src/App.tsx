@@ -212,18 +212,29 @@ function useReveal() {
 
 // ── AUTH ───────────────────────────────────────────────────────────────────────
 function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [portalType, setPortalType] = useState<"student"|"mentor">("student");
+  const [mode, setMode] = useState<"login"|"signup">("login");
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [name, setName] = useState(""); const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+
+  const isMentor = portalType === "mentor";
+  const accent = isMentor ? C.gold : C.blue;
 
   function submit() {
     setError("");
     if (!email || !password) { setError("Please fill in all fields."); return; }
+    const storage = rememberMe ? localStorage : sessionStorage;
+
+    if (isMentor) {
+      if (email.toLowerCase() !== MENTOR_EMAIL) { setError("Invalid mentor credentials."); return; }
+      const u: User = { id: "mentor_1", email: MENTOR_EMAIL, name: "Adrian", role: "mentor" };
+      storage.setItem("cc_session", JSON.stringify(u)); onAuth(u); return;
+    }
+
     if (mode === "signup" && !name) { setError("Please enter your name."); return; }
-    const role: Role = email.toLowerCase() === MENTOR_EMAIL ? "mentor" : "student";
     const users: User[] = JSON.parse(localStorage.getItem("cc_users") || "[]");
     if (mode === "login") {
       let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      // Auto-create account for students already on the roster
       if (!found) {
         const onRoster = loadStudents().find(s => s.email.toLowerCase() === email.toLowerCase());
         if (onRoster) {
@@ -232,52 +243,77 @@ function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () =>
         }
       }
       if (!found) { setError("No account found. Sign up first."); return; }
-      localStorage.setItem("cc_session", JSON.stringify(found)); onAuth(found);
+      storage.setItem("cc_session", JSON.stringify(found)); onAuth(found);
     } else {
       if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) { setError("Account exists. Sign in instead."); return; }
-      const u: User = { id: `u_${Date.now()}`, email, name: name || email.split("@")[0], role };
+      const u: User = { id: `u_${Date.now()}`, email, name: name || email.split("@")[0], role: "student" };
       localStorage.setItem("cc_users", JSON.stringify([...users, u]));
-      // Create a fresh student profile if this email isn't already on the roster
-      if (role === "student") {
-        const existing = loadStudents();
-        if (!existing.find(s => s.email.toLowerCase() === email.toLowerCase())) {
-          const fresh: Student = {
-            id: `s_${Date.now()}`, name: u.name, email: u.email, week: 1,
-            pillarsComplete: [], homework: [], notes: "",
-            joinDate: new Date().toISOString().slice(0, 10), nextCall: undefined,
-            checkIns: [], pillarNotes: {}, pillarMentorNotes: {}, messages: [], personalUpdates: []
-          };
-          saveStudents([...existing, fresh]);
-        }
+      const existing = loadStudents();
+      if (!existing.find(s => s.email.toLowerCase() === email.toLowerCase())) {
+        const fresh: Student = {
+          id: `s_${Date.now()}`, name: u.name, email: u.email, week: 1,
+          pillarsComplete: [], homework: [], notes: "",
+          joinDate: new Date().toISOString().slice(0, 10), nextCall: undefined,
+          checkIns: [], pillarNotes: {}, pillarMentorNotes: {}, messages: [], personalUpdates: [],
+          mentorPrivateNotes: "", unlockedResources: []
+        };
+        saveStudents([...existing, fresh]);
       }
-      localStorage.setItem("cc_session", JSON.stringify(u)); onAuth(u);
+      storage.setItem("cc_session", JSON.stringify(u)); onAuth(u);
     }
   }
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}><CCLogo size={52} /></div>
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><CCLogo size={48} /></div>
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>Capital Creator</div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 5, letterSpacing: "0.1em" }}>STUDENT PORTAL</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, letterSpacing: "0.1em" }}>SELECT PORTAL TO CONTINUE</div>
         </div>
-        <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 16, padding: 28 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{mode === "login" ? "Welcome back" : "Create your account"}</div>
-          <div style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>{mode === "login" ? "Sign in to access your portal" : "Get access to your curriculum and resources"}</div>
+
+        {/* Portal type selector */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+          {(["student", "mentor"] as const).map(type => (
+            <button key={type} onClick={() => { setPortalType(type); setMode("login"); setError(""); setEmail(""); setPassword(""); }}
+              style={{ padding: "18px 12px", borderRadius: 12, border: `1px solid ${portalType === type ? (type === "mentor" ? C.gold : C.blue) + "66" : C.bord}`, background: portalType === type ? (type === "mentor" ? `${C.gold}10` : `${C.blue}10`) : C.surf, color: portalType === type ? (type === "mentor" ? C.gold : C.blue) : C.muted, cursor: "pointer", transition: "all .2s", textAlign: "left" as const, boxShadow: portalType === type ? `0 0 20px ${type === "mentor" ? C.gold : C.blue}12` : "none" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.04em", marginBottom: 3 }}>{type === "student" ? "STUDENT" : "MENTOR"}</div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>{type === "student" ? "Student Portal" : "Mentor Dashboard"}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Form card */}
+        <div style={{ background: C.surf, border: `1px solid ${isMentor ? C.gold + "40" : C.bord}`, borderRadius: 16, padding: 28, boxShadow: `0 0 40px ${accent}08` }}>
+          {/* Top accent bar */}
+          <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}44)`, marginBottom: 22, marginLeft: -28, marginRight: -28, marginTop: -28, borderRadius: "14px 14px 0 0" }} />
+          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{isMentor ? "Mentor Access" : mode === "login" ? "Welcome back" : "Create your account"}</div>
+          <div style={{ fontSize: 13, color: C.muted, marginBottom: 22 }}>{isMentor ? "Sign in to your mentor dashboard" : mode === "login" ? "Sign in to access your portal" : "Get access to your curriculum and resources"}</div>
           {error && <div style={{ background: "#f8717118", border: "1px solid #f8717140", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
-          {mode === "signup" && <div style={{ marginBottom: 14 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>FULL NAME</div><input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" style={inp()} /></div>}
-          <div style={{ marginBottom: 14 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>EMAIL</div><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inp()} /></div>
-          <div style={{ marginBottom: 24 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>PASSWORD</div><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={inp()} onKeyDown={e => e.key === "Enter" && submit()} /></div>
-          <button onClick={submit} className="btn-blue" style={{ width: "100%", padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 16 }}>
-            {mode === "login" ? "SIGN IN" : "CREATE ACCOUNT"}
-          </button>
-          <div style={{ textAlign: "center", fontSize: 13, color: C.muted }}>
-            {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: C.blue, cursor: "pointer", fontWeight: 600 }}>
-              {mode === "login" ? "Sign up" : "Sign in"}
-            </span>
+          {!isMentor && mode === "signup" && <div style={{ marginBottom: 14 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>FULL NAME</div><input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" style={inp()} /></div>}
+          <div style={{ marginBottom: 14 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>EMAIL</div><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={isMentor ? "Mentor email address" : "you@example.com"} style={inp()} /></div>
+          <div style={{ marginBottom: 16 }}><div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>PASSWORD</div><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={inp()} onKeyDown={e => e.key === "Enter" && submit()} /></div>
+          {/* Remember Me */}
+          <div onClick={() => setRememberMe(!rememberMe)} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, cursor: "pointer", userSelect: "none" as const }}>
+            <div style={{ width: 18, height: 18, borderRadius: 5, background: rememberMe ? accent : "#1a2640", border: `1.5px solid ${rememberMe ? accent : C.bord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .15s" }}>
+              {rememberMe && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>}
+            </div>
+            <span style={{ fontSize: 13, color: C.dim }}>Remember me</span>
           </div>
+          <button onClick={submit} style={{ width: "100%", padding: 14, borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 16, background: accent, color: "#fff", border: "none", cursor: "pointer", transition: "box-shadow .2s, transform .15s" }}
+            onMouseEnter={e => { (e.target as HTMLButtonElement).style.boxShadow = `0 0 28px ${accent}66`; (e.target as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { (e.target as HTMLButtonElement).style.boxShadow = "none"; (e.target as HTMLButtonElement).style.transform = "none"; }}>
+            {isMentor ? "ENTER DASHBOARD" : mode === "login" ? "SIGN IN" : "CREATE ACCOUNT"}
+          </button>
+          {!isMentor && (
+            <div style={{ textAlign: "center", fontSize: 13, color: C.muted }}>
+              {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+              <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: C.blue, cursor: "pointer", fontWeight: 600 }}>
+                {mode === "login" ? "Sign up" : "Sign in"}
+              </span>
+            </div>
+          )}
         </div>
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontSize: 13 }}>← Back to site</button>
@@ -309,8 +345,12 @@ function HomeworkTab({ student, allStudents, setToast }: { student: Student; all
   const doneCount = activeList.filter(h => h.done).length;
 
   function HWCard({ hw }: { hw: Homework }) {
+    const today = new Date().toISOString().slice(0, 10);
+    const daysLeft = Math.ceil((new Date(hw.dueDate + "T12:00:00").getTime() - Date.now()) / 86400000);
+    const dueColor = hw.done ? C.green : daysLeft < 0 ? C.red : daysLeft <= 3 ? C.gold : C.muted;
+    const dueLabel = hw.done ? "Complete" : daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Due today" : daysLeft === 1 ? "Due tomorrow" : `${daysLeft}d left`;
     return (
-      <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
+      <div style={{ background: C.surf, border: `1px solid ${hw.done ? C.bord : daysLeft < 0 ? C.red + "30" : daysLeft <= 3 ? C.gold + "30" : C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: hw.done ? `${C.blue}22` : "#1a2640", border: `1.5px solid ${hw.done ? C.blue : C.bord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
             {hw.done && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -319,7 +359,8 @@ function HomeworkTab({ student, allStudents, setToast }: { student: Student; all
             <div style={{ fontSize: 14, fontWeight: hw.done ? 500 : 700, color: hw.done ? C.muted : C.white, textDecoration: hw.done ? "line-through" : "none", marginBottom: 4 }}>{hw.title}</div>
             <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 6 }}>{hw.desc}</div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" as const, alignItems: "center" }}>
-              <span style={{ fontSize: 10, color: C.muted }}>Pillar 0{hw.pillar} · Due {hw.dueDate}</span>
+              <span style={{ fontSize: 10, color: C.muted }}>Pillar 0{hw.pillar}</span>
+              <span style={{ fontSize: 10, color: dueColor, fontWeight: 700, background: `${dueColor}15`, border: `1px solid ${dueColor}30`, borderRadius: 5, padding: "2px 7px" }}>{dueLabel}</span>
               {hw.done && <span style={{ fontSize: 10, color: C.green, fontWeight: 600 }}>✓ Complete</span>}
               {!hw.done && submitOpen !== hw.id && (
                 <button onClick={() => { setSubmitOpen(hw.id); setSubmitNote(""); }} style={{ fontSize: 11, color: C.blue, fontWeight: 700, background: `${C.blue}18`, border: `1px solid ${C.blue}35`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>+ Submit</button>
@@ -705,21 +746,31 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
         {/* HOME TAB */}
         {tab === "home" && (
           <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
-            <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em" }}>Hey, {user.name.split(" ")[0]}.</div>
-              <div style={{ fontSize: 14, color: C.muted, marginTop: 5 }}>Week {student.week} of 12 · Keep building.</div>
-            </div>
+            {(() => {
+              const h = new Date().getHours();
+              const greeting = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+              return (
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.12em", marginBottom: 6 }}>WEEK {student.week} OF 12</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em" }}>{greeting}, {user.name.split(" ")[0]}.</div>
+                  <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>
+                    {student.pillarsComplete.length === 8 ? "All pillars complete. Independence phase." : `Pillar ${student.pillarsComplete.length + 1} of 8 is next.`}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Progress card */}
-            <div style={{ background: "linear-gradient(135deg, #0d1830 0%, #0f1f3d 100%)", border: `1px solid ${C.bord}`, borderRadius: 16, padding: 20, marginBottom: 12 }}>
+            <div style={{ background: "linear-gradient(135deg, #0a1428 0%, #0d1f40 50%, #071020 100%)", border: `1px solid ${C.blue}33`, borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: `0 0 40px ${C.blue}0a`, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${C.blue}18 0%, transparent 70%)`, pointerEvents: "none" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.12em", marginBottom: 6 }}>OVERALL PROGRESS</div>
-                  <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-0.03em" }}>{pct}<span style={{ fontSize: 18, color: C.muted, fontWeight: 600 }}>%</span></div>
+                  <div style={{ fontSize: 10, color: C.blue, letterSpacing: "0.12em", marginBottom: 6, fontWeight: 700 }}>OVERALL PROGRESS</div>
+                  <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: "-0.04em", background: `linear-gradient(135deg, #fff 0%, ${C.blue} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1 }}>{pct}<span style={{ fontSize: 20, fontWeight: 700 }}>%</span></div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.1em", marginBottom: 4 }}>PILLARS</div>
-                  <div style={{ fontSize: 22, fontWeight: 800 }}>{student.pillarsComplete.length}<span style={{ fontSize: 13, color: C.muted }}>/8</span></div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: C.white }}>{student.pillarsComplete.length}<span style={{ fontSize: 14, color: C.muted }}>/8</span></div>
                   <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Week {student.week}/12</div>
                 </div>
               </div>
@@ -859,29 +910,32 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
                 setHomeMsgTick(n => n + 1);
               }
               return (
-                <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginBottom: 12 }}>
+                <div style={{ background: C.surf, border: `1px solid ${C.blue}30`, borderRadius: 14, padding: 18, marginBottom: 12, boxShadow: `0 0 24px ${C.blue}08` }}>
                   {/* Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.blue}22`, border: `1px solid ${C.blue}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.blue, flexShrink: 0 }}>A</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>Chat with Adrian</div>
-                      <div style={{ fontSize: 11, color: C.muted }}>Private 1:1 · replies sent to your portal</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${C.bord}` }}>
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: `linear-gradient(135deg, ${C.blue}33, ${C.blue}11)`, border: `1.5px solid ${C.blue}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: C.blue }}>A</div>
+                      <div style={{ position: "absolute", bottom: 1, right: 1, width: 10, height: 10, borderRadius: "50%", background: C.green, border: `2px solid ${C.surf}` }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>Adrian</div>
+                      <div style={{ fontSize: 11, color: C.green, fontWeight: 600 }}>● Online</div>
                     </div>
                   </div>
                   {/* Messages */}
                   {msgs.length > 0 ? (
-                    <div style={{ maxHeight: 220, overflowY: "auto", marginBottom: 12, display: "flex", flexDirection: "column", gap: 8, scrollbarWidth: "thin" }}>
-                      {msgs.slice(-12).map(m => (
+                    <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 12, display: "flex", flexDirection: "column", gap: 10, scrollbarWidth: "thin" }}>
+                      {msgs.slice(-14).map(m => (
                         <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: m.from === "student" ? "flex-end" : "flex-start" }}>
-                          <div style={{ maxWidth: "82%", background: m.from === "student" ? `${C.blue}22` : "#0d1830", border: `1px solid ${m.from === "student" ? C.blue + "40" : C.bord}`, borderRadius: 10, padding: "9px 13px" }}>
-                            <div style={{ fontSize: 13, color: m.from === "student" ? C.white : C.dim, lineHeight: 1.6 }}>{m.text}</div>
+                          <div style={{ maxWidth: "80%", background: m.from === "student" ? `linear-gradient(135deg, ${C.blue}33, ${C.blue}18)` : "#0d1830", border: `1px solid ${m.from === "student" ? C.blue + "55" : C.bord}`, borderRadius: m.from === "student" ? "12px 12px 2px 12px" : "12px 12px 12px 2px", padding: "9px 13px" }}>
+                            <div style={{ fontSize: 13, color: m.from === "student" ? C.white : C.dim, lineHeight: 1.65 }}>{m.text}</div>
                           </div>
-                          <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>{m.from === "mentor" ? "Adrian" : "You"} · {m.date}</div>
+                          <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>{m.from === "mentor" ? "Adrian" : "You"} · {m.date}</div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 13, padding: "14px 0 18px" }}>No messages yet — send Adrian a question.</div>
+                    <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 13, padding: "16px 0 20px" }}>No messages yet. Send Adrian a question to get started.</div>
                   )}
                   {/* Compose */}
                   <div style={{ display: "flex", gap: 8 }}>
@@ -973,18 +1027,22 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: `${C.bg}f2`, backdropFilter: "blur(20px)", borderTop: `1px solid ${C.bord}`, display: "flex", padding: "10px 0 max(18px, env(safe-area-inset-bottom))" }}>
-        {NAV.map(n => (
-          <button key={n.id} onClick={() => setTab(n.id as typeof tab)} className="nav-item" style={{ flex: 1, background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: tab === n.id ? C.blue : C.muted, padding: "4px 0" }}>
-            <div style={{ position: "relative" }}>
-              {n.svg}
-              {n.id === "home" && unreadMsgs > 0 && (
-                <div style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: C.blue, border: `1.5px solid ${C.bg}` }} />
-              )}
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" as const }}>{n.label}</span>
-          </button>
-        ))}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: `${C.bg}f5`, backdropFilter: "blur(24px)", borderTop: `1px solid ${C.bord}`, display: "flex", padding: "8px 0 max(16px, env(safe-area-inset-bottom))" }}>
+        {NAV.map(n => {
+          const active = tab === n.id;
+          return (
+            <button key={n.id} onClick={() => setTab(n.id as typeof tab)} className="nav-item" style={{ flex: 1, background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: active ? C.blue : C.muted, padding: "4px 0", position: "relative" }}>
+              {active && <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", width: 28, height: 2, borderRadius: 1, background: C.blue, boxShadow: `0 0 8px ${C.blue}` }} />}
+              <div style={{ position: "relative" }}>
+                {n.svg}
+                {n.id === "home" && unreadMsgs > 0 && (
+                  <div style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: C.blue, border: `1.5px solid ${C.bg}`, boxShadow: `0 0 6px ${C.blue}` }} />
+                )}
+              </div>
+              <span style={{ fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: "0.05em", textTransform: "uppercase" as const }}>{n.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -2102,14 +2160,14 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const s = localStorage.getItem("cc_session");
+    const s = localStorage.getItem("cc_session") || sessionStorage.getItem("cc_session");
     if (s) {
       try { const u = JSON.parse(s) as User; setUser(u); setView(u.role === "mentor" ? "mentor" : "student"); } catch {}
     }
   }, []);
 
   function handleAuth(u: User) { setUser(u); setView(u.role === "mentor" ? "mentor" : "student"); }
-  function handleSignOut() { localStorage.removeItem("cc_session"); setUser(null); setView("landing"); }
+  function handleSignOut() { localStorage.removeItem("cc_session"); sessionStorage.removeItem("cc_session"); setUser(null); setView("landing"); }
 
   if (view === "auth")    return <AuthPage onAuth={handleAuth} onBack={() => setView("landing")} />;
   if (view === "student" && user) return <StudentPortal user={user} onSignOut={handleSignOut} />;
