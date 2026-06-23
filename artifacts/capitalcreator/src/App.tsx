@@ -3,16 +3,19 @@ import { useState, useEffect, useRef } from "react";
 // ── TYPES ──────────────────────────────────────────────────────────────────────
 type Role = "student" | "mentor";
 interface User { id: string; email: string; name: string; role: Role; }
-interface Homework { id: string; title: string; desc: string; pillar: number; done: boolean; dueDate: string; feedback?: string; studentNotes?: string; }
+interface Homework { id: string; title: string; desc: string; pillar: number; done: boolean; dueDate: string; feedback?: string; studentNotes?: string; isGroup?: boolean; }
 interface CheckIn { id: string; week: number; workedOn: string; challenged: string; questions: string; date: string; mentorReply?: string; }
 interface DirectMsg { id: string; from: "student" | "mentor"; text: string; date: string; }
+interface PersonalUpdate { id: string; title: string; body: string; date: string; }
 interface Student {
   id: string; name: string; email: string; week: number;
   pillarsComplete: number[]; homework: Homework[]; notes: string;
   joinDate: string; nextCall?: string;
   checkIns: CheckIn[];
   pillarNotes: Record<string, string>;
+  pillarMentorNotes: Record<string, string>;
   messages: DirectMsg[];
+  personalUpdates: PersonalUpdate[];
 }
 interface Announcement { id: string; title: string; body: string; date: string; pinned?: boolean; }
 interface Resource { id: string; title: string; category: string; desc: string; locked: boolean; size?: string; }
@@ -64,7 +67,9 @@ const MOCK_STUDENTS: Student[] = [
     homework: [
       { id: "h1", title: "Mark up 3 charts using market structure", desc: "Use the structure framework from Pillar 2. Identify BOS and CHoCH.", pillar: 2, done: true, dueDate: "2025-06-15", feedback: "Good work on BOS identification. Work on CHoCH timing.", studentNotes: "CHoCH is tricky on lower timeframes — keeping extra notes on this." },
       { id: "h2", title: "Journal your last 5 trades", desc: "Full entry, exit, reasoning, and emotional state for each.", pillar: 3, done: false, dueDate: "2025-06-28" },
-      { id: "h3", title: "Identify 5 liquidity levels on NQ", desc: "Mark buy-side and sell-side liquidity on the daily chart.", pillar: 4, done: false, dueDate: "2025-06-28" }
+      { id: "h3", title: "Identify 5 liquidity levels on NQ", desc: "Mark buy-side and sell-side liquidity on the daily chart.", pillar: 4, done: false, dueDate: "2025-06-28" },
+      { id: "gh1", title: "Watch: Friday Group Review Recording", desc: "Review the full chart walkthrough from Friday's live session. Take notes on the 3 setups discussed.", pillar: 2, done: false, dueDate: "2025-06-30", isGroup: true },
+      { id: "gh2", title: "Complete the Risk Framework Worksheet", desc: "Download from Resources → Risk & Execution. Fill out all sections and bring to your next call.", pillar: 5, done: false, dueDate: "2025-07-05", isGroup: true },
     ],
     notes: "Strong mindset, needs work on entry confirmation. Consistent with homework. Push harder on liquidity.",
     joinDate: "2025-05-01", nextCall: "2025-06-25",
@@ -75,9 +80,16 @@ const MOCK_STUDENTS: Student[] = [
       "1": "Foundations: structure, bias, execution. Review vocabulary list weekly.",
       "2": "BOS = Break of Structure. CHoCH = Change of Character. Practice on live charts daily."
     },
+    pillarMentorNotes: {
+      "2": "Focus on identifying BOS on the 4H first, then confirm on the 1H. You're rushing to the lower timeframes too fast.",
+      "3": "Your bias work is solid. Next step: practice holding bias through minor retracements without second-guessing."
+    },
     messages: [
       { id: "msg1", from: "student", text: "Should I be looking at the weekly chart for bias before going into daily?", date: "2025-06-19" },
       { id: "msg2", from: "mentor", text: "Always. Weekly = macro picture. Daily = execution window. Never trade against the weekly bias.", date: "2025-06-19" }
+    ],
+    personalUpdates: [
+      { id: "pu1", title: "Your next call has been confirmed", body: "Wednesday June 25 at 7PM EST. We'll be going through your chart markups and reviewing your journal entries. Come prepared with your 3 best setups from the week.", date: "2025-06-20" }
     ]
   },
   {
@@ -95,7 +107,13 @@ const MOCK_STUDENTS: Student[] = [
       "7": "Refinement = cutting what doesn't work, not adding more setups.",
       "8": "Independence = trusting my own read without needing external validation."
     },
-    messages: []
+    pillarMentorNotes: {
+      "8": "You're ready. Your next step is 30 days of fully independent trading with a weekly self-review. Trust your process."
+    },
+    messages: [],
+    personalUpdates: [
+      { id: "pu2", title: "Independence Phase — Starting July 1", body: "You're being moved into the independence phase. No structured calls for 30 days — just weekly self-reviews. You have everything you need. Let the process work.", date: "2025-06-22" }
+    ]
   },
   {
     id: "s3", name: "Marcus T.", email: "marcus@example.com", week: 2,
@@ -108,7 +126,13 @@ const MOCK_STUDENTS: Student[] = [
     joinDate: "2025-06-10", nextCall: "2025-06-27",
     checkIns: [],
     pillarNotes: {},
-    messages: []
+    pillarMentorNotes: {
+      "1": "Strong start. Make sure you understand the difference between structure and noise before moving to Pillar 2."
+    },
+    messages: [
+      { id: "msg3", from: "mentor", text: "Welcome to the program Marcus. Review the onboarding doc and message me with any questions before our first call.", date: "2025-06-10" }
+    ],
+    personalUpdates: []
   },
 ];
 
@@ -135,7 +159,7 @@ const MOCK_RESOURCES: Resource[] = [
 function loadStudents(): Student[] {
   const raw = localStorage.getItem("cc_students");
   const base: Student[] = raw ? JSON.parse(raw) : MOCK_STUDENTS;
-  return base.map(s => ({ ...s, checkIns: s.checkIns ?? [], pillarNotes: s.pillarNotes ?? {}, messages: s.messages ?? [] }));
+  return base.map(s => ({ ...s, checkIns: s.checkIns ?? [], pillarNotes: s.pillarNotes ?? {}, pillarMentorNotes: s.pillarMentorNotes ?? {}, messages: s.messages ?? [], personalUpdates: s.personalUpdates ?? [] }));
 }
 function saveStudents(students: Student[]) { localStorage.setItem("cc_students", JSON.stringify(students)); }
 function loadResources(): Resource[] { const raw = localStorage.getItem("cc_resources"); return raw ? JSON.parse(raw) : MOCK_RESOURCES; }
@@ -252,8 +276,7 @@ function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () =>
 function HomeworkTab({ student, allStudents, setToast }: { student: Student; allStudents: Student[]; setToast: (s: string) => void }) {
   const [submitOpen, setSubmitOpen] = useState<string | null>(null);
   const [submitNote, setSubmitNote] = useState("");
-  const [msgText, setMsgText] = useState("");
-  const hwDone = student.homework.filter(h => h.done).length;
+  const [section, setSection] = useState<"personal"|"group">("personal");
 
   function markComplete(hwId: string) {
     const updated = allStudents.map(s => {
@@ -265,103 +288,91 @@ function HomeworkTab({ student, allStudents, setToast }: { student: Student; all
     setToast("✓ Assignment marked complete");
   }
 
-  function sendMsg() {
-    if (!msgText.trim()) return;
-    const msg: DirectMsg = { id: `msg_${Date.now()}`, from: "student", text: msgText.trim(), date: new Date().toISOString().slice(0, 10) };
-    const updated = allStudents.map(s => s.id === student.id ? { ...s, messages: [...s.messages, msg] } : s);
-    saveStudents(updated);
-    setMsgText(""); setToast("✓ Message sent to Adrian");
+  const personalHW = student.homework.filter(h => !h.isGroup);
+  const groupHW = student.homework.filter(h => h.isGroup);
+  const activeList = section === "personal" ? personalHW : groupHW;
+  const doneCount = activeList.filter(h => h.done).length;
+
+  function HWCard({ hw }: { hw: Homework }) {
+    return (
+      <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div style={{ width: 26, height: 26, borderRadius: 7, background: hw.done ? `${C.blue}22` : "#1a2640", border: `1.5px solid ${hw.done ? C.blue : C.bord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+            {hw.done && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: hw.done ? 500 : 700, color: hw.done ? C.muted : C.white, textDecoration: hw.done ? "line-through" : "none", marginBottom: 4 }}>{hw.title}</div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 6 }}>{hw.desc}</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" as const, alignItems: "center" }}>
+              <span style={{ fontSize: 10, color: C.muted }}>Pillar 0{hw.pillar} · Due {hw.dueDate}</span>
+              {hw.done && <span style={{ fontSize: 10, color: C.green, fontWeight: 600 }}>✓ Complete</span>}
+              {!hw.done && submitOpen !== hw.id && (
+                <button onClick={() => { setSubmitOpen(hw.id); setSubmitNote(""); }} style={{ fontSize: 11, color: C.blue, fontWeight: 700, background: `${C.blue}18`, border: `1px solid ${C.blue}35`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>+ Submit</button>
+              )}
+            </div>
+            {!hw.done && submitOpen === hw.id && (
+              <div style={{ marginTop: 12, animation: "fadeUp .2s ease" }}>
+                <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", marginBottom: 6 }}>SUBMISSION NOTES (optional)</div>
+                <textarea value={submitNote} onChange={e => setSubmitNote(e.target.value)} placeholder="Describe what you did…" rows={3} style={{ ...inp({ fontSize: 13 }), resize: "none", lineHeight: 1.6 } as React.CSSProperties} />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => markComplete(hw.id)} className="btn-blue" style={{ flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12, fontWeight: 700, border: "none" }}>MARK COMPLETE</button>
+                  <button onClick={() => setSubmitOpen(null)} className="btn-outline" style={{ padding: "9px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>Cancel</button>
+                </div>
+              </div>
+            )}
+            {hw.studentNotes && hw.done && (
+              <div style={{ marginTop: 8, background: "#0c101833", border: `1px solid ${C.bord}`, borderRadius: 8, padding: "8px 12px" }}>
+                <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.08em", marginBottom: 3 }}>YOUR NOTES</div>
+                <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>{hw.studentNotes}</div>
+              </div>
+            )}
+            {hw.feedback && (
+              <div style={{ marginTop: 8, background: `${C.blue}0d`, border: `1px solid ${C.blue}30`, borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>MENTOR FEEDBACK</div>
+                <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.6 }}>{hw.feedback}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
-      <div style={{ marginBottom: 22 }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Homework</div>
-        <div style={{ fontSize: 14, color: C.muted, marginTop: 5 }}>{hwDone} of {student.homework.length} completed</div>
       </div>
 
-      <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em" }}>COMPLETION</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: hwDone === student.homework.length ? C.green : C.gold }}>{hwDone}/{student.homework.length}</span>
-        </div>
-        <div style={{ height: 5, background: "#1a2640", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${student.homework.length ? (hwDone / student.homework.length) * 100 : 0}%`, height: "100%", background: hwDone === student.homework.length ? C.green : C.blue, borderRadius: 3, transition: "width 1s ease" }} />
-        </div>
+      {/* Section toggle */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, background: C.surf, borderRadius: 10, padding: 4, border: `1px solid ${C.bord}` }}>
+        {([["personal", "My Assignments"], ["group", "Group Assignments"]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setSection(id)} style={{ flex: 1, padding: "8px 0", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", background: section === id ? C.blue : "transparent", color: section === id ? "#fff" : C.muted, transition: "all .15s" }}>
+            {label}
+          </button>
+        ))}
       </div>
 
-      {student.homework.map(hw => (
-        <div key={hw.id} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 10 }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <div style={{ width: 26, height: 26, borderRadius: 7, background: hw.done ? `${C.blue}22` : "#1a2640", border: `1.5px solid ${hw.done ? C.blue : C.bord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-              {hw.done && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: hw.done ? 500 : 700, color: hw.done ? C.muted : C.white, textDecoration: hw.done ? "line-through" : "none", marginBottom: 4 }}>{hw.title}</div>
-              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 6 }}>{hw.desc}</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" as const, alignItems: "center" }}>
-                <span style={{ fontSize: 10, color: C.muted }}>Pillar 0{hw.pillar} · Due {hw.dueDate}</span>
-                {hw.done && <span style={{ fontSize: 10, color: C.green, fontWeight: 600 }}>✓ Complete</span>}
-                {!hw.done && submitOpen !== hw.id && (
-                  <button onClick={() => { setSubmitOpen(hw.id); setSubmitNote(""); }} style={{ fontSize: 11, color: C.blue, fontWeight: 700, background: `${C.blue}18`, border: `1px solid ${C.blue}35`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>
-                    + Submit
-                  </button>
-                )}
-              </div>
-
-              {/* Submit form */}
-              {!hw.done && submitOpen === hw.id && (
-                <div style={{ marginTop: 12, animation: "fadeUp .2s ease" }}>
-                  <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", marginBottom: 6 }}>SUBMISSION NOTES (optional)</div>
-                  <textarea value={submitNote} onChange={e => setSubmitNote(e.target.value)} placeholder="Describe what you did, observations, or questions about this assignment…" rows={3} style={{ ...inp({ fontSize: 13 }), resize: "none", lineHeight: 1.6 } as React.CSSProperties} />
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button onClick={() => markComplete(hw.id)} className="btn-blue" style={{ flex: 1, padding: "9px 0", borderRadius: 8, fontSize: 12, fontWeight: 700, border: "none" }}>MARK COMPLETE</button>
-                    <button onClick={() => setSubmitOpen(null)} className="btn-outline" style={{ padding: "9px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>Cancel</button>
-                  </div>
-                </div>
-              )}
-
-              {hw.studentNotes && hw.done && (
-                <div style={{ marginTop: 8, background: "#0c101833", border: `1px solid ${C.bord}`, borderRadius: 8, padding: "8px 12px" }}>
-                  <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.08em", marginBottom: 3 }}>YOUR NOTES</div>
-                  <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>{hw.studentNotes}</div>
-                </div>
-              )}
-              {hw.feedback && (
-                <div style={{ marginTop: 8, background: `${C.blue}0d`, border: `1px solid ${C.blue}30`, borderRadius: 8, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 4 }}>MENTOR FEEDBACK</div>
-                  <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.6 }}>{hw.feedback}</div>
-                </div>
-              )}
-            </div>
+      {/* Progress bar */}
+      {activeList.length > 0 && (
+        <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em" }}>COMPLETION</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: doneCount === activeList.length ? C.green : C.gold }}>{doneCount}/{activeList.length}</span>
+          </div>
+          <div style={{ height: 5, background: "#1a2640", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ width: `${(doneCount / activeList.length) * 100}%`, height: "100%", background: doneCount === activeList.length ? C.green : C.blue, borderRadius: 3, transition: "width 1s ease" }} />
           </div>
         </div>
-      ))}
-
-      {student.homework.length === 0 && (
-        <div style={{ textAlign: "center", color: C.muted, fontSize: 14, paddingTop: 32, paddingBottom: 16 }}>No assignments yet. Check back after your next call.</div>
       )}
 
-      {/* Message Adrian */}
-      <div style={{ marginTop: 24 }}>
-        <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 14 }}>DIRECT MESSAGE</div>
-        {student.messages.length > 0 && (
-          <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
-            {student.messages.slice(-4).map(m => (
-              <div key={m.id} style={{ marginBottom: 12, display: "flex", flexDirection: "column" as const, alignItems: m.from === "student" ? "flex-end" : "flex-start" }}>
-                <div style={{ maxWidth: "85%", background: m.from === "student" ? `${C.blue}22` : C.surf2, border: `1px solid ${m.from === "student" ? C.blue + "40" : C.bord}`, borderRadius: 10, padding: "9px 13px" }}>
-                  <div style={{ fontSize: 12, color: m.from === "student" ? C.blue : C.dim, lineHeight: 1.6 }}>{m.text}</div>
-                </div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>{m.from === "mentor" ? "Adrian" : "You"} · {m.date}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 8 }}>
-          <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder="Ask Adrian a question…" style={{ ...inp(), padding: "11px 14px", fontSize: 14, flex: 1 }} />
-          <button onClick={sendMsg} disabled={!msgText.trim()} className="btn-blue" style={{ padding: "0 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", opacity: msgText.trim() ? 1 : 0.4 }}>Send</button>
+      {activeList.map(hw => <HWCard key={hw.id} hw={hw} />)}
+
+      {activeList.length === 0 && (
+        <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 14, paddingTop: 32, paddingBottom: 16 }}>
+          {section === "personal" ? "No personal assignments yet. Check back after your next call." : "No group assignments posted yet."}
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -419,6 +430,50 @@ function ResourcesTab({ resources }: { resources: Resource[] }) {
 }
 
 // ── CURRICULUM TAB ─────────────────────────────────────────────────────────────
+function CurriculumMessages({ student, allStudents }: { student: Student; allStudents: Student[] }) {
+  const [msgText, setMsgText] = useState("");
+  const [, forceRender] = useState(0);
+
+  function sendMsg() {
+    if (!msgText.trim()) return;
+    const msg: DirectMsg = { id: `msg_${Date.now()}`, from: "student", text: msgText.trim(), date: new Date().toISOString().slice(0, 10) };
+    const updated = allStudents.map(s => s.id === student.id ? { ...s, messages: [...s.messages, msg] } : s);
+    saveStudents(updated);
+    setMsgText("");
+    forceRender(n => n + 1);
+  }
+
+  const msgs = loadStudents().find(s => s.id === student.id)?.messages ?? student.messages;
+
+  return (
+    <div style={{ marginTop: 28, borderTop: `1px solid ${C.bord}`, paddingTop: 24 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Messages with Adrian</div>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>Private 1:1 — discuss lessons, questions, or anything from your sessions.</div>
+      {msgs.length > 0 && (
+        <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 12 }}>
+          {msgs.map(m => (
+            <div key={m.id} style={{ marginBottom: 12, display: "flex", flexDirection: "column" as const, alignItems: m.from === "student" ? "flex-end" : "flex-start" }}>
+              <div style={{ maxWidth: "85%", background: m.from === "student" ? `${C.blue}22` : C.surf2, border: `1px solid ${m.from === "student" ? C.blue + "40" : C.bord}`, borderRadius: 10, padding: "9px 13px" }}>
+                <div style={{ fontSize: 13, color: m.from === "student" ? C.white : C.dim, lineHeight: 1.6 }}>{m.text}</div>
+              </div>
+              <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>{m.from === "mentor" ? "Adrian" : "You"} · {m.date}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {msgs.length === 0 && (
+        <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: "16px", marginBottom: 12, textAlign: "center" as const }}>
+          <div style={{ fontSize: 13, color: C.muted }}>No messages yet. Send Adrian a question or topic for your next session.</div>
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input value={msgText} onChange={e => setMsgText(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder="Message Adrian…" style={{ ...inp(), padding: "11px 14px", fontSize: 14, flex: 1 }} />
+        <button onClick={sendMsg} disabled={!msgText.trim()} className="btn-blue" style={{ padding: "0 18px", borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", opacity: msgText.trim() ? 1 : 0.4 }}>Send</button>
+      </div>
+    </div>
+  );
+}
+
 function CurriculumTab({ student, allStudents }: { student: Student; allStudents: Student[] }) {
   const [expandedPillar, setExpandedPillar] = useState<number | null>(null);
   const [noteVal, setNoteVal] = useState("");
@@ -486,6 +541,12 @@ function CurriculumTab({ student, allStudents }: { student: Student; allStudents
 
             {isOpen && (
               <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.bord}`, paddingTop: 14, animation: "fadeUp .2s ease" }}>
+                {student.pillarMentorNotes[String(p.n)] && (
+                  <div style={{ background: `${C.blue}0d`, border: `1px solid ${C.blue}30`, borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 5 }}>NOTES FROM ADRIAN</div>
+                    <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.65 }}>{student.pillarMentorNotes[String(p.n)]}</div>
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", marginBottom: 8 }}>MY NOTES</div>
                 <textarea
                   value={noteVal}
@@ -502,6 +563,9 @@ function CurriculumTab({ student, allStudents }: { student: Student; allStudents
           </div>
         );
       })}
+
+      {/* 1:1 MESSAGE THREAD */}
+      <CurriculumMessages student={student} allStudents={allStudents} />
     </div>
   );
 }
@@ -721,22 +785,49 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
         )}
 
         {/* UPDATES TAB */}
-        {tab === "updates" && (
-          <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
-            <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Updates</div>
-              <div style={{ fontSize: 14, color: C.muted, marginTop: 5 }}>Messages from Adrian</div>
-            </div>
-            {announcements.map((a, i) => (
-              <div key={a.id} style={{ background: C.surf, border: `1px solid ${a.pinned ? C.blue + "44" : C.bord}`, borderLeft: `3px solid ${i === 0 ? C.blue : a.pinned ? C.blue : C.bord}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
-                {a.pinned && <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 6 }}>PINNED</div>}
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{a.date}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{a.title}</div>
-                <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{a.body}</div>
+        {tab === "updates" && (() => {
+          const [updSection, setUpdSection] = (useState as Function)<"group"|"personal">("group");
+          return (
+            <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Updates</div>
               </div>
-            ))}
-          </div>
-        )}
+              <div style={{ display: "flex", gap: 8, marginBottom: 20, background: C.surf, borderRadius: 10, padding: 4, border: `1px solid ${C.bord}` }}>
+                {([["group", "Group"], ["personal", "Personal"]] as const).map(([id, label]) => (
+                  <button key={id} onClick={() => setUpdSection(id)} style={{ flex: 1, padding: "8px 0", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", background: updSection === id ? C.blue : "transparent", color: updSection === id ? "#fff" : C.muted, transition: "all .15s" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {updSection === "group" && (
+                <>
+                  {announcements.map((a, i) => (
+                    <div key={a.id} style={{ background: C.surf, border: `1px solid ${a.pinned ? C.blue + "44" : C.bord}`, borderLeft: `3px solid ${i === 0 ? C.blue : a.pinned ? C.blue : C.bord}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
+                      {a.pinned && <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 6 }}>PINNED</div>}
+                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{a.date}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{a.title}</div>
+                      <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{a.body}</div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {updSection === "personal" && (
+                <>
+                  {student.personalUpdates.length === 0 && (
+                    <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 14, paddingTop: 32 }}>No personal updates yet.</div>
+                  )}
+                  {student.personalUpdates.map(u => (
+                    <div key={u.id} style={{ background: C.surf, border: `1px solid ${C.blue}40`, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{u.date}</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{u.title}</div>
+                      <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{u.body}</div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          );
+        })()}
 
         {/* HOMEWORK TAB */}
         {tab === "homework" && (
@@ -778,12 +869,13 @@ function MentorReplyInput({ sel, updateStudent, onSent }: { sel: Student; update
 function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   const [tab, setTab] = useState<"students"|"announce"|"library"|"schedule">("students");
   const [selected, setSelected] = useState<Student | null>(null);
-  const [detailTab, setDetailTab] = useState<"overview"|"homework"|"checkins"|"messages"|"notes">("overview");
+  const [detailTab, setDetailTab] = useState<"overview"|"homework"|"checkins"|"messages"|"notes"|"updates">("overview");
   const [annTitle, setAnnTitle] = useState(""); const [annBody, setAnnBody] = useState(""); const [toast, setToast] = useState("");
   const [editingNotes, setEditingNotes] = useState(false); const [notesVal, setNotesVal] = useState("");
-  const [addHwOpen, setAddHwOpen] = useState(false);
+  const [addHwOpen, setAddHwOpen] = useState(false); const [hwSendAll, setHwSendAll] = useState(false);
   const [hwTitle, setHwTitle] = useState(""); const [hwDesc, setHwDesc] = useState(""); const [hwPillar, setHwPillar] = useState("1"); const [hwDue, setHwDue] = useState("");
   const [feedbackOpen, setFeedbackOpen] = useState<string | null>(null); const [feedbackVal, setFeedbackVal] = useState("");
+  const [addPuOpen, setAddPuOpen] = useState(false); const [puTitle, setPuTitle] = useState(""); const [puBody, setPuBody] = useState("");
   const [replyOpen, setReplyOpen] = useState<string | null>(null); const [replyVal, setReplyVal] = useState("");
 
   const students = loadStudents();
@@ -823,10 +915,25 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
   }
 
   function addHomework() {
-    if (!sel || !hwTitle || !hwDue) return;
-    const hw: Homework = { id: `hw_${Date.now()}`, title: hwTitle, desc: hwDesc, pillar: parseInt(hwPillar), done: false, dueDate: hwDue };
-    updateStudent(sel.id, { homework: [...sel.homework, hw] });
-    setHwTitle(""); setHwDesc(""); setHwPillar("1"); setHwDue(""); setAddHwOpen(false); setToast("✓ Homework assigned");
+    if (!hwTitle || !hwDue) return;
+    const hw: Homework = { id: `hw_${Date.now()}`, title: hwTitle, desc: hwDesc, pillar: parseInt(hwPillar), done: false, dueDate: hwDue, isGroup: hwSendAll };
+    if (hwSendAll) {
+      const all = loadStudents();
+      saveStudents(all.map(s => ({ ...s, homework: [...s.homework, { ...hw, id: `hw_${Date.now()}_${s.id}` }] })));
+      setToast(`✓ Assigned to all ${all.length} students`);
+    } else {
+      if (!sel) return;
+      updateStudent(sel.id, { homework: [...sel.homework, hw] });
+      setToast("✓ Homework assigned");
+    }
+    setHwTitle(""); setHwDesc(""); setHwPillar("1"); setHwDue(""); setHwSendAll(false); setAddHwOpen(false);
+  }
+
+  function addPersonalUpdate() {
+    if (!sel || !puTitle || !puBody) return;
+    const pu: PersonalUpdate = { id: `pu_${Date.now()}`, title: puTitle, body: puBody, date: new Date().toISOString().slice(0, 10) };
+    updateStudent(sel.id, { personalUpdates: [...(sel.personalUpdates ?? []), pu] });
+    setPuTitle(""); setPuBody(""); setAddPuOpen(false); setToast("✓ Personal update sent");
   }
 
   function saveFeedback(hwId: string) {
@@ -939,7 +1046,7 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
 
             {/* Detail sub-nav */}
             <div style={{ display: "flex", gap: 0, background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 10, padding: 3, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none" }}>
-              {(["overview", "homework", "checkins", "messages", "notes"] as const).map(t => (
+              {(["overview", "homework", "checkins", "messages", "notes", "updates"] as const).map(t => (
                 <button key={t} onClick={() => setDetailTab(t)} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, fontSize: 11, fontWeight: 700, letterSpacing: "0.03em", background: detailTab === t ? C.surf2 : "transparent", color: detailTab === t ? C.white : C.muted, border: "none", cursor: "pointer", transition: "all .15s", whiteSpace: "nowrap", textTransform: "capitalize" }}>
                   {t === "checkins" ? "Check-Ins" : t.charAt(0).toUpperCase() + t.slice(1)}
                   {t === "checkins" && sel.checkIns.filter(c => !c.mentorReply).length > 0 && <span style={{ marginLeft: 4, background: C.gold, color: "#000", borderRadius: "50%", fontSize: 9, padding: "1px 5px", fontWeight: 800 }}>{sel.checkIns.filter(c => !c.mentorReply).length}</span>}
@@ -1016,8 +1123,17 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                         <input type="date" value={hwDue} onChange={e => setHwDue(e.target.value)} style={{ ...inp(), colorScheme: "dark" }} />
                       </div>
                     </div>
+                    <div onClick={() => setHwSendAll(!hwSendAll)} style={{ display: "flex", alignItems: "center", gap: 10, background: hwSendAll ? `${C.blue}15` : C.surf2, border: `1px solid ${hwSendAll ? C.blue + "55" : C.bord}`, borderRadius: 8, padding: "10px 14px", marginBottom: 14, cursor: "pointer" }}>
+                      <div style={{ width: 18, height: 18, borderRadius: 5, background: hwSendAll ? C.blue : "#1a2640", border: `1.5px solid ${hwSendAll ? C.blue : C.bord}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {hwSendAll && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700 }}>Send to all students</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>This becomes a Group Assignment for everyone</div>
+                      </div>
+                    </div>
                     <button onClick={addHomework} disabled={!hwTitle || !hwDue} className="btn-blue" style={{ width: "100%", padding: 12, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", opacity: hwTitle && hwDue ? 1 : 0.45 }}>
-                      ASSIGN TO {sel.name.split(" ")[0].toUpperCase()}
+                      {hwSendAll ? "ASSIGN TO ALL STUDENTS" : `ASSIGN TO ${sel.name.split(" ")[0].toUpperCase()}`}
                     </button>
                   </div>
                 )}
@@ -1134,6 +1250,40 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* PERSONAL UPDATES SUB-TAB */}
+            {detailTab === "updates" && (
+              <div style={{ animation: "fadeUp .3s ease" }}>
+                <button onClick={() => setAddPuOpen(!addPuOpen)} className="btn-blue" style={{ width: "100%", padding: 12, borderRadius: 10, fontSize: 13, fontWeight: 700, border: "none", marginBottom: 16 }}>
+                  {addPuOpen ? "Cancel" : "+ SEND PERSONAL UPDATE"}
+                </button>
+                {addPuOpen && (
+                  <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginBottom: 16, animation: "fadeUp .25s ease" }}>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", marginBottom: 6 }}>TITLE</div>
+                      <input value={puTitle} onChange={e => setPuTitle(e.target.value)} placeholder="e.g. Your next call is confirmed" style={inp()} />
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", marginBottom: 6 }}>MESSAGE</div>
+                      <textarea value={puBody} onChange={e => setPuBody(e.target.value)} placeholder="Write the personal update for this student…" rows={4} style={{ ...inp(), resize: "none", lineHeight: 1.6 } as React.CSSProperties} />
+                    </div>
+                    <button onClick={addPersonalUpdate} disabled={!puTitle || !puBody} className="btn-blue" style={{ width: "100%", padding: 12, borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", opacity: puTitle && puBody ? 1 : 0.45 }}>
+                      SEND TO {sel.name.split(" ")[0].toUpperCase()}
+                    </button>
+                  </div>
+                )}
+                {(sel.personalUpdates ?? []).length === 0 && !addPuOpen && (
+                  <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 14, paddingTop: 24 }}>No personal updates sent yet.</div>
+                )}
+                {(sel.personalUpdates ?? []).map(u => (
+                  <div key={u.id} style={{ background: C.surf, border: `1px solid ${C.blue}40`, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 12px 12px 0", padding: 16, marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{u.date}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{u.title}</div>
+                    <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.7 }}>{u.body}</div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
