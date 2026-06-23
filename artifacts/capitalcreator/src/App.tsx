@@ -1365,7 +1365,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <button onClick={onPortal} style={{ background: "transparent", border: `1px solid rgba(26,107,255,0.35)`, color: C.blue, padding: "9px 18px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer" }}>Student Login</button>
-            <button className="btn-blue" style={{ padding: "9px 20px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em" }}>Apply Now</button>
+            <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ padding: "9px 20px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", display: "inline-block" }}>Apply Now</a>
           </div>
         </nav>
 
@@ -1392,9 +1392,9 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
             </p>
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" as const }}>
-              <button className="btn-blue" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 28px", borderRadius: 8, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, boxShadow: "0 0 30px rgba(26,107,255,0.4), 0 4px 20px rgba(26,107,255,0.25)" }}>
+              <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 28px", borderRadius: 8, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, boxShadow: "0 0 30px rgba(26,107,255,0.4), 0 4px 20px rgba(26,107,255,0.25)" }}>
                 Apply for Private Advisory <span style={{ fontSize: 16 }}>→</span>
-              </button>
+              </a>
               <button className="btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
                 Book a Clarity Call
               </button>
@@ -1528,9 +1528,9 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
           </div>
         </div>
         <div className="reveal" style={{ textAlign: "center" }}>
-          <button className="btn-blue" style={{ padding: "15px 32px", borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", boxShadow: `0 0 28px #1A6BFF44` }}>
+          <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ display: "inline-block", padding: "15px 32px", borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", boxShadow: `0 0 28px #1A6BFF44` }}>
             APPLY FOR PRIVATE ADVISORY →
-          </button>
+          </a>
         </div>
       </section>
 
@@ -1643,7 +1643,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
             The Capital Creator Accelerator is a private, application-only program. Spots are limited to ensure quality of guidance and individual attention.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" as const }}>
-            <button className="btn-blue" style={{ padding: "16px 36px", borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", boxShadow: `0 0 32px #1A6BFF55` }}>APPLY NOW →</button>
+            <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ display: "inline-block", padding: "16px 36px", borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", boxShadow: `0 0 32px #1A6BFF55` }}>APPLY NOW →</a>
             <button className="btn-outline" style={{ padding: "16px 26px", borderRadius: 10, fontSize: 14, fontWeight: 600 }}>BOOK A CLARITY CALL</button>
           </div>
         </div>
