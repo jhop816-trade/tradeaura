@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Creator - 30 Day Content Calendar</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #050508;
+            color: #ffffff;
+            padding: 40px 20px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #637394;
+        }
+
+        .header-logo-icon {
+            width: 20px;
+            height: 20px;
+            background: #1A6BFF;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .header h1 .accent { color: #1A6BFF; }
+
+        .header-desc {
+            font-size: 14px;
+            color: #637394;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .header-tags {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            padding: 6px 12px;
+            background: #0c1018;
+            border: 1px solid #1a2640;
+            border-radius: 20px;
+            color: #8fa3c4;
+        }
+
+        .tag-dot { width: 6px; height: 6px; background: #1A6BFF; border-radius: 50%; }
+        .tag-dot.gold { background: #d4a843; }
+        .tag-dot.green { background: #34d399; }
+
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #1a2640;
+            padding-bottom: 0;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #637394;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover { color: #8fa3c4; }
+        .nav-tab.active { color: #1A6BFF; border-bottom-color: #1A6BFF; }
+
+        .week-section {
+            margin-bottom: 40px;
+        }
+
+        .week-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a2640;
+        }
+
+        .week-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #1A6BFF;
+        }
+
+        .week-label-dot {
+            width: 8px;
+            height: 8px;
+            background: #1A6BFF;
+            border-radius: 50%;
+        }
+
+        .week-dates {
+            font-size: 12px;
+            color: #637394;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        .day-card {
+            background: #0c1018;
+            border: 1px solid #1a2640;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-card:hover {
+            border-color: #1A6BFF;
+            background: #111826;
+            box-shadow: 0 0 20px #1A6BFF11;
+        }
+
+        .day-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a264044;
+        }
+
+        .day-card-date {
+            font-size: 28px;
+            font-weight: 900;
+            color: #1A6BFF;
+        }
+
+        .day-card-dayname {
+            font-size: 11px;
+            font-weight: 700;
+            color: #637394;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .post-item {
+            background: #111826;
+            border-left: 3px solid #1A6BFF;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #e0e7ff;
+        }
+
+        .post-item.mindset { border-left-color: #d4a843; }
+        .post-item.lifestyle { border-left-color: #34d399; }
+        .post-item.promo { border-left-color: #f87171; }
+
+        .post-label {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #1A6BFF;
+            margin-bottom: 3px;
+        }
+
+        .post-label.mindset { color: #d4a843; }
+        .post-label.lifestyle { color: #34d399; }
+        .post-label.promo { color: #f87171; }
+
+        .stats-box {
+            background: #0c1018;
+            border: 1px solid #1a2640;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 900;
+            color: #1A6BFF;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #637394;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-day {
+            background: #080c12;
+            border: 1px dashed #1a2640;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 1024px) {
+            .week-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .week-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .week-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-logo">
+                <div class="header-logo-icon">CC</div>
+                <span>Capital Creator</span>
+            </div>
+            <h1>30-Day <span class="accent">Content Calendar</span></h1>
+            <p class="header-desc">90 posts across 30 days — Instagram graphics, captions, hashtags. Complete monthly strategy ready to deploy.</p>
+            <div class="header-tags">
+                <div class="tag"><span class="tag-dot"></span>Instagram Graphics</div>
+                <div class="tag"><span class="tag-dot gold"></span>Instagram Captions</div>
+                <div class="tag"><span class="tag-dot green"></span>Hashtag Strategy</div>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-box">
+            <div class="stat">
+                <div class="stat-number">90</div>
+                <div class="stat-label">Total Posts</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">30</div>
+                <div class="stat-label">Days</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Posts/Day</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">8</div>
+                <div class="stat-label">Trading Pillars</div>
+            </div>
+        </div>
+
+        <!-- NAV TABS -->
+        <div class="nav-tabs">
+            <button class="nav-tab active">Overview</button>
+            <button class="nav-tab">Wk 1 (Days 1-7)</button>
+            <button class="nav-tab">Wk 2 (Days 8-14)</button>
+            <button class="nav-tab">Wk 3 (Days 15-21)</button>
+            <button class="nav-tab">Wk 4 (Days 22-30)</button>
+        </div>
+
+        <!-- WEEK 1 -->
+        <div class="week-section">
+            <div class="week-header">
+                <div class="week-label">
+                    <span class="week-label-dot"></span>
+                    WEEK 1
+                </div>
+                <div class="week-dates">Days 1-7</div>
+            </div>
+            <div class="week-grid">
+                <!-- Day 1 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">1</div>
+                        <div class="day-card-dayname">Monday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            Most traders fail before they even open a chart
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            The market doesn't care about your timeline
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            You're not failing because you're stupid
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 2 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">2</div>
+                        <div class="day-card-dayname">Tuesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            You're reading the chart wrong
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Your biggest enemy isn't the market. It's your ego
+                        </div>
+                        <div class="post-item lifestyle">
+                            <div class="post-label lifestyle">Lifestyle</div>
+                            5:30 AM. No snooze. No excuses
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 3 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">3</div>
+                        <div class="day-card-dayname">Wednesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            You missed the trade because you didn't know the bias
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            One good trade doesn't make you a trader
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            Risk management isn't boring. It's freedom
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 4 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">4</div>
+                        <div class="day-card-dayname">Thursday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            Price doesn't move without liquidity
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Fear is information. It's not something to overcome
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Habits & Discipline</div>
+                            Your habit isn't trading. Your habit is logging trades
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 5 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">5</div>
+                        <div class="day-card-dayname">Friday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            You don't have a strategy. You have a direction
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Stop comparing your account to other people's screenshots
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            Trading is lonely. But you don't have to improve alone
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 6 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">6</div>
+                        <div class="day-card-dayname">Saturday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            The market is not irrational. YOU are
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Discipline isn't sexy. Discipline is saying NO
+                        </div>
+                        <div class="post-item lifestyle">
+                            <div class="post-label lifestyle">Lifestyle</div>
+                            Started the year with a goal. $5K to $50K account
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 7 -->
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">7</div>
+                        <div class="day-card-dayname">Sunday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            You don't have an edge on every timeframe
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Your loss today is your tuition. The market is teaching you
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Refinement</div>
+                            Your system isn't broken. Your execution is
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WEEK 2 -->
+        <div class="week-section">
+            <div class="week-header">
+                <div class="week-label">
+                    <span class="week-label-dot"></span>
+                    WEEK 2
+                </div>
+                <div class="week-dates">Days 8-14</div>
+            </div>
+            <div class="week-grid">
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">8</div>
+                        <div class="day-card-dayname">Monday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            You're waiting for confirmation...
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            1% daily doesn't sound like much
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            We don't accept everyone. That's quality
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">9</div>
+                        <div class="day-card-dayname">Tuesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            Your account is already dead...
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            FOMO is a killer. The market will still be there tomorrow
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Habits & Discipline</div>
+                            Friday night. Time to look back
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">10</div>
+                        <div class="day-card-dayname">Wednesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            Price is supply and demand. That's it
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You won't see results in 30 days
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Independence</div>
+                            You don't need another indicator...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">11</div>
+                        <div class="day-card-dayname">Thursday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            Position size is your brake pedal
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            It's not glamorous. 6 AM alarm. Coffee. Charts
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            Proof isn't in promises. Proof is in consistency
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">12</div>
+                        <div class="day-card-dayname">Friday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            You're probably trading the wrong timeframe
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You'll hit a plateau. That's not failure
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Habits & Discipline</div>
+                            Your trade log is your most valuable asset
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">13</div>
+                        <div class="day-card-dayname">Saturday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            Breakouts are where volume tells the truth
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You can't predict the future. Stop trying
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Independence</div>
+                            Stop copying other traders' setups
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">14</div>
+                        <div class="day-card-dayname">Sunday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            Price doesn't move randomly. It moves where volume is
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Today you'll lose. Tomorrow you might lose again
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Refinement</div>
+                            Stop looking at total P&L. Look at these metrics
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WEEK 3 -->
+        <div class="week-section">
+            <div class="week-header">
+                <div class="week-label">
+                    <span class="week-label-dot"></span>
+                    WEEK 3
+                </div>
+                <div class="week-dates">Days 15-21</div>
+            </div>
+            <div class="week-grid">
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">15</div>
+                        <div class="day-card-dayname">Monday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            Most traders know their entry. Few know their exit
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            More indicators = more confusion
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            This isn't a course. This is a mentorship
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">16</div>
+                        <div class="day-card-dayname">Tuesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            Before you trade, you need a baseline
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            $1K to $10K takes longer than $10K to $100K
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            When price is choppy, ranges tell you everything
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">17</div>
+                        <div class="day-card-dayname">Wednesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            One signal isn't confirmation. Confluence is
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You thought you were smart. Then the market humbled you
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Habits & Discipline</div>
+                            Your market open is predetermined
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">18</div>
+                        <div class="day-card-dayname">Thursday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            Rejection is a setup
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            If you had $1K in your account, what would you do different?
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Independence</div>
+                            Stop listening to the noise
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">19</div>
+                        <div class="day-card-dayname">Friday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            You don't have to go all-in at once
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            That trader made $50K this month. You made $500
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            Day 1 trader vs Month 6 trader transformation
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">20</div>
+                        <div class="day-card-dayname">Saturday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            Some traders can handle 50% drawdown...
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You just took a $500 loss. Now you NEED to make it back
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            Trending market = ride the trend
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">21</div>
+                        <div class="day-card-dayname">Sunday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            Price action at 9:35 AM isn't the same as 2 PM
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            $50 win. You wanted $500. Now you feel robbed
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Refinement</div>
+                            Every Friday. 30 minutes. No shortcuts
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WEEK 4 -->
+        <div class="week-section">
+            <div class="week-header">
+                <div class="week-label">
+                    <span class="week-label-dot"></span>
+                    WEEK 4
+                </div>
+                <div class="week-dates">Days 22-30</div>
+            </div>
+            <div class="week-grid">
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">22</div>
+                        <div class="day-card-dayname">Monday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            Volume climax = big move coming
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You want the prize. You don't want the process
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            We're closing applications in 48 hours
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">23</div>
+                        <div class="day-card-dayname">Tuesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            Before you click BUY: [checklist]
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You took a trade that fit your setup perfectly
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            What does "making it" actually mean to you?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">24</div>
+                        <div class="day-card-dayname">Wednesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            Supply zones are where sellers stomped buyers
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            There's a gap between knowing and doing
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Independence</div>
+                            You're not on anyone else's timeline
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">25</div>
+                        <div class="day-card-dayname">Thursday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            Don't analyze in a vacuum. Check three timeframes
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Why do you want to trade? Your why matters
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Refinement</div>
+                            Your system works in trends but market is ranging
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">26</div>
+                        <div class="day-card-dayname">Friday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            Accumulation vs Distribution
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You're in a losing streak. 7 losses in a row
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            We show P&L statements. Real, verifiable results
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">27</div>
+                        <div class="day-card-dayname">Saturday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Risk & Execution</div>
+                            Trade is up 1:1 on your risk. Move stop to break even
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You're comfortable now. That's the death zone
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Foundations</div>
+                            Before you trade real money, test it. Backtest
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">28</div>
+                        <div class="day-card-dayname">Sunday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Market Structure</div>
+                            Pullbacks in trends are where money is made
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            Day 1: zero confidence. You risk $10
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            This is the last day of applications
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">29</div>
+                        <div class="day-card-dayname">Monday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Bias & Context</div>
+                            News is context, not a setup
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            You used to be "trying to trade". Now you're "a trader"
+                        </div>
+                        <div class="post-item">
+                            <div class="post-label">Independence</div>
+                            In 5 years, what do you want to say about your trading?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="day-card">
+                    <div class="day-card-header">
+                        <div class="day-card-date">30</div>
+                        <div class="day-card-dayname">Tuesday</div>
+                    </div>
+                    <div class="day-card-content">
+                        <div class="post-item">
+                            <div class="post-label">Liquidity & Confirmations</div>
+                            A reversal isn't one candle. It's a pattern
+                        </div>
+                        <div class="post-item mindset">
+                            <div class="post-label mindset">Mindset</div>
+                            The market taught you something today
+                        </div>
+                        <div class="post-item promo">
+                            <div class="post-label promo">Promotional</div>
+                            30-Day Challenge Complete. Ready to build?
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
