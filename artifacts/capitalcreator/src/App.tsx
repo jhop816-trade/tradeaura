@@ -592,6 +592,8 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
   const [ciChallenged, setCiChallenged] = useState("");
   const [ciQuestions, setCiQuestions] = useState("");
   const [updSection, setUpdSection] = useState<"group"|"personal">("group");
+  const [homeMsg, setHomeMsg] = useState("");
+  const [homeMsgTick, setHomeMsgTick] = useState(0);
 
   const allStudents = loadStudents();
   // If somehow a fresh signup's student entry isn't in localStorage yet, create it on the fly
@@ -777,30 +779,47 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
               </div>
             )}
 
-            {/* Chat with Adrian */}
+            {/* Chat with Adrian — inline on Home */}
             {(() => {
-              const lastMsg = student.messages.length > 0 ? student.messages[student.messages.length - 1] : null;
+              const msgs = loadStudents().find(s => s.id === student.id)?.messages ?? student.messages;
+              function sendHomeMsg() {
+                if (!homeMsg.trim()) return;
+                const msg: DirectMsg = { id: `msg_${Date.now()}`, from: "student", text: homeMsg.trim(), date: new Date().toISOString().slice(0, 10) };
+                const all = loadStudents();
+                saveStudents(all.map(s => s.id === student.id ? { ...s, messages: [...s.messages, msg] } : s));
+                setHomeMsg("");
+                setHomeMsgTick(n => n + 1);
+              }
               return (
-                <div onClick={() => setTab("curriculum")} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 12, cursor: "pointer" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastMsg ? 10 : 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.blue}22`, border: `1px solid ${C.blue}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.blue, flexShrink: 0 }}>A</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700 }}>Chat with Adrian</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>1:1 conversation · Tap to open</div>
-                      </div>
+                <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18, marginBottom: 12 }}>
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.blue}22`, border: `1px solid ${C.blue}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.blue, flexShrink: 0 }}>A</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>Chat with Adrian</div>
+                      <div style={{ fontSize: 11, color: C.muted }}>Private 1:1 · replies sent to your portal</div>
                     </div>
-                    <span style={{ color: C.blue, fontSize: 18 }}>›</span>
                   </div>
-                  {lastMsg && (
-                    <div style={{ background: lastMsg.from === "mentor" ? `${C.blue}0d` : "#111826", border: `1px solid ${lastMsg.from === "mentor" ? C.blue + "25" : C.bord}`, borderRadius: 8, padding: "9px 12px" }}>
-                      <div style={{ fontSize: 10, color: lastMsg.from === "mentor" ? C.blue : C.muted, fontWeight: 700, letterSpacing: "0.06em", marginBottom: 3 }}>{lastMsg.from === "mentor" ? "ADRIAN" : "YOU"}</div>
-                      <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{lastMsg.text.substring(0, 80)}{lastMsg.text.length > 80 ? "…" : ""}</div>
+                  {/* Messages */}
+                  {msgs.length > 0 ? (
+                    <div style={{ maxHeight: 220, overflowY: "auto", marginBottom: 12, display: "flex", flexDirection: "column", gap: 8, scrollbarWidth: "thin" }}>
+                      {msgs.slice(-12).map(m => (
+                        <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: m.from === "student" ? "flex-end" : "flex-start" }}>
+                          <div style={{ maxWidth: "82%", background: m.from === "student" ? `${C.blue}22` : "#0d1830", border: `1px solid ${m.from === "student" ? C.blue + "40" : C.bord}`, borderRadius: 10, padding: "9px 13px" }}>
+                            <div style={{ fontSize: 13, color: m.from === "student" ? C.white : C.dim, lineHeight: 1.6 }}>{m.text}</div>
+                          </div>
+                          <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>{m.from === "mentor" ? "Adrian" : "You"} · {m.date}</div>
+                        </div>
+                      ))}
                     </div>
+                  ) : (
+                    <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 13, padding: "14px 0 18px" }}>No messages yet — send Adrian a question.</div>
                   )}
-                  {!lastMsg && (
-                    <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>No messages yet — tap to start a conversation.</div>
-                  )}
+                  {/* Compose */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input value={homeMsg} onChange={e => setHomeMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendHomeMsg()} placeholder="Message Adrian…" style={{ ...inp(), padding: "11px 14px", fontSize: 14, flex: 1 }} />
+                    <button onClick={sendHomeMsg} disabled={!homeMsg.trim()} className="btn-blue" style={{ padding: "0 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, border: "none", opacity: homeMsg.trim() ? 1 : 0.4, flexShrink: 0 }}>Send</button>
+                  </div>
                 </div>
               );
             })()}
