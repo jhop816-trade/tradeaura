@@ -211,8 +211,8 @@ function useReveal() {
 }
 
 // ── AUTH ───────────────────────────────────────────────────────────────────────
-function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () => void }) {
-  const [portalType, setPortalType] = useState<"student"|"mentor">("student");
+function AuthPage({ onAuth, onBack, defaultPortal }: { onAuth: (u: User) => void; onBack: () => void; defaultPortal?: "student" | "mentor" }) {
+  const [portalType, setPortalType] = useState<"student"|"mentor">(defaultPortal ?? "student");
   const [mode, setMode] = useState<"login"|"signup">("login");
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [name, setName] = useState(""); const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -1719,7 +1719,7 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
 }
 
 // ── LANDING PAGE ───────────────────────────────────────────────────────────────
-function LandingPage({ onPortal }: { onPortal: () => void }) {
+function LandingPage({ onPortal }: { onPortal: (type?: "student" | "mentor") => void }) {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -1827,7 +1827,8 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={onPortal} style={{ background: "transparent", border: `1px solid rgba(26,107,255,0.35)`, color: C.blue, padding: "9px 18px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer" }}>Student Login</button>
+            <button onClick={() => onPortal("student")} style={{ background: "transparent", border: `1px solid rgba(26,107,255,0.35)`, color: C.blue, padding: "9px 18px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer" }}>Student Login</button>
+            <button onClick={() => onPortal("mentor")} style={{ background: "transparent", border: `1px solid rgba(212,168,67,0.35)`, color: C.gold, padding: "9px 18px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer" }}>Mentor Login</button>
             <a href="https://form.typeform.com/to/iTdy92qq" target="_blank" rel="noopener noreferrer" className="btn-blue" style={{ padding: "9px 20px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", display: "inline-block" }}>Apply Now</a>
           </div>
         </nav>
@@ -2158,6 +2159,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
 export default function App() {
   const [view, setView] = useState<"landing"|"auth"|"student"|"mentor">("landing");
   const [user, setUser] = useState<User | null>(null);
+  const [authPortalType, setAuthPortalType] = useState<"student" | "mentor" | undefined>(undefined);
 
   useEffect(() => {
     const s = localStorage.getItem("cc_session") || sessionStorage.getItem("cc_session");
@@ -2169,8 +2171,8 @@ export default function App() {
   function handleAuth(u: User) { setUser(u); setView(u.role === "mentor" ? "mentor" : "student"); }
   function handleSignOut() { localStorage.removeItem("cc_session"); sessionStorage.removeItem("cc_session"); setUser(null); setView("landing"); }
 
-  if (view === "auth")    return <AuthPage onAuth={handleAuth} onBack={() => setView("landing")} />;
+  if (view === "auth")    return <AuthPage defaultPortal={authPortalType} onAuth={handleAuth} onBack={() => setView("landing")} />;
   if (view === "student" && user) return <StudentPortal user={user} onSignOut={handleSignOut} />;
   if (view === "mentor"  && user) return <MentorDashboard user={user} onSignOut={handleSignOut} />;
-  return <LandingPage onPortal={() => setView("auth")} />;
+  return <LandingPage onPortal={(type) => { setAuthPortalType(type); setView("auth"); }} />;
 }
