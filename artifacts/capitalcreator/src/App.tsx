@@ -1258,19 +1258,71 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
 // ── LANDING PAGE ───────────────────────────────────────────────────────────────
 function LandingPage({ onPortal }: { onPortal: () => void }) {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
-  const [count12, setCount12] = useState(0);
-  const [count8, setCount8] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Count-up animation for stats
+  // Particle animation
   useEffect(() => {
-    let f12 = 0, f8 = 0;
-    const t = setInterval(() => {
-      f12 = Math.min(f12 + 1, 12); setCount12(f12);
-      f8  = Math.min(f8  + 1, 8);  setCount8(f8);
-      if (f12 === 12 && f8 === 8) clearInterval(t);
-    }, 80);
-    return () => clearInterval(t);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const GLOW_CX_FRAC = 0.45, GLOW_CY_FRAC = 0.40, GLOW_RADIUS = 280;
+    const PARTICLE_COUNT = 80, LINK_DISTANCE = 150, MIN_SPEED = 0.3, MAX_SPEED = 0.5;
+    let W = 0, H = 0, glowCX = 0, glowCY = 0, rafId = 0;
+    let particles: { x: number; y: number; vx: number; vy: number; radius: number; baseOpacity: number }[] = [];
+
+    function resize() {
+      W = canvas!.width = window.innerWidth;
+      H = canvas!.height = window.innerHeight;
+      glowCX = W * GLOW_CX_FRAC;
+      glowCY = H * GLOW_CY_FRAC;
+    }
+    function rand(min: number, max: number) { return min + Math.random() * (max - min); }
+    function createParticle() {
+      const speed = rand(MIN_SPEED, MAX_SPEED), angle = rand(0, Math.PI * 2);
+      return { x: rand(0, W), y: rand(0, H), vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, radius: rand(1.0, 2.2), baseOpacity: rand(0.25, 0.50) };
+    }
+    function getColor(p: typeof particles[0]) {
+      const dx = p.x - glowCX, dy = p.y - glowCY;
+      const t = Math.max(0, 1 - Math.sqrt(dx*dx + dy*dy) / GLOW_RADIUS);
+      if (t > 0) { const r = Math.round(176 + (26-176)*t), g = Math.round(196 + (107-196)*t), b = Math.round(232 + (255-232)*t); return `rgba(${r},${g},${b},${p.baseOpacity})`; }
+      return `rgba(180,200,230,${p.baseOpacity})`;
+    }
+    function draw() {
+      ctx!.clearRect(0, 0, W, H);
+      for (const p of particles) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
+        if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
+      }
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i], b = particles[j];
+          const dx = a.x - b.x, dy = a.y - b.y, dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < LINK_DISTANCE) {
+            const alpha = (1 - dist / LINK_DISTANCE) * 0.18;
+            const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+            const t2 = Math.max(0, 1 - Math.sqrt((mx-glowCX)**2+(my-glowCY)**2)/GLOW_RADIUS);
+            const r = Math.round(140+(26-140)*t2), g = Math.round(160+(107-160)*t2), bl = Math.round(200+(255-200)*t2);
+            ctx!.beginPath(); ctx!.moveTo(a.x, a.y); ctx!.lineTo(b.x, b.y);
+            ctx!.strokeStyle = `rgba(${r},${g},${bl},${alpha})`; ctx!.lineWidth = 0.8; ctx!.stroke();
+          }
+        }
+      }
+      for (const p of particles) {
+        ctx!.beginPath(); ctx!.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx!.fillStyle = getColor(p); ctx!.fill();
+      }
+      rafId = requestAnimationFrame(draw);
+    }
+    function onResize() { resize(); glowCX = W*GLOW_CX_FRAC; glowCY = H*GLOW_CY_FRAC; }
+
+    resize();
+    particles = Array.from({ length: PARTICLE_COUNT }, createParticle);
+    rafId = requestAnimationFrame(draw);
+    window.addEventListener("resize", onResize);
+    return () => { cancelAnimationFrame(rafId); window.removeEventListener("resize", onResize); };
   }, []);
 
   // Scroll reveal
@@ -1282,97 +1334,137 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
     return () => obs.disconnect();
   }, []);
 
-  const css = `
-    .btn-blue { background: #1A6BFF; color: #fff; border: none; transition: box-shadow .2s, transform .15s; }
-    .btn-blue:hover { box-shadow: 0 0 32px #1A6BFF88; transform: translateY(-2px); }
-    .btn-outline { background: transparent; border: 1px solid #1a2640; color: #8fa3c4; transition: all .2s; }
-    .btn-outline:hover { border-color: #ffffff44; background: #111826; color: #fff; }
-    .card-hover { transition: border-color .2s, transform .2s, box-shadow .2s; }
-    .card-hover:hover { border-color: #1A6BFF44 !important; transform: translateY(-3px); box-shadow: 0 8px 40px #00000055; }
-    .faq-item { transition: background .15s; cursor: pointer; }
-    .faq-item:hover { background: #111826 !important; }
-    .ticker-wrap { overflow: hidden; border-top: 1px solid #1a2640; border-bottom: 1px solid #1a2640; padding: 13px 0; }
-    .ticker { display: flex; gap: 0; animation: ticker 22s linear infinite; white-space: nowrap; }
-    .ticker-item { display: inline-flex; align-items: center; gap: 10px; padding: 0 36px; }
-    .ticker-dot { width: 4px; height: 4px; background: #1A6BFF; border-radius: 50%; flex-shrink: 0; }
-  `;
-
-  const tickerItems = ["EDUCATION FIRST", "PROCESS OVER HYPE", "RISK BEFORE REWARD", "DISCIPLINE OVER EMOTION", "STRUCTURE OVER IMPULSE", "INDEPENDENCE NOT DEPENDENCE"];
+  const tickerItems = ["Education First", "Process Over Hype", "Risk Before Reward", "Discipline Over Emotion", "Structure Creates Freedom", "Clarity Before Capital"];
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.white, fontFamily: "'Space Grotesk', sans-serif", overflowX: "hidden" }}>
-      <style>{css}</style>
 
-      {/* NAV */}
-      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", borderBottom: `1px solid ${C.bord}`, position: "sticky", top: 0, background: `${C.bg}ee`, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <CCLogo size={36} />
-          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>Capital Creator</span>
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button onClick={onPortal} className="btn-outline" style={{ padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>Student Login</button>
-          <button className="btn-blue" style={{ padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700, boxShadow: `0 0 20px #1A6BFF44` }}>Apply Now</button>
-        </div>
-      </nav>
+      {/* PARTICLE CANVAS */}
+      <canvas ref={canvasRef} id="particle-canvas" />
 
-      {/* HERO */}
-      <section ref={heroRef} style={{ padding: "76px 20px 64px", maxWidth: 580, margin: "0 auto", textAlign: "center", position: "relative" }}>
-        <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)", width: 500, height: 400, background: `radial-gradient(ellipse, #1A6BFF14 0%, transparent 70%)`, pointerEvents: "none" }} />
+      {/* HERO SECTION */}
+      <section style={{ position: "relative", width: "100%", minHeight: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        <div className="glow" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${C.blue}18`, border: `1px solid ${C.blue}40`, borderRadius: 20, padding: "5px 16px", fontSize: 11, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 28 }}>
-          PRIVATE ADVISORY · CAPITAL CREATOR
-        </div>
+        {/* BG layers */}
+        <div className="hero-bg" />
+        <div className="scanlines" />
 
-        <h1 style={{ fontSize: 48, fontWeight: 900, lineHeight: 1.04, letterSpacing: "-0.03em", marginBottom: 20, position: "relative" }}>
-          BUILD DISCIPLINED,{" "}
-          <span style={{ background: `linear-gradient(135deg, ${C.blue} 30%, #78b4ff 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            SELF-SUFFICIENT
-          </span>
-          {" "}TRADERS.
-        </h1>
+        {/* Col divider */}
+        <div style={{ position: "absolute", top: 88, bottom: 80, left: "50%", width: 1, background: "linear-gradient(to bottom, transparent, rgba(26,40,64,0.6) 30%, rgba(26,40,64,0.6) 70%, transparent)", zIndex: 5, pointerEvents: "none" }} />
 
-        <p style={{ fontSize: 16, color: C.dim, lineHeight: 1.78, maxWidth: 460, margin: "0 auto 40px" }}>
-          Private 1:1 advisory for ambitious professionals who want structure, clarity, and repeatable execution — not noise, not signals, not guesswork.
-        </p>
+        {/* NAV */}
+        <nav style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 48px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <CCLogo size={32} />
+            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>Capital<span style={{ color: C.blue }}>Creator</span></span>
+          </div>
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            {["Program", "Process", "Results", "About"].map(l => (
+              <span key={l} className="nav-item" style={{ fontSize: 12, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: C.muted, cursor: "pointer" }}>{l}</span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={onPortal} style={{ background: "transparent", border: `1px solid rgba(26,107,255,0.35)`, color: C.blue, padding: "9px 18px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", cursor: "pointer" }}>Student Login</button>
+            <button className="btn-blue" style={{ padding: "9px 20px", borderRadius: 7, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em" }}>Apply Now</button>
+          </div>
+        </nav>
 
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" as const, marginBottom: 56 }}>
-          <button className="btn-blue" style={{ padding: "16px 32px", borderRadius: 10, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em", boxShadow: `0 0 32px #1A6BFF55` }}>
-            APPLY FOR PRIVATE ADVISORY →
-          </button>
-          <button className="btn-outline" style={{ padding: "16px 26px", borderRadius: 10, fontSize: 14, fontWeight: 600 }}>
-            BOOK A CLARITY CALL
-          </button>
-        </div>
+        {/* HERO CONTENT */}
+        <div style={{ position: "relative", zIndex: 10, flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center", padding: "0 64px", paddingTop: 120, paddingBottom: 80, maxWidth: 1280, margin: "0 auto", width: "100%" }}>
 
-        {/* Stats */}
-        <div style={{ display: "flex", borderTop: `1px solid ${C.bord}`, paddingTop: 36 }}>
-          {[
-            { num: count12, unit: "WEEKS",   label: "Guided Framework",   sep: true },
-            { num: count8,  unit: "PILLARS", label: "Core Curriculum",    sep: true },
-            { num: "1:1",   unit: "PRIVATE", label: "Advisory Access",    sep: false },
-          ].map(s => (
-            <div key={s.unit} style={{ flex: 1, textAlign: "center", borderRight: s.sep ? `1px solid ${C.bord}` : "none", padding: "0 12px" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 5, marginBottom: 4 }}>
-                <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.03em" }}>{s.num}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: C.blue, letterSpacing: "0.1em" }}>{s.unit}</span>
-              </div>
-              <div style={{ fontSize: 11, color: C.muted }}>{s.label}</div>
+          {/* LEFT: Copy */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+              <div className="eyebrow-dot" />
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" as const, color: C.blue }}>Private 1:1 Advisory — By Application Only</span>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* TICKER */}
-      <div className="ticker-wrap">
-        <div className="ticker">
-          {[...tickerItems, ...tickerItems].map((item, i) => (
-            <span key={i} className="ticker-item">
-              <span className="ticker-dot" />
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.muted, letterSpacing: "0.1em" }}>{item}</span>
-            </span>
-          ))}
+            <h1 style={{ fontSize: "clamp(38px, 4.5vw, 58px)", fontWeight: 900, lineHeight: 1.0, letterSpacing: "-0.03em", textTransform: "uppercase" as const, marginBottom: 8 }}>
+              <span style={{ display: "block" }}>BUILD</span>
+              <span style={{ display: "block" }}>DISCIPLINED,</span>
+              <span style={{ display: "block", color: "transparent", WebkitTextStroke: "1.5px rgba(26,107,255,0.9)", fontStyle: "italic", letterSpacing: "-0.025em" }}>SELF-SUFFICIENT</span>
+              <span style={{ display: "block", color: C.blue, textShadow: "0 0 40px rgba(26,107,255,0.5), 0 0 80px rgba(26,107,255,0.2)" }}>TRADERS.</span>
+            </h1>
+
+            <p style={{ fontSize: 17, fontWeight: 400, lineHeight: 1.65, color: C.muted, maxWidth: 440, marginTop: 28, marginBottom: 40 }}>
+              Private 1:1 advisory for <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>ambitious professionals</strong> who want <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>structure, clarity,</strong> and <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>repeatable execution</strong> — without the noise.
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" as const }}>
+              <button className="btn-blue" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "16px 28px", borderRadius: 8, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, boxShadow: "0 0 30px rgba(26,107,255,0.4), 0 4px 20px rgba(26,107,255,0.25)" }}>
+                Apply for Private Advisory <span style={{ fontSize: 16 }}>→</span>
+              </button>
+              <button className="btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 24px", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
+                Book a Clarity Call
+              </button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 36 }}>
+              <div style={{ display: "flex" }}>
+                {["JR","MK","AC","TP"].map((initials, i) => (
+                  <div key={initials} style={{ width: 30, height: 30, borderRadius: "50%", border: `2px solid ${C.bg}`, marginLeft: i === 0 ? 0 : -8, background: "linear-gradient(135deg, #1a2a4a, #2a3a60)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", zIndex: 4-i, position: "relative" as const }}>
+                    {initials}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                <strong style={{ color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>47 traders</strong> accepted this year<br />
+                Applications reviewed within 48 hours
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Bento Grid */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" as const, color: C.muted }}>Program Snapshot</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "rgba(99,115,148,0.7)" }}>
+                <div style={{ width: 20, height: 1, background: C.bord }} />
+                <span>What's included</span>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div className="bento-card card-blue">
+                <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: C.blue, textShadow: "0 0 30px rgba(26,107,255,0.4)" }}>12</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" as const, color: C.blue, marginTop: 2 }}>Weeks</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>Guided Framework</div>
+              </div>
+              <div className="bento-card">
+                <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em" }}>8</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" as const, color: C.blue, marginTop: 2 }}>Pillars</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>Core Curriculum</div>
+              </div>
+              <div className="bento-card">
+                <div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em" }}>1:1</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase" as const, color: C.blue, marginTop: 2 }}>Private</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 8, lineHeight: 1.4 }}>Advisory Access</div>
+              </div>
+              <div className="bento-card card-app">
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 6 }}>By<br />Application</div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.5 }}>Limited spots<br />available</div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(26,107,255,0.15)", border: "1px solid rgba(26,107,255,0.3)", color: "#7ab0ff", fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" as const, padding: "5px 10px", borderRadius: 100, width: "fit-content", marginTop: 14 }}>
+                  <div style={{ width: 5, height: 5, background: C.blue, borderRadius: "50%", boxShadow: "0 0 6px rgba(26,107,255,0.8)" }} />
+                  Serious Applicants Only
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* TICKER */}
+        <div className="ticker-strip">
+          <div className="ticker-track">
+            {[...tickerItems, ...tickerItems].map((item, i) => (
+              <span key={i} className="ticker-item-new">
+                <span className="ticker-dot-sm" />
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+      </section>
 
       {/* WHAT CC IS */}
       <section style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
