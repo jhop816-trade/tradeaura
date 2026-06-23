@@ -1081,6 +1081,7 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
   const [quickReplyText, setQuickReplyText] = useState("");
   const [editPrivateNotes, setEditPrivateNotes] = useState(false);
   const [privateNotesVal, setPrivateNotesVal] = useState("");
+  const [uploadTitle, setUploadTitle] = useState(""); const [uploadCategory, setUploadCategory] = useState("Bonus");
 
   const students = loadStudents();
   const resources = loadResources();
@@ -1155,6 +1156,20 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
   function toggleResource(rId: string) {
     const updated = resources.map(r => r.id === rId ? { ...r, locked: !r.locked } : r);
     saveResources(updated); setToast("✓ Resource updated");
+  }
+
+  function handleUpload(file: File) {
+    if (!uploadTitle.trim()) { setToast("✗ Enter a resource title"); return; }
+    const newRes: Resource = {
+      id: `r_${Date.now()}`,
+      title: uploadTitle.trim(),
+      category: uploadCategory,
+      desc: `Uploaded file: ${file.name}`,
+      locked: false,
+      size: file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${(file.size / 1024).toFixed(1)} KB`
+    };
+    saveResources([...resources, newRes]);
+    setUploadTitle(""); setUploadCategory("Bonus"); setToast("✓ Resource uploaded");
   }
 
   const NAV = [
@@ -1232,7 +1247,7 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                   <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const }}>
                     <span style={{ fontSize: 11, color: C.muted }}>{s.pillarsComplete.length}/8 pillars</span>
                     <span style={{ fontSize: 11, color: hwDone === s.homework.length ? C.green : C.muted }}>{hwDone}/{s.homework.length} hw done</span>
-                    {s.nextCall && <span style={{ fontSize: 11, color: C.blue }}>Call: {s.nextCall}</span>}
+                    {s.nextCall && <span style={{ fontSize: 11, color: C.blue }}>Call: {new Date(s.nextCall + (s.nextCall.includes("T") ? "" : "T12:00")).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>}
                   </div>
                   {/* Quick reply expand */}
                   {quickReply === s.id ? (
@@ -1340,7 +1355,16 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
                 {/* Next call editor */}
                 <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 14, padding: 18 }}>
                   <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em", marginBottom: 12 }}>NEXT 1:1 CALL</div>
-                  <input type="date" defaultValue={sel.nextCall ?? ""} onChange={e => updateStudent(sel.id, { nextCall: e.target.value })} style={{ ...inp(), colorScheme: "dark" }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: C.muted, marginBottom: 6 }}>DATE</div>
+                      <input type="date" defaultValue={sel.nextCall?.split("T")[0] ?? ""} onChange={e => { const time = sel.nextCall?.split("T")[1] ?? "12:00"; updateStudent(sel.id, { nextCall: e.target.value ? `${e.target.value}T${time}` : "" }); }} style={{ ...inp(), colorScheme: "dark" }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: C.muted, marginBottom: 6 }}>TIME</div>
+                      <input type="time" defaultValue={sel.nextCall?.split("T")[1] ?? "12:00"} onChange={e => { const date = sel.nextCall?.split("T")[0] ?? ""; updateStudent(sel.id, { nextCall: date ? `${date}T${e.target.value}` : "" }); }} style={{ ...inp(), colorScheme: "dark" }} />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1632,9 +1656,31 @@ function MentorDashboard({ user, onSignOut }: { user: User; onSignOut: () => voi
               <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Resource Library</div>
               <div style={{ fontSize: 14, color: C.muted, marginTop: 5 }}>Toggle access — students see changes instantly</div>
             </div>
-            <div style={{ background: `${C.blue}0d`, border: `1px solid ${C.blue}25`, borderRadius: 12, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div><div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Upload a Resource</div><div style={{ fontSize: 12, color: C.muted }}>Full upload in production build</div></div>
-              <button className="btn-blue" style={{ padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 700 }}>+ Upload</button>
+            <div style={{ background: `${C.blue}0d`, border: `1px solid ${C.blue}25`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>Upload a Resource</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 10, alignItems: "flex-end" }}>
+                <div>
+                  <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>RESOURCE TITLE</div>
+                  <input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} placeholder="e.g., Advanced Setup Guide" style={inp()} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: C.muted, letterSpacing: "0.1em", marginBottom: 6 }}>CATEGORY</div>
+                  <select value={uploadCategory} onChange={e => setUploadCategory(e.target.value)} style={{ ...inp(), fontSize: 13 }}>
+                    <option>Free</option>
+                    <option>Bonus</option>
+                    <option>Tools</option>
+                    <option>Pillar 01</option>
+                    <option>Pillar 02</option>
+                    <option>Pillar 03</option>
+                    <option>Pillar 04</option>
+                    <option>Pillar 05</option>
+                  </select>
+                </div>
+                <label style={{ cursor: "pointer" }}>
+                  <input type="file" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])} style={{ display: "none" }} />
+                  <button style={{ width: "100%", padding: "10px 18px", borderRadius: 8, fontSize: 13, fontWeight: 700, background: C.blue, color: "#fff", border: "none", cursor: "pointer" }}>+ Upload</button>
+                </label>
+              </div>
             </div>
             {loadResources().map(r => (
               <div key={r.id} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
