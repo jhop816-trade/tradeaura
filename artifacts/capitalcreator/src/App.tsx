@@ -1359,8 +1359,8 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
             <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>Capital<span style={{ color: C.blue }}>Creator</span></span>
           </div>
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            {["Program", "Process", "Results", "About"].map(l => (
-              <span key={l} className="nav-item" style={{ fontSize: 12, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: C.muted, cursor: "pointer" }}>{l}</span>
+            {(["Program", "Process", "Results", "About"] as const).map(l => (
+              <a key={l} href={`#${l.toLowerCase()}`} className="nav-item" style={{ fontSize: 12, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: C.muted, textDecoration: "none", cursor: "pointer" }}>{l}</a>
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -1467,7 +1467,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
       </section>
 
       {/* WHAT CC IS */}
-      <section style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
+      <section id="process" style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
         <div className="reveal">
           <Label>What Capital Creator Is</Label>
           <h2 style={{ fontSize: 36, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.025em", marginBottom: 16 }}>
@@ -1535,7 +1535,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
       </section>
 
       {/* FRAMEWORK */}
-      <section style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
+      <section id="program" style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
         <div className="reveal">
           <Label>The Accelerator</Label>
           <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 6 }}>THE CAPITAL CREATOR</h2>
@@ -1579,7 +1579,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
       </section>
 
       {/* FOUNDER */}
-      <section style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
+      <section id="about" style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
         <div className="reveal">
           <Label>Founder Philosophy</Label>
           <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.025em", marginBottom: 6 }}>WHY I BUILT</h2>
@@ -1601,7 +1601,7 @@ function LandingPage({ onPortal }: { onPortal: () => void }) {
       </section>
 
       {/* PROOF */}
-      <section style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
+      <section id="results" style={{ padding: "80px 20px", maxWidth: 580, margin: "0 auto" }}>
         <div className="reveal">
           <Label>Credibility</Label>
           <h2 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.025em", marginBottom: 6 }}>PROOF. PROCESS.</h2>
