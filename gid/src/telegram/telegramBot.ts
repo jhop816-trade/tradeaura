@@ -162,6 +162,9 @@ export class TelegramBot {
       case '/skip':
         await this.cmdSkip(chatId);
         break;
+      case '/preview':
+        await this.cmdPreview(chatId);
+        break;
       default:
         await this.sendMessage(
           chatId,
@@ -528,6 +531,40 @@ export class TelegramBot {
     await this.sendMessage(chatId, lines.join('\n'));
   }
 
+  private async cmdPreview(chatId: number): Promise<void> {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const { data, error } = await this.supabase
+      .from('content_calendar')
+      .select('id, scheduled_date, title, content, image_url')
+      .eq('status', 'scheduled')
+      .eq('platform', 'instagram')
+      .gte('scheduled_date', today)
+      .order('scheduled_date')
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      await this.sendMessage(chatId, `❌ DB error: ${error.message}`);
+      return;
+    }
+    if (!data) {
+      await this.sendMessage(chatId, 'No upcoming Instagram posts scheduled.');
+      return;
+    }
+
+    const lines = [
+      `📸 <b>Next Instagram Post — ${String(data.scheduled_date)}</b>`,
+      `<b>${String(data.title ?? 'Untitled')}</b>\n`,
+      String(data.content),
+    ];
+
+    if (data.image_url) {
+      lines.push(`\n🖼 <a href="${String(data.image_url)}">View Image</a>`);
+    }
+
+    await this.sendMessage(chatId, lines.join('\n'));
+  }
+
   private async cmdApprove(chatId: number): Promise<void> {
     if (!this.agent) {
       await this.sendMessage(chatId, 'Agent not ready yet.');
@@ -598,6 +635,7 @@ export class TelegramBot {
       '/resume — Resume scheduled posting',
       '/test — Run a test post to all platforms',
       '',
+      '/preview — Show the next scheduled Instagram post in full',
       '/approve — Post the pending Instagram content now',
       '/skip — Skip the pending Instagram post (mark as done)',
       '',
