@@ -235,6 +235,19 @@ function AuthPage({ onAuth, onBack }: { onAuth: (u: User) => void; onBack: () =>
       if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) { setError("Account exists. Sign in instead."); return; }
       const u: User = { id: `u_${Date.now()}`, email, name: name || email.split("@")[0], role };
       localStorage.setItem("cc_users", JSON.stringify([...users, u]));
+      // Create a fresh student profile if this email isn't already on the roster
+      if (role === "student") {
+        const existing = loadStudents();
+        if (!existing.find(s => s.email.toLowerCase() === email.toLowerCase())) {
+          const fresh: Student = {
+            id: `s_${Date.now()}`, name: u.name, email: u.email, week: 1,
+            pillarsComplete: [], homework: [], notes: "",
+            joinDate: new Date().toISOString().slice(0, 10), nextCall: undefined,
+            checkIns: [], pillarNotes: {}, pillarMentorNotes: {}, messages: [], personalUpdates: []
+          };
+          saveStudents([...existing, fresh]);
+        }
+      }
       localStorage.setItem("cc_session", JSON.stringify(u)); onAuth(u);
     }
   }
@@ -578,9 +591,21 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
   const [ciWorkedOn, setCiWorkedOn] = useState("");
   const [ciChallenged, setCiChallenged] = useState("");
   const [ciQuestions, setCiQuestions] = useState("");
+  const [updSection, setUpdSection] = useState<"group"|"personal">("group");
 
   const allStudents = loadStudents();
-  const student = allStudents.find(s => s.email.toLowerCase() === user.email.toLowerCase()) ?? allStudents[0];
+  // If somehow a fresh signup's student entry isn't in localStorage yet, create it on the fly
+  const foundStudent = allStudents.find(s => s.email.toLowerCase() === user.email.toLowerCase());
+  const student = foundStudent ?? (() => {
+    const fresh: Student = {
+      id: `s_${Date.now()}`, name: user.name, email: user.email, week: 1,
+      pillarsComplete: [], homework: [], notes: "",
+      joinDate: new Date().toISOString().slice(0, 10), nextCall: undefined,
+      checkIns: [], pillarNotes: {}, pillarMentorNotes: {}, messages: [], personalUpdates: []
+    };
+    saveStudents([...allStudents, fresh]);
+    return fresh;
+  })();
   const announcements: Announcement[] = JSON.parse(localStorage.getItem("cc_announcements") || JSON.stringify(MOCK_ANNOUNCEMENTS));
   const pct = Math.round((student.pillarsComplete.length / 8) * 100);
   const hwDone = student.homework.filter(h => h.done).length;
@@ -752,6 +777,34 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
               </div>
             )}
 
+            {/* Chat with Adrian */}
+            {(() => {
+              const lastMsg = student.messages.length > 0 ? student.messages[student.messages.length - 1] : null;
+              return (
+                <div onClick={() => setTab("curriculum")} style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 12, padding: 16, marginBottom: 12, cursor: "pointer" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastMsg ? 10 : 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${C.blue}22`, border: `1px solid ${C.blue}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.blue, flexShrink: 0 }}>A</div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>Chat with Adrian</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>1:1 conversation · Tap to open</div>
+                      </div>
+                    </div>
+                    <span style={{ color: C.blue, fontSize: 18 }}>›</span>
+                  </div>
+                  {lastMsg && (
+                    <div style={{ background: lastMsg.from === "mentor" ? `${C.blue}0d` : "#111826", border: `1px solid ${lastMsg.from === "mentor" ? C.blue + "25" : C.bord}`, borderRadius: 8, padding: "9px 12px" }}>
+                      <div style={{ fontSize: 10, color: lastMsg.from === "mentor" ? C.blue : C.muted, fontWeight: 700, letterSpacing: "0.06em", marginBottom: 3 }}>{lastMsg.from === "mentor" ? "ADRIAN" : "YOU"}</div>
+                      <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{lastMsg.text.substring(0, 80)}{lastMsg.text.length > 80 ? "…" : ""}</div>
+                    </div>
+                  )}
+                  {!lastMsg && (
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>No messages yet — tap to start a conversation.</div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Next pillar */}
             {student.pillarsComplete.length < 8 && (() => {
               const next = PILLARS[student.pillarsComplete.length];
@@ -785,49 +838,46 @@ function StudentPortal({ user, onSignOut }: { user: User; onSignOut: () => void 
         )}
 
         {/* UPDATES TAB */}
-        {tab === "updates" && (() => {
-          const [updSection, setUpdSection] = (useState as Function)<"group"|"personal">("group");
-          return (
-            <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Updates</div>
-              </div>
-              <div style={{ display: "flex", gap: 8, marginBottom: 20, background: C.surf, borderRadius: 10, padding: 4, border: `1px solid ${C.bord}` }}>
-                {([["group", "Group"], ["personal", "Personal"]] as const).map(([id, label]) => (
-                  <button key={id} onClick={() => setUpdSection(id)} style={{ flex: 1, padding: "8px 0", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", background: updSection === id ? C.blue : "transparent", color: updSection === id ? "#fff" : C.muted, transition: "all .15s" }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {updSection === "group" && (
-                <>
-                  {announcements.map((a, i) => (
-                    <div key={a.id} style={{ background: C.surf, border: `1px solid ${a.pinned ? C.blue + "44" : C.bord}`, borderLeft: `3px solid ${i === 0 ? C.blue : a.pinned ? C.blue : C.bord}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
-                      {a.pinned && <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 6 }}>PINNED</div>}
-                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{a.date}</div>
-                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{a.title}</div>
-                      <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{a.body}</div>
-                    </div>
-                  ))}
-                </>
-              )}
-              {updSection === "personal" && (
-                <>
-                  {student.personalUpdates.length === 0 && (
-                    <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 14, paddingTop: 32 }}>No personal updates yet.</div>
-                  )}
-                  {student.personalUpdates.map(u => (
-                    <div key={u.id} style={{ background: C.surf, border: `1px solid ${C.blue}40`, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{u.date}</div>
-                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{u.title}</div>
-                      <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{u.body}</div>
-                    </div>
-                  ))}
-                </>
-              )}
+        {tab === "updates" && (
+          <div style={{ paddingTop: 24, animation: "fadeUp .5s ease" }}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Updates</div>
             </div>
-          );
-        })()}
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, background: C.surf, borderRadius: 10, padding: 4, border: `1px solid ${C.bord}` }}>
+              {([["group", "Group"], ["personal", "Personal"]] as const).map(([id, label]) => (
+                <button key={id} onClick={() => setUpdSection(id)} style={{ flex: 1, padding: "8px 0", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer", background: updSection === id ? C.blue : "transparent", color: updSection === id ? "#fff" : C.muted, transition: "all .15s" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {updSection === "group" && (
+              <>
+                {announcements.map((a, i) => (
+                  <div key={a.id} style={{ background: C.surf, border: `1px solid ${a.pinned ? C.blue + "44" : C.bord}`, borderLeft: `3px solid ${i === 0 ? C.blue : a.pinned ? C.blue : C.bord}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
+                    {a.pinned && <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.1em", marginBottom: 6 }}>PINNED</div>}
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{a.date}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{a.title}</div>
+                    <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{a.body}</div>
+                  </div>
+                ))}
+              </>
+            )}
+            {updSection === "personal" && (
+              <>
+                {student.personalUpdates.length === 0 && (
+                  <div style={{ textAlign: "center" as const, color: C.muted, fontSize: 14, paddingTop: 32 }}>No personal updates yet.</div>
+                )}
+                {student.personalUpdates.map(u => (
+                  <div key={u.id} style={{ background: C.surf, border: `1px solid ${C.blue}40`, borderLeft: `3px solid ${C.blue}`, borderRadius: "0 12px 12px 0", padding: 18, marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>{u.date}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{u.title}</div>
+                    <div style={{ fontSize: 13, color: C.dim, lineHeight: 1.75 }}>{u.body}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
 
         {/* HOMEWORK TAB */}
         {tab === "homework" && (
