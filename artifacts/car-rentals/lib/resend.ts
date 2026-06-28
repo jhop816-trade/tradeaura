@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 
-export const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend(): Resend {
+  return new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
+}
 
 export async function sendBookingConfirmation(booking: {
   client_name: string
@@ -10,7 +12,7 @@ export async function sendBookingConfirmation(booking: {
   end_date: string
   deposit_amount: number
 }) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: booking.client_email,
     subject: `Booking Confirmed — ${booking.vehicle_name}`,
@@ -35,7 +37,7 @@ export async function sendOwnerAlert(booking: {
   end_date: string
   deposit_amount: number
 }) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: process.env.RESEND_FROM_EMAIL!,
     to: process.env.OWNER_EMAIL!,
     subject: `New Booking — ${booking.vehicle_name} (${booking.start_date})`,

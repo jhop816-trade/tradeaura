@@ -64,3 +64,82 @@ ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "feedback: own rows" ON feedback
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
+
+-- ============================================================
+-- Car Rentals Tables
+-- ============================================================
+
+create table if not exists vehicles (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  make text not null,
+  model text not null,
+  year int not null,
+  daily_rate numeric not null,
+  deposit_amount numeric not null,
+  mileage_limit int not null default 200,
+  photos text[] not null default '{}',
+  description text not null default '',
+  slug text not null unique,
+  active boolean not null default true
+);
+
+create table if not exists bookings (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id uuid references vehicles(id) not null,
+  client_name text not null,
+  client_email text not null,
+  client_phone text not null,
+  start_date date not null,
+  end_date date not null,
+  status text not null default 'pending'
+    check (status in ('pending','confirmed','cancelled','completed')),
+  stripe_payment_id text,
+  deposit_paid boolean not null default false,
+  source text not null default 'website',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists inquiries (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text not null,
+  email text not null,
+  vehicle_id uuid references vehicles(id),
+  preferred_dates text not null default '',
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+-- RLS: anon can insert bookings and inquiries, not read them
+alter table bookings enable row level security;
+alter table inquiries enable row level security;
+alter table vehicles enable row level security;
+
+create policy "anon insert bookings" on bookings for insert to anon with check (true);
+create policy "service role all bookings" on bookings for all to service_role using (true);
+create policy "anon insert inquiries" on inquiries for insert to anon with check (true);
+create policy "service role all inquiries" on inquiries for all to service_role using (true);
+create policy "public read vehicles" on vehicles for select using (active = true);
+create policy "service role all vehicles" on vehicles for all to service_role using (true);
+
+-- Seed vehicles
+insert into vehicles (name, make, model, year, daily_rate, deposit_amount, mileage_limit, photos, description, slug)
+values
+  (
+    'Tesla Model 3',
+    'Tesla', 'Model 3', 2023,
+    250, 500, 200,
+    array['https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1200'],
+    'Experience the future of driving in our 2023 Tesla Model 3. Zero emissions, instant acceleration, and cutting-edge tech. Includes access to Tesla Supercharger network.',
+    'tesla-model-3'
+  ),
+  (
+    'Mercedes-Benz C300',
+    'Mercedes-Benz', 'C300', 2022,
+    300, 600, 200,
+    array['https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1200'],
+    'Turn heads in our 2022 Mercedes-Benz C300. Luxury redefined — premium leather, panoramic sunroof, and a turbocharged engine that makes every drive unforgettable.',
+    'mercedes-benz-c300'
+  )
+on conflict (slug) do nothing;
