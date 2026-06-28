@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Booking } from '@/types'
+import BookingActions from './BookingActions'
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -31,7 +32,7 @@ export default async function AdminPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {['Vehicle', 'Client', 'Dates', 'Deposit', 'Status', 'Booked'].map(h => (
+                {['Vehicle', 'Client', 'Dates', 'Deposit', 'Status', 'Booked', 'Actions'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -64,6 +65,9 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-4 py-4 text-gray-400 text-xs">
                     {new Date(b.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-4">
+                    <BookingActions bookingId={b.id} currentStatus={b.status} />
                   </td>
                 </tr>
               ))}

@@ -81,6 +81,13 @@ export default function ContactPage() {
             </a>
           </div>
           <div>
+            <p className="font-semibold text-gray-900 mb-1">Text / WhatsApp</p>
+            <a href="https://wa.me/1XXXXXXXXXX" target="_blank" rel="noopener" className="text-green-600 hover:underline">
+              +1 (XXX) XXX-XXXX
+            </a>
+            <p className="text-gray-400 text-xs mt-1">Fastest way to reach us</p>
+          </div>
+          <div>
             <p className="font-semibold text-gray-900 mb-1">Service Area</p>
             <p>[City, State] and surrounding areas. Pickup and dropoff by arrangement.</p>
           </div>

@@ -66,6 +66,32 @@ export default async function HomePage() {
         )}
       </section>
 
+      <section className="bg-gray-50 py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-10">What Renters Say</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { name: 'Alex M.', text: 'Easiest rental experience ever. The Tesla was immaculate.', rating: 5 },
+              { name: 'Brittany K.', text: 'Booked the Mercedes for my anniversary. Way better than Turo.', rating: 5 },
+              { name: 'Jordan T.', text: 'Drove the Tesla for a week. Loved every minute. Highly recommend.', rating: 5 },
+            ].map(r => (
+              <div key={r.name} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex gap-0.5 mb-3">
+                  {Array.from({ length: r.rating }).map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4">"{r.text}"</p>
+                <p className="text-sm font-semibold text-gray-500">{r.name}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <a href="/reviews" className="text-sm text-gray-500 hover:text-black underline underline-offset-2">Read all reviews →</a>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-black text-white py-20 px-4 text-center">
         <h2 className="text-3xl font-bold mb-4">Ready to roll?</h2>
         <p className="text-gray-400 mb-8 max-w-md mx-auto">Check availability and lock in your dates in minutes.</p>

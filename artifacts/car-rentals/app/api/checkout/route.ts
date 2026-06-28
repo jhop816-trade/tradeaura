@@ -23,6 +23,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
+    // Check for conflicting confirmed bookings
+    const { data: conflicts } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('vehicle_id', vehicle_id)
+      .eq('status', 'confirmed')
+      .or(`start_date.lte.${end_date},end_date.gte.${start_date}`)
+
+    if (conflicts && conflicts.length > 0) {
+      return NextResponse.json({ error: 'Those dates are no longer available. Please choose different dates.' }, { status: 409 })
+    }
+
     const { data: booking, error: bErr } = await supabase
       .from('bookings')
       .insert({

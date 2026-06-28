@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Vehicle } from '@/types'
+import PhotoCarousel from '@/components/PhotoCarousel'
 
 async function getVehicle(slug: string): Promise<Vehicle | null> {
   try {
@@ -33,15 +33,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
   return (
     <div className="max-w-5xl mx-auto px-4 py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-        <div className="rounded-2xl overflow-hidden aspect-video relative shadow-lg">
-          <Image
-            src={vehicle.photos[0] || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200'}
-            alt={vehicle.name}
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
+        <PhotoCarousel photos={vehicle.photos} alt={vehicle.name} />
 
         <div>
           <h1 className="text-3xl font-bold">{vehicle.name}</h1>
@@ -82,6 +74,24 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
           {['Full insurance coverage', 'Roadside assistance', 'Full tank/charge at pickup', 'Clean, detailed vehicle', '24/7 owner support', 'Flexible pickup/dropoff'].map(item => (
             <li key={item} className="flex items-center gap-2">
               <span className="text-green-500">✓</span> {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-6">Requirements</h2>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+          {[
+            'Valid driver\'s license (21+ years old)',
+            'Full coverage auto insurance',
+            'Major credit or debit card for deposit',
+            'Clean driving record (no DUI/reckless driving)',
+            'Must be primary driver listed on booking',
+            'No smoking in vehicle',
+          ].map(item => (
+            <li key={item} className="flex items-start gap-2">
+              <span className="text-blue-500 mt-0.5">→</span> {item}
             </li>
           ))}
         </ul>

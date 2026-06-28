@@ -33,6 +33,9 @@ export default async function BookingPage({
         Select your vehicle, pick your dates, and pay the deposit online.
         We'll reach out to confirm pickup details.
       </p>
+      <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-8 text-sm text-amber-800">
+        <strong>Cancellation policy:</strong> Deposits are fully refundable if cancelled 48+ hours before pickup. Cancellations within 48 hours are non-refundable.
+      </div>
       {vehicles.length === 0 ? (
         <p className="text-gray-400">No vehicles available at this time. Please check back soon.</p>
       ) : (
