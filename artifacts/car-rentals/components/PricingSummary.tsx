@@ -18,17 +18,17 @@ export default function PricingSummary({ vehicle, dateRange }: Props) {
   if (days === 0) return null
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-6 space-y-3 text-sm">
-      <h3 className="font-semibold text-base">Pricing Summary</h3>
-      <div className="flex justify-between">
-        <span className="text-gray-500">${vehicle.daily_rate}/day × {days} {days === 1 ? 'day' : 'days'}</span>
-        <span className="font-medium">${rentalTotal}</span>
+    <div className="bg-[#0f0f0f] border border-white/10 p-6 space-y-3 text-sm">
+      <h3 className="font-playfair font-bold text-base text-white">Pricing Summary</h3>
+      <div className="flex justify-between text-white/50">
+        <span>${vehicle.daily_rate}/day × {days} {days === 1 ? 'day' : 'days'}</span>
+        <span className="text-white font-medium">${rentalTotal}</span>
       </div>
-      <div className="flex justify-between text-green-700 font-medium">
-        <span>Deposit due today</span>
-        <span>${vehicle.deposit_amount}</span>
+      <div className="flex justify-between font-medium">
+        <span className="text-white/50">Deposit due today</span>
+        <span className="text-[#D4A853]">${vehicle.deposit_amount}</span>
       </div>
-      <div className="border-t pt-3 flex justify-between text-gray-500">
+      <div className="border-t border-white/10 pt-3 flex justify-between text-white/30">
         <span>Balance due at pickup</span>
         <span>${Math.max(0, balance)}</span>
       </div>

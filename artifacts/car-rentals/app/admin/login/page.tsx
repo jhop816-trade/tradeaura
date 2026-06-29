@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
   return (
     <div className="bg-black min-h-screen flex items-center justify-center px-8">
       <div className="w-full max-w-sm">
-        <p className="font-playfair font-bold text-3xl text-white mb-2">[Client Name]</p>
+        <p className="font-playfair font-bold text-3xl text-white mb-2">38 Exotics</p>
         <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-10">Admin Access</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

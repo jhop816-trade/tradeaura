@@ -9,12 +9,12 @@ interface Props {
 
 const TRANSITIONS: Record<string, { label: string; next: string; color: string }[]> = {
   pending: [
-    { label: 'Confirm', next: 'confirmed', color: 'bg-green-600 hover:bg-green-700 text-white' },
-    { label: 'Cancel', next: 'cancelled', color: 'bg-red-100 hover:bg-red-200 text-red-700' },
+    { label: 'Confirm', next: 'confirmed', color: 'bg-[#D4A853] hover:bg-[#e8c278] text-black' },
+    { label: 'Cancel', next: 'cancelled', color: 'bg-red-900/40 hover:bg-red-900/60 text-red-400' },
   ],
   confirmed: [
-    { label: 'Complete', next: 'completed', color: 'bg-gray-800 hover:bg-gray-900 text-white' },
-    { label: 'Cancel', next: 'cancelled', color: 'bg-red-100 hover:bg-red-200 text-red-700' },
+    { label: 'Complete', next: 'completed', color: 'bg-white/10 hover:bg-white/20 text-white' },
+    { label: 'Cancel', next: 'cancelled', color: 'bg-red-900/40 hover:bg-red-900/60 text-red-400' },
   ],
   completed: [],
   cancelled: [],
@@ -44,7 +44,7 @@ export default function BookingActions({ bookingId, currentStatus }: Props) {
           key={a.next}
           disabled={loading}
           onClick={() => updateStatus(a.next)}
-          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${a.color}`}
+          className={`text-xs px-3 py-1.5 font-bold tracking-wider uppercase transition-colors disabled:opacity-50 ${a.color}`}
         >
           {a.label}
         </button>

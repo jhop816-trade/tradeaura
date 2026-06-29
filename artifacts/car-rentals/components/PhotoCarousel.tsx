@@ -8,7 +8,7 @@ interface Props {
   alt: string
 }
 
-const FALLBACK = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200'
+const FALLBACK = '/images/placeholder.jpg'
 
 export default function PhotoCarousel({ photos, alt }: Props) {
   const images = photos.length > 0 ? photos : [FALLBACK]
@@ -18,7 +18,7 @@ export default function PhotoCarousel({ photos, alt }: Props) {
   function next() { setIndex(i => (i + 1) % images.length) }
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-lg">
+    <div className="overflow-hidden">
       <div className="relative aspect-video">
         <Image
           src={images[index]}
@@ -32,13 +32,13 @@ export default function PhotoCarousel({ photos, alt }: Props) {
           <>
             <button
               onClick={prev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={next}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 transition-colors"
             >
               <ChevronRight size={18} />
             </button>
@@ -47,7 +47,7 @@ export default function PhotoCarousel({ photos, alt }: Props) {
                 <button
                   key={i}
                   onClick={() => setIndex(i)}
-                  className={`w-2 h-2 rounded-full transition-colors ${i === index ? 'bg-white' : 'bg-white/40'}`}
+                  className={`w-2 h-2 transition-colors ${i === index ? 'bg-[#D4A853]' : 'bg-white/30'}`}
                 />
               ))}
             </div>
