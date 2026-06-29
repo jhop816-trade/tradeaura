@@ -67,16 +67,16 @@ export default function ContactPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Text / WhatsApp</p>
-              <a href="https://wa.me/1XXXXXXXXXX" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">+1 (XXX) XXX-XXXX</a>
+              <a href="https://wa.me/19546543485" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">(954) 654-3485</a>
               <p className="text-white/25 text-xs mt-1">Fastest way to reach us</p>
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Instagram</p>
-              <a href="https://instagram.com" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">@[handle]</a>
+              <a href="https://instagram.com/38exotics_" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">@38exotics_</a>
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Service Area</p>
-              <p>[City, State] and surrounding areas. Pickup and dropoff by arrangement.</p>
+              <p>South Florida — Broward, Miami-Dade, and Palm Beach. Pickup and dropoff by arrangement.</p>
             </div>
           </div>
         </div>

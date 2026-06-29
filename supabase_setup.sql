@@ -127,19 +127,29 @@ create policy "service role all vehicles" on vehicles for all to service_role us
 insert into vehicles (name, make, model, year, daily_rate, deposit_amount, mileage_limit, photos, description, slug)
 values
   (
-    'Tesla Model 3',
-    'Tesla', 'Model 3', 2023,
+    'Tesla Model Y',
+    'Tesla', 'Model Y', 2026,
     250, 500, 200,
-    array['https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1200'],
-    'Experience the future of driving in our 2023 Tesla Model 3. Zero emissions, instant acceleration, and cutting-edge tech. Includes access to Tesla Supercharger network.',
-    'tesla-model-3'
+    array[]::text[],
+    'The 2026 Tesla Model Y — all-electric, zero emissions, and built for South Florida. Instant torque, autopilot-ready, and charged up before every rental. No gas stops. Just drive.',
+    'tesla-model-y'
   ),
   (
-    'Mercedes-Benz C300',
-    'Mercedes-Benz', 'C300', 2022,
+    'CLA 35 AMG',
+    'Mercedes-Benz', 'CLA 35 AMG', 2020,
     300, 600, 200,
-    array['https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1200'],
-    'Turn heads in our 2022 Mercedes-Benz C300. Luxury redefined — premium leather, panoramic sunroof, and a turbocharged engine that makes every drive unforgettable.',
-    'mercedes-benz-c300'
+    array[
+      '/images/mercedes/mercedes-1.jpg',
+      '/images/mercedes/mercedes-2.jpg',
+      '/images/mercedes/mercedes-3.jpg',
+      '/images/mercedes/mercedes-4.jpg',
+      '/images/mercedes/mercedes-5.jpg',
+      '/images/mercedes/mercedes-6.jpg',
+      '/images/mercedes/mercedes-int-1.jpg',
+      '/images/mercedes/mercedes-int-2.jpg',
+      '/images/mercedes/mercedes-int-3.jpg'
+    ],
+    'The 2020 Mercedes-Benz CLA 35 AMG. 302 horsepower, AMG sport seats with red stitching, MBUX dual-screen cockpit, and quad exhaust tips. This is the car people stop and look at.',
+    'mercedes-cla-35-amg'
   )
 on conflict (slug) do nothing;

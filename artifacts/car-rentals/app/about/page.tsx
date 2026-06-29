@@ -26,7 +26,7 @@ export default function AboutPage() {
               Private car rental — the way it should be.
             </p>
             <p>
-              We're a small, owner-operated rental service offering two meticulously maintained vehicles: a Tesla Model 3 and a Mercedes-Benz C300. No middlemen, no agencies, no Turo fees eating into your budget.
+              38 Exotics is a South Florida owner-operated rental service offering two meticulously maintained vehicles: a 2026 Tesla Model Y and a 2020 Mercedes-Benz CLA 35 AMG. No middlemen, no agencies, no Turo fees eating into your budget.
             </p>
             <p>
               When you book with us, you deal directly with the owner. That means fast responses, flexible arrangements, and a vehicle that's always spotless and ready to go.

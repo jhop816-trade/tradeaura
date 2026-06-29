@@ -16,13 +16,13 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: '[Client Name] | Private Car Rentals',
-    template: '%s | [Client Name] Car Rentals',
+    default: '38 Exotics | Private Car Rentals — South Florida',
+    template: '%s | 38 Exotics',
   },
-  description: 'Book a Tesla or Mercedes-Benz for your next trip. Private car rental — no agency fees, personal service.',
+  description: 'Rent a Tesla Model Y or Mercedes CLA 35 AMG in South Florida. Private owner rental — no Turo fees, no agency, no nonsense. Book online.',
   openGraph: {
     type: 'website',
-    siteName: '[Client Name] Car Rentals',
+    siteName: '38 Exotics',
   },
 }
 
@@ -32,11 +32,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const localBusinessSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    name: '[Client Name] Car Rentals',
-    description: 'Private car rental — Tesla Model 3 and Mercedes-Benz C300.',
+    name: '38 Exotics',
+    description: 'Private car rental in South Florida — 2026 Tesla Model Y and 2020 Mercedes-Benz CLA 35 AMG.',
     '@id': process.env.NEXT_PUBLIC_SITE_URL,
     url: process.env.NEXT_PUBLIC_SITE_URL,
-    telephone: '',
+    telephone: '+19546543485',
+    sameAs: ['https://www.instagram.com/38exotics_'],
+    areaServed: 'South Florida',
     priceRange: '$$',
     serviceType: 'Car Rental',
   }

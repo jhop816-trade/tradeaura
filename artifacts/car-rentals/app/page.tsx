@@ -40,7 +40,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="text-[15px] font-light text-white/50 leading-relaxed max-w-sm mb-12">
-              Tesla Model 3 and Mercedes-Benz C300. Book directly with the owner — no agency, no fees, no nonsense.
+              Tesla Model Y and Mercedes CLA 35 AMG. Book directly with the owner — no agency, no fees, no nonsense.
             </p>
 
             <div className="flex flex-col gap-4">

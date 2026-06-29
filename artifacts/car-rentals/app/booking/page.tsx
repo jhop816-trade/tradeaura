@@ -5,7 +5,7 @@ import type { Vehicle } from '@/types'
 
 export const metadata: Metadata = {
   title: 'Book a Vehicle',
-  description: 'Check availability and book your Tesla or Mercedes-Benz rental online.',
+  description: 'Check availability and book the Tesla Model Y or Mercedes CLA 35 AMG online.',
 }
 
 async function getVehicles(): Promise<Vehicle[]> {
