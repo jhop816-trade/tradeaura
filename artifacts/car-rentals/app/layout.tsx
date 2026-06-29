@@ -1,11 +1,18 @@
 import type { Metadata } from 'next'
 import { Geist } from 'next/font/google'
+import { Playfair_Display } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Script from 'next/script'
 
-const geist = Geist({ subsets: ['latin'] })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  style: ['normal', 'italic'],
+  weight: ['400', '600', '700', '900'],
+})
 
 export const metadata: Metadata = {
   title: {
@@ -42,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
       </head>
-      <body className={`${geist.className} bg-white text-gray-900 antialiased`}>
+      <body className={`${geist.variable} ${playfair.variable} bg-black text-white antialiased`}>
         {ga4Id && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} strategy="afterInteractive" />

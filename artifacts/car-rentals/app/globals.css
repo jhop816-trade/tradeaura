@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+:root {
+  --gold: #D4A853;
+  --gold-light: #e8c278;
+  --font-playfair: var(--font-playfair);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.font-playfair {
+  font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
+}
