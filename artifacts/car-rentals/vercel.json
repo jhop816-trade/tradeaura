@@ -1,4 +1,3 @@
 {
-  "buildCommand": "npx next build",
-  "installCommand": "npm install"
+  "buildCommand": "pnpm --filter @workspace/car-rentals run build"
 }
