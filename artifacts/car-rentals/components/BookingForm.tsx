@@ -74,24 +74,26 @@ export default function BookingForm({ vehicles, defaultVehicleSlug }: Props) {
     }
   }
 
+  const inputClass = "w-full bg-[#0f0f0f] border border-white/10 text-white px-4 py-3 text-sm focus:outline-none focus:border-[#D4A853] transition-colors placeholder:text-white/20"
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <label className="block text-sm font-medium mb-2">Select Vehicle</label>
+        <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-3">Select Vehicle</label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {vehicles.map(v => (
             <button
               key={v.id}
               type="button"
               onClick={() => handleVehicleChange(v.id)}
-              className={`p-4 rounded-xl border text-left transition-colors ${
+              className={`p-4 border text-left transition-colors ${
                 vehicleId === v.id
-                  ? 'border-black bg-black text-white'
-                  : 'border-gray-200 hover:border-gray-400'
+                  ? 'border-[#D4A853] bg-[#D4A853]/10 text-white'
+                  : 'border-white/15 hover:border-white/30 text-white'
               }`}
             >
-              <p className="font-semibold">{v.name}</p>
-              <p className={`text-sm ${vehicleId === v.id ? 'text-gray-300' : 'text-gray-500'}`}>
+              <p className="font-semibold text-sm">{v.name}</p>
+              <p className={`text-sm mt-0.5 ${vehicleId === v.id ? 'text-white/60' : 'text-white/40'}`}>
                 ${v.daily_rate}/day · ${v.deposit_amount} deposit
               </p>
             </button>
@@ -100,8 +102,8 @@ export default function BookingForm({ vehicles, defaultVehicleSlug }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Select Dates</label>
-        <div className="border border-gray-200 rounded-2xl p-4 inline-block">
+        <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-3">Select Dates</label>
+        <div className="border border-white/10 p-4 inline-block">
           <BookingCalendar
             selected={dateRange}
             onSelect={setDateRange}
@@ -113,43 +115,43 @@ export default function BookingForm({ vehicles, defaultVehicleSlug }: Props) {
       {selectedVehicle && <PricingSummary vehicle={selectedVehicle} dateRange={dateRange} />}
 
       <div className="space-y-4">
-        <h3 className="font-semibold">Your Information</h3>
+        <h3 className="font-playfair font-bold text-xl text-white">Your Information</h3>
         <div>
-          <label className="block text-sm font-medium mb-1">Full Name</label>
+          <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Full Name</label>
           <input
             type="text" required value={name} onChange={e => setName(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            className={inputClass}
             placeholder="Jane Smith"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Email</label>
           <input
             type="email" required value={email} onChange={e => setEmail(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            className={inputClass}
             placeholder="jane@example.com"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Phone</label>
+          <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Phone</label>
           <input
             type="tel" required value={phone} onChange={e => setPhone(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            className={inputClass}
             placeholder="+1 (555) 000-0000"
           />
         </div>
       </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
 
       <button
         type="submit"
         disabled={loading || !dateRange?.from || !dateRange?.to}
-        className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#D4A853] text-black py-4 text-[12px] font-bold tracking-[0.16em] uppercase hover:bg-[#e8c278] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Processing…' : 'Continue to Payment →'}
       </button>
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-white/30 text-center">
         You'll pay the deposit securely via Stripe. Balance is due at pickup.
       </p>
     </form>

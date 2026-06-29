@@ -10,11 +10,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="font-bold text-lg">Admin Dashboard</h1>
+    <div className="min-h-screen bg-[#050505]">
+      <header className="bg-[#0a0a0a] border-b border-white/6 px-6 py-4 flex items-center justify-between">
+        <h1 className="font-playfair font-bold text-white text-lg">Admin Dashboard</h1>
         <form action="/api/admin/logout" method="POST">
-          <button type="submit" className="text-sm text-gray-500 hover:text-black">Log out</button>
+          <button type="submit" className="text-sm text-white/40 hover:text-white transition-colors">Log out</button>
         </form>
       </header>
       <main className="p-6">{children}</main>

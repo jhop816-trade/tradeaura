@@ -20,76 +20,64 @@ export default function ContactPage() {
       if (res.ok) {
         setStatus('success')
         setName(''); setEmail(''); setPhone(''); setMessage('')
-      } else {
-        setStatus('error')
-      }
-    } catch {
-      setStatus('error')
-    }
+      } else { setStatus('error') }
+    } catch { setStatus('error') }
   }
 
+  const inputClass = "w-full bg-[#0f0f0f] border border-white/10 text-white px-4 py-3.5 text-sm focus:outline-none focus:border-[#D4A853] transition-colors placeholder:text-white/20"
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
-      <p className="text-gray-500 mb-12">Have questions before booking? Reach out — we respond fast.</p>
+    <div className="bg-black min-h-screen pt-[76px]">
+      <div className="max-w-5xl mx-auto px-8 md:px-20 py-24">
+        <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Get in Touch</p>
+        <h1 className="font-playfair font-black text-5xl md:text-6xl leading-none text-white tracking-tight mb-4">Contact Us</h1>
+        <p className="text-white/40 text-[15px] mb-20">Have questions before booking? Reach out — we respond fast.</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="Your name" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="you@example.com" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Phone (optional)</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="+1 (555) 000-0000" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Message</label>
-            <textarea required value={message} onChange={e => setMessage(e.target.value)} rows={5}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
-              placeholder="Ask us anything…" />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-16">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Name</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Your name" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Email</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="you@example.com" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Phone (optional)</label>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={inputClass} placeholder="+1 (555) 000-0000" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold tracking-[0.14em] uppercase text-white/40 mb-2">Message</label>
+              <textarea required value={message} onChange={e => setMessage(e.target.value)} rows={5} className={`${inputClass} resize-none`} placeholder="Ask us anything…" />
+            </div>
 
-          {status === 'success' && <p className="text-green-600 text-sm">Message sent! We'll get back to you soon.</p>}
-          {status === 'error' && <p className="text-red-600 text-sm">Something went wrong. Please try again.</p>}
+            {status === 'success' && <p className="text-[#D4A853] text-sm">Message sent! We'll get back to you soon.</p>}
+            {status === 'error' && <p className="text-red-400 text-sm">Something went wrong. Please try again.</p>}
 
-          <button type="submit" disabled={status === 'loading'}
-            className="w-full bg-black text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50">
-            {status === 'loading' ? 'Sending…' : 'Send Message'}
-          </button>
-        </form>
+            <button type="submit" disabled={status === 'loading'} className="w-full bg-[#D4A853] text-black py-4 text-[12px] font-bold tracking-[0.16em] uppercase hover:bg-[#e8c278] transition-colors disabled:opacity-50">
+              {status === 'loading' ? 'Sending…' : 'Send Message'}
+            </button>
+          </form>
 
-        <div className="space-y-6 text-sm text-gray-700">
-          <div>
-            <p className="font-semibold text-gray-900 mb-1">Response Time</p>
-            <p>We typically respond within a few hours. For urgent inquiries, DM us on Instagram.</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 mb-1">Instagram</p>
-            <a href="https://instagram.com" target="_blank" rel="noopener" className="text-blue-600 hover:underline">
-              @[handle]
-            </a>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 mb-1">Text / WhatsApp</p>
-            <a href="https://wa.me/1XXXXXXXXXX" target="_blank" rel="noopener" className="text-green-600 hover:underline">
-              +1 (XXX) XXX-XXXX
-            </a>
-            <p className="text-gray-400 text-xs mt-1">Fastest way to reach us</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 mb-1">Service Area</p>
-            <p>[City, State] and surrounding areas. Pickup and dropoff by arrangement.</p>
+          <div className="space-y-10 text-[14px] text-white/50 pt-1">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Response Time</p>
+              <p>We typically respond within a few hours. For urgent inquiries, text or DM us on Instagram.</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Text / WhatsApp</p>
+              <a href="https://wa.me/1XXXXXXXXXX" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">+1 (XXX) XXX-XXXX</a>
+              <p className="text-white/25 text-xs mt-1">Fastest way to reach us</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Instagram</p>
+              <a href="https://instagram.com" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">@[handle]</a>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Service Area</p>
+              <p>[City, State] and surrounding areas. Pickup and dropoff by arrangement.</p>
+            </div>
           </div>
         </div>
       </div>
