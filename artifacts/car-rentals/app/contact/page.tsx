@@ -67,8 +67,12 @@ export default function ContactPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Text / WhatsApp</p>
-              <a href="https://wa.me/19546543485" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">(954) 654-3485</a>
+              <a href="https://wa.me/17543077359" target="_blank" rel="noopener" className="text-white hover:text-[#D4A853] transition-colors">(754) 307-7359</a>
               <p className="text-white/25 text-xs mt-1">Fastest way to reach us</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Email</p>
+              <a href="mailto:hightowertransportllc5@gmail.com" className="text-white hover:text-[#D4A853] transition-colors break-all">hightowertransportllc5@gmail.com</a>
             </div>
             <div>
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Instagram</p>
