@@ -37,8 +37,8 @@ export default function Footer() {
             <p className="text-[9px] font-bold tracking-[0.22em] uppercase text-[#D4A853] mb-5">Connect</p>
             <ul className="flex flex-col gap-3">
               <li><a href="https://instagram.com/38exotics_" target="_blank" rel="noopener" className="text-[13px] text-white/35 hover:text-white transition-colors">@38exotics_</a></li>
-              <li><a href="https://wa.me/19546543485" target="_blank" rel="noopener" className="text-[13px] text-white/35 hover:text-white transition-colors">WhatsApp</a></li>
-              <li><a href="tel:+19546543485" className="text-[13px] text-white/35 hover:text-white transition-colors">(954) 654-3485</a></li>
+              <li><a href="https://wa.me/17543077359" target="_blank" rel="noopener" className="text-[13px] text-white/35 hover:text-white transition-colors">WhatsApp / Text</a></li>
+              <li><a href="tel:+17543077359" className="text-[13px] text-white/35 hover:text-white transition-colors">(754) 307-7359</a></li>
               <li><Link href="/contact" className="text-[13px] text-white/35 hover:text-white transition-colors">Contact Form</Link></li>
             </ul>
           </div>

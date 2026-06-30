@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     description: 'Private car rental in South Florida — 2026 Tesla Model Y and 2020 Mercedes-Benz CLA 35 AMG.',
     '@id': process.env.NEXT_PUBLIC_SITE_URL,
     url: process.env.NEXT_PUBLIC_SITE_URL,
-    telephone: '+19546543485',
+    telephone: '+17543077359',
     sameAs: ['https://www.instagram.com/38exotics_'],
     areaServed: 'South Florida',
     priceRange: '$$',

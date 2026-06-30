@@ -6,7 +6,7 @@ import type { Vehicle } from '@/types'
 
 export const metadata: Metadata = {
   title: 'Fleet',
-  description: 'Browse our Tesla Model 3 and Mercedes-Benz C300 available for private daily rental.',
+  description: 'Browse our 2026 Tesla Model Y and 2020 Mercedes-Benz CLA 35 AMG — both available for private daily rental in South Florida.',
 }
 
 async function getVehicles(): Promise<Vehicle[]> {
@@ -27,7 +27,7 @@ export default async function FleetPage() {
         <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Our Collection</p>
         <h1 className="font-playfair font-black text-5xl md:text-6xl leading-none text-white tracking-tight mb-6">The Fleet</h1>
         <p className="text-white/40 text-[15px] max-w-lg leading-relaxed mb-20">
-          Two meticulously maintained vehicles ready for your next trip. Both include insurance, roadside assistance, and a full tank or charge.
+          Two personally owned and maintained vehicles — detailed before every rental, ready when you are. Book direct and skip the platform fees.
         </p>
 
         <div className="flex flex-col gap-1">
