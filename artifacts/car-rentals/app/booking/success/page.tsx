@@ -1,9 +1,20 @@
-import type { Metadata } from 'next'
+'use client'
+import { useEffect } from 'react'
 import Link from 'next/link'
 
-export const metadata: Metadata = { title: 'Booking Confirmed' }
+declare global {
+  interface Window { gtag?: (...args: unknown[]) => void }
+}
 
 export default function SuccessPage() {
+  useEffect(() => {
+    window.gtag?.('event', 'conversion', {
+      event_category: 'booking',
+      event_label: 'deposit_paid',
+      value: 1,
+    })
+  }, [])
+
   return (
     <div className="bg-black min-h-screen pt-[76px] flex items-center justify-center px-8">
       <div className="max-w-lg w-full text-center py-24">
