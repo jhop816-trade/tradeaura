@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Vehicle } from '@/types'
+import DashboardHero from '@/components/DashboardHero'
 
 async function getVehicles(): Promise<Vehicle[]> {
   try {
@@ -15,83 +16,10 @@ async function getVehicles(): Promise<Vehicle[]> {
 
 export default async function HomePage() {
   const vehicles = await getVehicles()
-  const [primary] = vehicles
 
   return (
     <>
-      {/* HERO — Editorial Split */}
-      <section className="flex min-h-screen mt-[76px]">
-        {/* Left */}
-        <div className="flex-1 relative bg-black flex flex-col justify-center px-10 md:px-20 py-20">
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 20% 60%, rgba(212,168,83,0.05) 0%, transparent 60%)' }} />
-          {/* Gold vertical line */}
-          <div className="hidden md:block absolute right-0 top-0 bottom-0 w-px"
-            style={{ background: 'linear-gradient(to bottom, transparent 5%, #D4A853 30%, #D4A853 70%, transparent 95%)', opacity: 0.4 }} />
-
-          <div className="relative z-10 max-w-xl">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-px bg-[#D4A853]" />
-              <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853]">Private Car Rentals</span>
-            </div>
-
-            <h1 className="font-playfair font-black text-[clamp(52px,7vw,82px)] leading-[0.92] tracking-tight text-white mb-9">
-              Drive<br />Something<br /><em className="italic text-[#D4A853]">Worth It.</em>
-            </h1>
-
-            <p className="text-[15px] font-light text-white/50 leading-relaxed max-w-sm mb-12">
-              Tesla Model Y and Mercedes CLA 35 AMG. Book directly with the owner — no agency, no fees, no nonsense.
-            </p>
-
-            <div className="flex flex-col gap-4">
-              <Link href="/booking"
-                className="self-start bg-[#D4A853] text-black px-10 py-[18px] text-[12px] font-bold tracking-[0.16em] uppercase hover:bg-[#e8c278] transition-colors">
-                Book Now
-              </Link>
-              <Link href="/fleet"
-                className="self-start flex items-center gap-3 text-[12px] font-medium tracking-[0.12em] uppercase text-white/45 hover:text-white transition-colors group">
-                View Fleet <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-            </div>
-
-            <div className="mt-14 pt-10 border-t border-white/7 flex gap-10">
-              {[
-                { val: '2', label: 'Vehicles' },
-                { val: '$250', label: 'From / day' },
-                { val: '24h', label: 'Response' },
-              ].map(s => (
-                <div key={s.label}>
-                  <div className="font-playfair font-bold text-4xl text-white leading-none mb-1.5">{s.val}</div>
-                  <div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-white/30">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right — car photo */}
-        <div className="hidden md:block flex-1 relative overflow-hidden">
-          {primary?.photos?.[0] ? (
-            <Image
-              src={primary.photos[0]}
-              alt={primary.name}
-              fill
-              className="object-cover saturate-75 brightness-90"
-              priority
-              sizes="50vw"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1c1c1c] to-[#080808]" />
-          )}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 30%)' }} />
-          {primary && (
-            <div className="absolute bottom-8 right-8 bg-black/70 backdrop-blur border border-[#D4A853]/30 px-5 py-4">
-              <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#D4A853] mb-1">{primary.name}</p>
-              <p className="font-playfair font-bold text-2xl text-white">${primary.daily_rate}<span className="font-sans text-xs text-white/40 font-normal">/day</span></p>
-            </div>
-          )}
-        </div>
-      </section>
+      <DashboardHero />
 
       {/* VALUE PROPS */}
       <section className="bg-[#0d0d0d] border-y border-white/5 px-10 md:px-20 py-24">
