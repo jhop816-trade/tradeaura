@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { Vehicle } from '@/types'
 import DashboardHero from '@/components/DashboardHero'
+import GoldAurora from '@/components/GoldAurora'
 
 async function getVehicles(): Promise<Vehicle[]> {
   try {
@@ -22,7 +23,8 @@ export default async function HomePage() {
       <DashboardHero />
 
       {/* VALUE PROPS */}
-      <section className="bg-[#0d0d0d] border-y border-white/5 px-10 md:px-20 py-24">
+      <section className="relative bg-[#0d0d0d] border-y border-white/5 px-10 md:px-20 py-24">
+        <GoldAurora />
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-20 items-start">
           <div className="md:sticky md:top-28">
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-4">Why Book Direct</p>
@@ -47,7 +49,8 @@ export default async function HomePage() {
       </section>
 
       {/* FLEET */}
-      <section className="bg-black px-10 md:px-20 py-28">
+      <section className="relative bg-black px-10 md:px-20 py-28">
+        <GoldAurora />
         <div className="max-w-6xl mx-auto">
           <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Our Collection</p>
           <h2 className="font-playfair font-black text-5xl md:text-6xl leading-none text-white tracking-tight mb-16">The Fleet</h2>
@@ -111,7 +114,8 @@ export default async function HomePage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="bg-[#060606] border-t border-white/5 px-10 md:px-20 py-28">
+      <section className="relative bg-[#060606] border-t border-white/5 px-10 md:px-20 py-28">
+        <GoldAurora />
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex gap-0.5">
@@ -155,7 +159,8 @@ export default async function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-black border-t border-[#D4A853]/10 px-10 md:px-20 py-28">
+      <section className="relative bg-black border-t border-[#D4A853]/10 px-10 md:px-20 py-28">
+        <GoldAurora />
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-16">
           <div className="max-w-xl">
             <div className="w-12 h-[3px] bg-[#D4A853] mb-7" />
