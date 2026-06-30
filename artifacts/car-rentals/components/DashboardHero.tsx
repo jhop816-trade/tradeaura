@@ -10,8 +10,9 @@ export default function DashboardHero() {
   useEffect(() => {
     const warpCanvas = warpRef.current
     if (!warpCanvas) return
-    const wCtx = warpCanvas.getContext('2d')
-    if (!wCtx) return
+    const wCtxOrNull = warpCanvas.getContext('2d')
+    if (!wCtxOrNull) return
+    const wCtx = wCtxOrNull
 
     warpCanvas.width = warpCanvas.offsetWidth
     warpCanvas.height = warpCanvas.offsetHeight
@@ -83,8 +84,9 @@ export default function DashboardHero() {
   useEffect(() => {
     const dashCanvas = dashRef.current
     if (!dashCanvas) return
-    const ctx = dashCanvas.getContext('2d')
-    if (!ctx) return
+    const ctxOrNull = dashCanvas.getContext('2d')
+    if (!ctxOrNull) return
+    const ctx = ctxOrNull
 
     dashCanvas.width = dashCanvas.offsetWidth
     dashCanvas.height = dashCanvas.offsetHeight
