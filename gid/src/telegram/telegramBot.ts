@@ -286,7 +286,6 @@ export class TelegramBot {
   }
 
   private getNextScheduledPost(): string {
-    // Schedule (ET): X at 9:30, 13:00, 19:00 | IG at 11:00 | FB at 15:00 | TikTok draft at 8:00
     const now = new Date();
     const etFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
@@ -299,14 +298,12 @@ export class TelegramBot {
     const etMinute = Number(etParts.find((p) => p.type === 'minute')?.value ?? 0);
     const etTotalMinutes = etHour * 60 + etMinute;
 
-    // Sorted schedule entries: [minuteOfDay, label]
     const schedule: [number, string][] = [
-      [8 * 60, '🎵 TikTok draft at 8:00am ET'],
-      [9 * 60 + 30, '𝕏 X post at 9:30am ET'],
-      [11 * 60, '📸 Instagram post at 11:00am ET'],
-      [13 * 60, '𝕏 X post at 1:00pm ET'],
-      [15 * 60, '👥 Facebook post at 3:00pm ET'],
-      [19 * 60, '𝕏 X post at 7:00pm ET'],
+      [7 * 60 + 30, '🎵 TikTok draft at 7:30am ET'],
+      [9 * 60, '📸 Instagram prep at 9:00am ET'],
+      [10 * 60, '👥 Facebook post at 10:00am ET'],
+      [17 * 60, '📸 Instagram prep at 5:00pm ET'],
+      [17 * 60 + 30, '📊 Daily summary at 5:30pm ET'],
     ];
 
     for (const [minuteOfDay, label] of schedule) {
@@ -314,8 +311,7 @@ export class TelegramBot {
         return label;
       }
     }
-    // All posts done for today — next is tomorrow's first
-    return '🎵 TikTok draft at 8:00am ET (tomorrow)';
+    return '🎵 TikTok draft at 7:30am ET (tomorrow)';
   }
 
   private async cmdStatus(chatId: number): Promise<void> {
