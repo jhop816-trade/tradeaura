@@ -1,0 +1,6 @@
+[build]
+  command = "pnpm install && pnpm --filter @workspace/car-rentals run build"
+  publish = "artifacts/car-rentals/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
