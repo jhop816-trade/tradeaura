@@ -56,6 +56,9 @@ export async function POST(req: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3002'
 
+    const days = Math.max(1, Math.round((new Date(end_date).getTime() - new Date(start_date).getTime()) / 86400000))
+    const rentalTotal = days * vehicle.daily_rate
+
     const session = await getStripe().checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -63,10 +66,10 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${vehicle.name} Rental Deposit`,
-              description: `Rental: ${start_date} → ${end_date}`,
+              name: `${vehicle.name} Rental`,
+              description: `Rental: ${start_date} → ${end_date} (${days} ${days === 1 ? 'day' : 'days'})`,
             },
-            unit_amount: Math.round(vehicle.deposit_amount * 100),
+            unit_amount: Math.round(rentalTotal * 100),
           },
           quantity: 1,
         },
