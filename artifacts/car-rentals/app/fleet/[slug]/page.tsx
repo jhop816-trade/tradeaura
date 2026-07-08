@@ -49,9 +49,9 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
             <div className="grid grid-cols-2 gap-px bg-white/6 border border-white/6 mb-10">
               {[
                 { label: 'Daily Rate', value: `$${vehicle.daily_rate}` },
-                { label: 'Deposit', value: `$${vehicle.deposit_amount}` },
+                { label: 'Security Deposit', value: `$${vehicle.deposit_amount}` },
                 { label: 'Mileage Limit', value: `${vehicle.mileage_limit} mi/day` },
-                { label: 'Balance Due', value: 'At pickup' },
+                { label: 'Payment', value: 'Full online' },
               ].map(item => (
                 <div key={item.label} className="bg-[#0f0f0f] p-5">
                   <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-white/30 mb-2">{item.label}</p>
