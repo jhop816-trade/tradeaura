@@ -13,6 +13,7 @@ export default function PricingSummary({ vehicle, dateRange }: Props) {
     : 0
 
   const rentalTotal = days * vehicle.daily_rate
+  const chargeTotal = rentalTotal + vehicle.deposit_amount
 
   if (days === 0) return null
 
@@ -23,9 +24,13 @@ export default function PricingSummary({ vehicle, dateRange }: Props) {
         <span>${vehicle.daily_rate}/day × {days} {days === 1 ? 'day' : 'days'}</span>
         <span className="text-white font-medium">${rentalTotal}</span>
       </div>
+      <div className="flex justify-between text-white/50">
+        <span>Security deposit (refundable)</span>
+        <span className="text-white font-medium">${vehicle.deposit_amount}</span>
+      </div>
       <div className="flex justify-between font-medium border-t border-white/10 pt-3">
         <span className="text-white/50">Total due today</span>
-        <span className="text-[#D4A853]">${rentalTotal}</span>
+        <span className="text-[#D4A853]">${chargeTotal}</span>
       </div>
     </div>
   )
