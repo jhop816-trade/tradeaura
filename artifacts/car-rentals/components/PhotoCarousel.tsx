@@ -8,11 +8,14 @@ interface Props {
   alt: string
 }
 
-const FALLBACK = '/images/placeholder.jpg'
-
 export default function PhotoCarousel({ photos, alt }: Props) {
-  const images = photos.length > 0 ? photos : [FALLBACK]
   const [index, setIndex] = useState(0)
+
+  if (photos.length === 0) {
+    return <div className="aspect-video bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
+  }
+
+  const images = photos
 
   function prev() { setIndex(i => (i - 1 + images.length) % images.length) }
   function next() { setIndex(i => (i + 1) % images.length) }

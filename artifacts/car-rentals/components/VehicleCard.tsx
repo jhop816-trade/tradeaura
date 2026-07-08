@@ -11,13 +11,17 @@ export default function VehicleCard({ vehicle, compact = false }: Props) {
   return (
     <div className="bg-[#0f0f0f] border border-white/6 overflow-hidden group">
       <div className="relative aspect-video overflow-hidden">
-        <Image
-          src={vehicle.photos[0] || '/images/placeholder.jpg'}
-          alt={vehicle.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+        {vehicle.photos[0] ? (
+          <Image
+            src={vehicle.photos[0]}
+            alt={vehicle.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
+        )}
       </div>
       <div className="p-6">
         <div className="flex items-start justify-between gap-2 mb-4">
