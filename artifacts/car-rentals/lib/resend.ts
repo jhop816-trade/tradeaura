@@ -19,10 +19,9 @@ export async function sendBookingConfirmation(booking: {
     html: `
       <h2>Your booking is confirmed!</h2>
       <p>Hi ${booking.client_name},</p>
-      <p>Your rental of the <strong>${booking.vehicle_name}</strong> has been confirmed.</p>
+      <p>Your rental of the <strong>${booking.vehicle_name}</strong> has been confirmed and your payment has been received.</p>
       <p><strong>Dates:</strong> ${booking.start_date} → ${booking.end_date}</p>
-      <p><strong>Deposit paid:</strong> $${booking.deposit_amount}</p>
-      <p>The remaining balance is due at pickup. We'll reach out to confirm pickup logistics.</p>
+      <p>We'll reach out shortly to confirm pickup logistics.</p>
       <p>Questions? Reply to this email or DM us on Instagram.</p>
     `,
   })
