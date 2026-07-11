@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentMemory } from '../memory/agentMemory.js';
 import type { ContentGenerator } from '../tools/contentGenerator.js';
+import type { InstagramInsights } from '../tools/instagramInsights.js';
 import type { SocialPoster } from '../tools/socialPoster.js';
 import type { Alerter } from '../utils/alerter.js';
 import { AlertMessages } from '../utils/alerter.js';
@@ -41,6 +42,7 @@ export class MarketingAgent {
     private readonly memory: AgentMemory,
     private readonly alerter: Alerter,
     private readonly logger: Logger,
+    private readonly insights?: InstagramInsights,
   ) {}
 
   private async isPostingPaused(): Promise<boolean> {
@@ -385,7 +387,8 @@ export class MarketingAgent {
       this.logger.info('Fewer than 14 days of calendar content remain — generating new week');
 
       const recentTopics = await this.getRecentTopics();
-      const pieces = await this.contentGenerator.generateWeekCalendar(recentTopics);
+      const weights = this.insights ? await this.insights.getWeightedPillarDistribution() : undefined;
+      const pieces = await this.contentGenerator.generateWeekCalendar(recentTopics, weights);
 
       if (pieces.length === 0) {
         this.logger.warn('generateWeekCalendar returned no pieces');
