@@ -463,6 +463,12 @@ export class MarketingAgent {
         this.logger.warn({ err }, 'Failed to fetch follower count');
       }
 
+      const { data: weekPosts, count: weekPostCount } = await this.supabase
+        .from('content_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('platform', 'instagram')
+        .gte('posted_at', sevenDaysAgo);
+
       const { data: insights } = await this.supabase
         .from('post_insights')
         .select('instagram_post_id, pillar, format, reach, saves, score')
@@ -493,6 +499,7 @@ export class MarketingAgent {
       const lines = [
         '📊 <b>Weekly Analytics Report</b>\n',
         followerLine,
+        `📸 Posts this week: ${weekPostCount ?? 0}`,
         `📡 Total Reach: ${totalReach.toLocaleString()}`,
         '',
         '<b>Top 3 Posts</b>',
