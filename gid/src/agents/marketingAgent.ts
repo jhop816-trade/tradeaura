@@ -2,19 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentMemory } from '../memory/agentMemory.js';
 import type { ContentGenerator } from '../tools/contentGenerator.js';
 import type { SocialPoster } from '../tools/socialPoster.js';
-import type { TiktokDrafter } from '../tools/tiktokDrafter.js';
 import type { Alerter } from '../utils/alerter.js';
 import { AlertMessages } from '../utils/alerter.js';
+import type { DailyCounts } from '../utils/alerter.js';
 import { getTodayKeyNY } from '../utils/date.js';
 import type { Logger } from '../utils/logger.js';
 import { withRetry } from '../utils/retry.js';
-
-interface DailyCounts {
-  x: number;
-  ig: number;
-  fb: number;
-  tiktok: number;
-}
 
 interface CalendarContent {
   id: string;
@@ -22,6 +15,8 @@ interface CalendarContent {
   title: string | null;
   image_url: string | null;
   video_url: string | null;
+  pillar: string | null;
+  format: string | null;
 }
 
 const AGENT_NAME = 'marketing-agent';
@@ -31,7 +26,6 @@ export class MarketingAgent {
     private readonly supabase: SupabaseClient,
     private readonly contentGenerator: ContentGenerator,
     private readonly socialPoster: SocialPoster,
-    private readonly tiktokDrafter: TiktokDrafter,
     private readonly memory: AgentMemory,
     private readonly alerter: Alerter,
     private readonly logger: Logger,
@@ -53,21 +47,30 @@ export class MarketingAgent {
     await this.memory.upsert(AGENT_NAME, 'recent-topics', updated);
   }
 
-  private async incrementDailyCounter(field: keyof DailyCounts): Promise<void> {
+  private async incrementDailyCounter(): Promise<void> {
     const today = getTodayKeyNY();
     const key = `daily-counts-${today}`;
-    const current = (await this.memory.get<DailyCounts>(AGENT_NAME, key)) ?? {
-      x: 0,
-      ig: 0,
-      fb: 0,
-      tiktok: 0,
-    };
-    current[field]++;
+    const current = (await this.memory.get<DailyCounts>(AGENT_NAME, key)) ?? { ig: 0 };
+    current.ig++;
     await this.memory.upsert(AGENT_NAME, key, current);
   }
 
-  private async logPost(platform: string, content: string, postId: string): Promise<void> {
-    await this.supabase.from('content_log').insert({ platform, content, post_id: postId });
+  private async logPost(
+    platform: string,
+    content: string,
+    postId: string,
+    pillar?: string | null,
+    format?: string | null,
+    utmLink?: string | null,
+  ): Promise<void> {
+    await this.supabase.from('content_log').insert({
+      platform,
+      content,
+      post_id: postId,
+      ...(pillar != null && { pillar }),
+      ...(format != null && { format }),
+      ...(utmLink != null && { utm_link: utmLink }),
+    });
   }
 
   private async handlePostError(platform: string, err: unknown): Promise<never> {
@@ -89,7 +92,7 @@ export class MarketingAgent {
     const today = getTodayKeyNY();
     let query = this.supabase
       .from('content_calendar')
-      .select('id, content, title, image_url, video_url')
+      .select('id, content, title, image_url, video_url, pillar, format')
       .eq('scheduled_date', today)
       .eq('platform', platform)
       .eq('status', 'scheduled');
@@ -117,29 +120,6 @@ export class MarketingAgent {
     }
   }
 
-  async postX(slot: 'morning' | 'midday' | 'evening'): Promise<void> {
-    if (await this.isPostingPaused()) {
-      this.logger.info({ slot }, 'Posting paused — skipping X post');
-      return;
-    }
-    try {
-      const recentTopics = await this.getRecentTopics();
-      const { text } = await this.contentGenerator.generateXPost(slot, recentTopics);
-      const { postId } = await withRetry(() => this.socialPoster.postToX(text));
-      await this.logPost('x', text, postId);
-      await this.incrementDailyCounter('x');
-      await this.addRecentTopic(text.substring(0, 60));
-      this.logger.info({ slot, postId }, 'X post published');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (message.includes('TWITTER_PAYMENT_REQUIRED')) {
-        this.logger.info({ slot }, 'X post skipped — paid API tier required (402)');
-        return;
-      }
-      await this.handlePostError('x', err);
-    }
-  }
-
   async postInstagram(): Promise<void> {
     if (await this.isPostingPaused()) {
       this.logger.info('Posting paused — skipping Instagram post');
@@ -147,16 +127,20 @@ export class MarketingAgent {
     }
     try {
       let caption: string;
+      let pillar: string | null = null;
+      let format: string | null = null;
       const calendarResult = await this.getCalendarContent('instagram');
 
       if (calendarResult) {
         caption = calendarResult.row.content;
+        pillar = calendarResult.row.pillar ?? null;
+        format = calendarResult.row.format ?? null;
         const imageUrl = calendarResult.row.image_url ?? undefined;
         this.logger.info({ id: calendarResult.row.id }, 'Using calendar content for Instagram');
         const { postId } = await withRetry(() => this.socialPoster.postToInstagram(caption, imageUrl));
-        await this.logPost('instagram', caption, postId);
+        await this.logPost('instagram', caption, postId, pillar, format);
         await this.markCalendarRowPosted(calendarResult.row.id);
-        await this.incrementDailyCounter('ig');
+        await this.incrementDailyCounter();
         await this.addRecentTopic(caption.substring(0, 60));
         this.logger.info({ postId }, 'Instagram post published from calendar');
       } else {
@@ -166,7 +150,7 @@ export class MarketingAgent {
           this.socialPoster.postToInstagram(caption, process.env.INSTAGRAM_DEFAULT_IMAGE_URL),
         );
         await this.logPost('instagram', caption, postId);
-        await this.incrementDailyCounter('ig');
+        await this.incrementDailyCounter();
         await this.addRecentTopic(caption.substring(0, 60));
         this.logger.info({ postId }, 'Instagram post published from Claude generation');
       }
@@ -184,6 +168,8 @@ export class MarketingAgent {
       let caption: string;
       let imageUrl: string | null;
       let calendarId: string | null;
+      let pillar: string | null = null;
+      let format: string | null = null;
 
       const calendarResult = await this.getCalendarContent('instagram');
 
@@ -191,6 +177,8 @@ export class MarketingAgent {
         caption = calendarResult.row.content;
         imageUrl = calendarResult.row.image_url;
         calendarId = calendarResult.row.id;
+        pillar = calendarResult.row.pillar ?? null;
+        format = calendarResult.row.format ?? null;
         this.logger.info({ id: calendarId }, 'Prepared Instagram post from calendar');
       } else {
         const recentTopics = await this.getRecentTopics();
@@ -200,7 +188,13 @@ export class MarketingAgent {
         this.logger.info('Prepared Instagram post from Claude generation');
       }
 
-      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', { calendarId, caption, imageUrl });
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', {
+        calendarId,
+        caption,
+        imageUrl,
+        pillar,
+        format,
+      });
 
       const imageLabel = imageUrl ?? 'default image';
       const notification = [
@@ -219,74 +213,33 @@ export class MarketingAgent {
     }
   }
 
-  async postInstagramNow(caption: string, imageUrl: string | null, calendarId: string | null): Promise<void> {
+  async postInstagramNow(
+    caption: string,
+    imageUrl: string | null,
+    calendarId: string | null,
+    pillar?: string | null,
+    format?: string | null,
+    utmLink?: string | null,
+  ): Promise<void> {
     const { postId } = await withRetry(() =>
       this.socialPoster.postToInstagram(caption, imageUrl ?? undefined),
     );
-    await this.logPost('instagram', caption, postId);
+    await this.logPost('instagram', caption, postId, pillar, format, utmLink);
     if (calendarId) {
       await this.markCalendarRowPosted(calendarId);
     }
-    await this.incrementDailyCounter('ig');
+    await this.incrementDailyCounter();
     await this.addRecentTopic(caption.substring(0, 60));
     this.logger.info({ postId }, 'Instagram post published via /approve');
   }
 
   async postFacebook(): Promise<void> {
-    // Facebook handled via Instagram cross-post — skipped here
-    this.logger.info('Facebook skipped — using Instagram cross-post instead');
-  }
-
-  async generateTikTokDraft(): Promise<void> {
-    if (await this.isPostingPaused()) {
-      this.logger.info('Posting paused — skipping TikTok draft');
-      return;
-    }
-    try {
-      const calendarResult = await this.getCalendarContent('tiktok');
-
-      if (calendarResult) {
-        const { row } = calendarResult;
-        const scriptContent = row.title
-          ? `TITLE: ${row.title}\n\n${row.content}`
-          : row.content;
-        this.logger.info({ id: row.id }, 'Using calendar content for TikTok draft');
-
-        if (row.video_url) {
-          const { postId } = await withRetry(() =>
-            this.socialPoster.postToTikTok(row.video_url!, scriptContent),
-          );
-          await this.logPost('tiktok', scriptContent, postId);
-          await this.markCalendarRowPosted(row.id);
-          await this.incrementDailyCounter('tiktok');
-          this.logger.info({ postId }, 'TikTok video posted from calendar');
-        } else {
-          await this.tiktokDrafter.saveDraft(scriptContent);
-          await this.markCalendarRowPosted(row.id);
-          await this.incrementDailyCounter('tiktok');
-          await this.alerter.send(AlertMessages.tiktokDraftReady());
-          this.logger.info('TikTok draft saved from calendar');
-        }
-      } else {
-        const { script } = await this.contentGenerator.generateTikTokScript();
-        await this.tiktokDrafter.saveDraft(script);
-        await this.incrementDailyCounter('tiktok');
-        await this.alerter.send(AlertMessages.tiktokDraftReady());
-        this.logger.info('TikTok draft saved from Claude generation');
-      }
-    } catch (err) {
-      await this.handlePostError('tiktok', err);
-    }
+    this.logger.info('Facebook handled via Instagram cross-post — no action needed');
   }
 
   async sendDailySummary(): Promise<void> {
     const today = getTodayKeyNY();
-    const counts = (await this.memory.get<DailyCounts>(AGENT_NAME, `daily-counts-${today}`)) ?? {
-      x: 0,
-      ig: 0,
-      fb: 0,
-      tiktok: 0,
-    };
+    const counts = (await this.memory.get<DailyCounts>(AGENT_NAME, `daily-counts-${today}`)) ?? { ig: 0 };
     const siteStatus = await this.memory.get<{ up: boolean }>(
       'website-monitor',
       'site-status',
@@ -319,7 +272,7 @@ export class MarketingAgent {
     }
   }
 
-  private async refillCalendarIfNeeded(): Promise<void> {
+  async refillCalendarIfNeeded(): Promise<void> {
     try {
       const today = getTodayKeyNY();
       const { count, error } = await this.supabase
@@ -372,6 +325,8 @@ export class MarketingAgent {
           slot: null as string | null,
           title: piece.title,
           content: piece.content,
+          pillar: piece.pillar,
+          format: piece.format,
           status: 'scheduled',
         };
       });

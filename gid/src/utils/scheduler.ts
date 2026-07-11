@@ -13,9 +13,7 @@ export class Scheduler {
   ) {}
 
   registerAll(): void {
-    cron.schedule('30 7 * * *', () => this.wrap('tiktok-draft', () => this.agent.generateTikTokDraft()), { timezone: TZ });
     cron.schedule('0 9 * * *', () => this.wrap('instagram-morning', () => this.agent.prepareInstagramPost()), { timezone: TZ });
-    cron.schedule('0 10 * * *', () => this.wrap('facebook', () => this.agent.postFacebook()), { timezone: TZ });
     cron.schedule('0 17 * * *', () => this.wrap('instagram-evening', () => this.agent.prepareInstagramPost()), { timezone: TZ });
     cron.schedule('30 17 * * *', () => this.wrap('daily-summary', () => this.agent.sendDailySummary()), { timezone: TZ });
     cron.schedule('0 6 * * 0', () => this.wrap('weekly-audit', () => this.agent.weeklyContentAudit()), { timezone: TZ });
