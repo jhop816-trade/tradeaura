@@ -200,6 +200,9 @@ importers:
       stripe:
         specifier: ^22.2.0
         version: 22.2.0(@types/node@25.6.2)
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
     devDependencies:
       '@types/cookie-parser':
         specifier: ^1.4.10
@@ -213,6 +216,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.2
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
       esbuild:
         specifier: 0.27.3
         version: 0.27.3
@@ -225,6 +231,9 @@ importers:
       thread-stream:
         specifier: 3.1.0
         version: 3.1.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.21.0
 
   artifacts/car-rentals:
     dependencies:

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "disciplined-winner",
+    "description": "Followed plan perfectly, good entry, proper stop, won",
+    "trade": {
+      "symbol": "ES",
+      "direction": "long",
+      "entry": 4800.00,
+      "exit": 4820.00,
+      "pnl": 1000.00,
+      "stopLoss": 4790.00,
+      "setup": "BOS + Retest",
+      "mood": "Focused",
+      "rulesFollowed": ["waited for confirmation", "proper position size", "stop set before entry"],
+      "notes": "Waited for the 15m candle close, entered on retest of BOS level",
+      "outcome": "win"
+    },
+    "expectedGrade": "A"
+  },
+  {
+    "id": "revenge-trade-no-stop",
+    "description": "Entered after a loss to get even, no stop loss set",
+    "trade": {
+      "symbol": "NQ",
+      "direction": "long",
+      "entry": 16000.00,
+      "exit": 15800.00,
+      "pnl": -2000.00,
+      "stopLoss": null,
+      "setup": null,
+      "mood": "Frustrated",
+      "rulesFollowed": [],
+      "notes": "Just lost on last trade. Went long to get it back. No plan.",
+      "outcome": "loss"
+    },
+    "expectedGrade": "F"
+  },
+  {
+    "id": "good-process-losing-trade",
+    "description": "Perfect process but market stopped out at planned stop",
+    "trade": {
+      "symbol": "GC",
+      "direction": "short",
+      "entry": 1950.00,
+      "exit": 1958.00,
+      "pnl": -240.00,
+      "stopLoss": 1958.00,
+      "setup": "PDH Rejection",
+      "mood": "Calm",
+      "rulesFollowed": ["waited for setup", "stop set", "correct size"],
+      "notes": "Clean rejection setup. Market hit my stop — that's trading.",
+      "outcome": "loss"
+    },
+    "expectedGrade": "B"
+  },
+  {
+    "id": "lucky-winner-moved-stop",
+    "description": "Winner but moved stop loss to breakeven too early, broke plan",
+    "trade": {
+      "symbol": "CL",
+      "direction": "long",
+      "entry": 72.50,
+      "exit": 74.00,
+      "pnl": 1500.00,
+      "stopLoss": 72.50,
+      "setup": "Opening Range Break",
+      "mood": "Anxious",
+      "rulesFollowed": ["waited for setup"],
+      "notes": "Moved stop to breakeven right after entering, got nervous. Held on somehow.",
+      "outcome": "win"
+    },
+    "expectedGrade": "C"
+  },
+  {
+    "id": "scaled-partial-exits",
+    "description": "Executed planned partial exits at targets, great risk management",
+    "trade": {
+      "symbol": "SPY",
+      "direction": "long",
+      "entry": 430.00,
+      "exit": 435.00,
+      "pnl": 750.00,
+      "stopLoss": 428.00,
+      "setup": "VWAP Reclaim",
+      "mood": "Focused",
+      "rulesFollowed": ["partial exit at 1R", "runner to 2R", "stop at structure", "pre-planned entry"],
+      "notes": "Took half off at first target, let runner go to full target. Exactly as planned.",
+      "outcome": "win"
+    },
+    "expectedGrade": "A"
+  },
+  {
+    "id": "low-confidence-missing-data",
+    "description": "No stop, no setup, no notes — grader has little to work with",
+    "trade": {
+      "symbol": "AAPL",
+      "direction": "long",
+      "entry": 175.00,
+      "exit": 178.00,
+      "pnl": 300.00,
+      "stopLoss": null,
+      "setup": null,
+      "mood": null,
+      "rulesFollowed": [],
+      "notes": null,
+      "outcome": "win"
+    },
+    "expectedGrade": "C"
+  },
+  {
+    "id": "low-confidence-ambiguous-mood",
+    "description": "Winning trade but mood was 'FOMO', notes suggest impulsive entry",
+    "trade": {
+      "symbol": "NQ",
+      "direction": "long",
+      "entry": 15900.00,
+      "exit": 16050.00,
+      "pnl": 1500.00,
+      "stopLoss": 15850.00,
+      "setup": "Breakout",
+      "mood": "FOMO",
+      "rulesFollowed": ["stop set"],
+      "notes": "Jumped in because it was moving fast. Got lucky it kept going.",
+      "outcome": "win"
+    },
+    "expectedGrade": "D"
+  }
+]

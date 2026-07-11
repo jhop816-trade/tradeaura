@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, tradesTable } from "@workspace/db";
+import { gradeTrade } from "../lib/grade-trade.js";
+import { runBatch } from "../lib/batch-queue.js";
 import {
   ListTradesQueryParams,
   CreateTradeBody,
@@ -156,6 +158,76 @@ router.post("/trades", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(GetTradeResponse.parse(mapRow(row)));
+});
+
+// Batch grade trades — must be defined before /trades/:id to avoid route conflict
+router.post("/trades/batch-grade", async (req, res): Promise<void> => {
+  const { tradeIds } = req.body as { tradeIds?: unknown };
+
+  if (!Array.isArray(tradeIds) || tradeIds.length === 0) {
+    res.status(400).json({ error: "tradeIds must be a non-empty array" });
+    return;
+  }
+  if (tradeIds.length > 50) {
+    res.status(400).json({ error: "tradeIds must contain at most 50 entries" });
+    return;
+  }
+  if (!tradeIds.every((id) => typeof id === "number" && Number.isInteger(id))) {
+    res.status(400).json({ error: "tradeIds must be an array of integers" });
+    return;
+  }
+
+  const ids = tradeIds as number[];
+
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(and(eq(tradesTable.userId, req.userId)));
+
+  const matching = rows.filter((r) => ids.includes(r.id));
+
+  const settled = await runBatch(
+    matching,
+    async (row) => {
+      const result = await gradeTrade({
+        symbol: row.symbol,
+        direction: row.direction as "long" | "short",
+        entry: parseFloat(row.entryPrice),
+        exit: parseFloat(row.exitPrice),
+        pnl: parseFloat(row.pnl),
+        stopLoss: row.stopLoss ? parseFloat(row.stopLoss) : null,
+        setup: row.setup,
+        mood: row.mood,
+        rulesFollowed: row.rulesFollowed ? (JSON.parse(row.rulesFollowed) as string[]) : [],
+        notes: row.notes,
+        outcome: row.outcome as "win" | "loss" | "breakeven",
+      });
+
+      await db
+        .update(tradesTable)
+        .set({ aiGrade: result.grade, aiFeedback: JSON.stringify(result) })
+        .where(eq(tradesTable.id, row.id));
+
+      return { id: row.id, ...result };
+    },
+    4,
+  );
+
+  let graded = 0;
+  let failed = 0;
+  const results: unknown[] = [];
+
+  for (const s of settled) {
+    if (s.status === "fulfilled") {
+      graded++;
+      results.push(s.value);
+    } else {
+      failed++;
+      results.push({ error: s.reason instanceof Error ? s.reason.message : String(s.reason) });
+    }
+  }
+
+  res.json({ graded, failed, results });
 });
 
 // Get single trade
@@ -370,6 +442,63 @@ router.get("/stats/equity-curve", async (req, res): Promise<void> => {
   });
 
   res.json(GetEquityCurveResponse.parse(curve));
+});
+
+// Grade a single trade using the server-side grading function
+router.post("/trades/:id/grade", async (req, res): Promise<void> => {
+  const tradeId = parseInt(req.params.id, 10);
+  if (isNaN(tradeId)) {
+    res.status(400).json({ error: "Invalid trade ID" });
+    return;
+  }
+
+  const [row] = await db
+    .select()
+    .from(tradesTable)
+    .where(and(eq(tradesTable.id, tradeId), eq(tradesTable.userId, req.userId)));
+
+  if (!row) {
+    res.status(404).json({ error: "Trade not found" });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
+
+  try {
+    const result = await gradeTrade(
+      {
+        symbol: row.symbol,
+        direction: row.direction as "long" | "short",
+        entry: parseFloat(row.entryPrice),
+        exit: parseFloat(row.exitPrice),
+        pnl: parseFloat(row.pnl),
+        stopLoss: row.stopLoss ? parseFloat(row.stopLoss) : null,
+        setup: row.setup,
+        mood: row.mood,
+        rulesFollowed: row.rulesFollowed ? (JSON.parse(row.rulesFollowed) as string[]) : [],
+        notes: row.notes,
+        outcome: row.outcome as "win" | "loss" | "breakeven",
+      },
+      controller.signal,
+    );
+
+    await db
+      .update(tradesTable)
+      .set({ aiGrade: result.grade, aiFeedback: JSON.stringify(result) })
+      .where(eq(tradesTable.id, tradeId));
+
+    res.json(result);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Grading timed out" });
+      return;
+    }
+    req.log.error(err, "Grade trade error");
+    res.status(502).json({ error: "Grading failed" });
+  } finally {
+    clearTimeout(timeout);
+  }
 });
 
 // Stats: by day of week

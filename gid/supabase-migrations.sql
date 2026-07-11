@@ -53,3 +53,47 @@ CREATE TABLE IF NOT EXISTS content_calendar (
 
 ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS pillar TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS format TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS utm_link TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS pillar TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS format TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS utm_link TEXT;
+
+-- Instagram post insights (fetched at 24h and 7d post-publish)
+CREATE TABLE IF NOT EXISTS post_insights (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  instagram_post_id   text NOT NULL,
+  pillar              text,
+  format              text,
+  window              text NOT NULL,        -- '24h' | '7d'
+  reach               integer NOT NULL DEFAULT 0,
+  likes               integer NOT NULL DEFAULT 0,
+  comments_count      integer NOT NULL DEFAULT 0,
+  saves               integer NOT NULL DEFAULT 0,
+  shares              integer NOT NULL DEFAULT 0,
+  score               numeric(10,4) NOT NULL DEFAULT 0,
+  fetched_at          timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (instagram_post_id, window)
+);
+
+-- Rolling pillar+format performance scores (recomputed weekly)
+CREATE TABLE IF NOT EXISTS pillar_scores (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pillar       text NOT NULL,
+  format       text NOT NULL,
+  avg_score    numeric(10,4) NOT NULL DEFAULT 0,
+  post_count   integer NOT NULL DEFAULT 0,
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (pillar, format)
+);
+
+-- Track which comments we've already alerted on
+CREATE TABLE IF NOT EXISTS seen_comments (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  instagram_post_id   text NOT NULL,
+  comment_id          text NOT NULL UNIQUE,
+  text_preview        text,
+  alerted             boolean NOT NULL DEFAULT false,
+  seen_at             timestamptz NOT NULL DEFAULT now()
+);

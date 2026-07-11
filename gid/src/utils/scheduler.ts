@@ -1,5 +1,7 @@
 import cron from 'node-cron';
 import type { MarketingAgent } from '../agents/marketingAgent.js';
+import type { CommentMonitor } from '../tools/commentMonitor.js';
+import type { InstagramInsights } from '../tools/instagramInsights.js';
 import type { WebsiteMonitor } from '../tools/websiteMonitor.js';
 import type { Logger } from './logger.js';
 
@@ -10,16 +12,24 @@ export class Scheduler {
     private readonly agent: MarketingAgent,
     private readonly monitor: WebsiteMonitor,
     private readonly logger: Logger,
+    private readonly insights?: InstagramInsights,
+    private readonly commentMonitor?: CommentMonitor,
   ) {}
 
   registerAll(): void {
-    cron.schedule('30 7 * * *', () => this.wrap('tiktok-draft', () => this.agent.generateTikTokDraft()), { timezone: TZ });
     cron.schedule('0 9 * * *', () => this.wrap('instagram-morning', () => this.agent.prepareInstagramPost()), { timezone: TZ });
-    cron.schedule('0 10 * * *', () => this.wrap('facebook', () => this.agent.postFacebook()), { timezone: TZ });
     cron.schedule('0 17 * * *', () => this.wrap('instagram-evening', () => this.agent.prepareInstagramPost()), { timezone: TZ });
     cron.schedule('30 17 * * *', () => this.wrap('daily-summary', () => this.agent.sendDailySummary()), { timezone: TZ });
     cron.schedule('0 6 * * 0', () => this.wrap('weekly-audit', () => this.agent.weeklyContentAudit()), { timezone: TZ });
+    cron.schedule('0 9 * * 0', () => this.wrap('weekly-analytics', () => this.agent.weeklyAnalyticsReport()), { timezone: TZ });
     cron.schedule('*/5 * * * *', () => this.wrap('site-monitor', () => this.monitor.check()), { timezone: TZ });
+    cron.schedule('*/30 * * * *', () => this.wrap('approval-reminder', () => this.agent.checkPendingApprovalReminder()), { timezone: TZ });
+    if (this.insights) {
+      cron.schedule('0 * * * *', () => this.wrap('ig-insights', () => this.insights!.fetchPendingInsights()), { timezone: TZ });
+    }
+    if (this.commentMonitor) {
+      cron.schedule('*/30 * * * *', () => this.wrap('comment-monitor', () => this.commentMonitor!.poll()), { timezone: TZ });
+    }
     this.logger.info('All cron jobs registered');
   }
 
