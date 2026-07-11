@@ -26,7 +26,6 @@ import { AgentMemory } from './memory/agentMemory.js';
 import { TelegramBot } from './telegram/telegramBot.js';
 import { ContentGenerator } from './tools/contentGenerator.js';
 import { SocialPoster } from './tools/socialPoster.js';
-import { TiktokDrafter } from './tools/tiktokDrafter.js';
 import { WebsiteMonitor } from './tools/websiteMonitor.js';
 import { Alerter, AlertMessages } from './utils/alerter.js';
 import { buildLogger } from './utils/logger.js';
@@ -61,13 +60,11 @@ async function main(): Promise<void> {
   const memory = new AgentMemory(supabase, logger);
   const contentGenerator = new ContentGenerator(anthropic, logger);
   const socialPoster = new SocialPoster(logger);
-  const tiktokDrafter = new TiktokDrafter(supabase, logger);
   const monitor = new WebsiteMonitor(supabase, memory, alerter, logger);
   const agent = new MarketingAgent(
     supabase,
     contentGenerator,
     socialPoster,
-    tiktokDrafter,
     memory,
     alerter,
     logger,
@@ -90,7 +87,6 @@ async function main(): Promise<void> {
 
   logger.info({ supabaseUrl: process.env.SUPABASE_URL }, 'Supabase URL check');
 
-  // Test Supabase connectivity at startup
   const sbUrl = process.env.SUPABASE_URL ?? '';
   console.log(`[GID] SUPABASE_URL: "${sbUrl}" (${sbUrl.length} chars)`);
   try {
@@ -105,7 +101,6 @@ async function main(): Promise<void> {
     console.log(`[GID] Supabase UNREACHABLE — ${String((err as any)?.message ?? err)}`);
   }
 
-  // Validate Meta token at startup so Railway logs show the exact problem
   const metaToken = process.env.META_ACCESS_TOKEN;
   if (metaToken) {
     console.log(`[GID] META_ACCESS_TOKEN: SET (${metaToken.length} chars, starts: ${metaToken.slice(0, 12)}..., ends: ...${metaToken.slice(-6)})`);

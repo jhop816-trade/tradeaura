@@ -135,9 +135,6 @@ export class TelegramBot {
       case '/status':
         await this.cmdStatus(chatId);
         break;
-      case '/tiktok':
-        await this.cmdTikTok(chatId);
-        break;
       case '/post':
         await this.cmdPost(chatId, fullText);
         break;
@@ -299,9 +296,7 @@ export class TelegramBot {
     const etTotalMinutes = etHour * 60 + etMinute;
 
     const schedule: [number, string][] = [
-      [7 * 60 + 30, '🎵 TikTok draft at 7:30am ET'],
       [9 * 60, '📸 Instagram prep at 9:00am ET'],
-      [10 * 60, '👥 Facebook post at 10:00am ET'],
       [17 * 60, '📸 Instagram prep at 5:00pm ET'],
       [17 * 60 + 30, '📊 Daily summary at 5:30pm ET'],
     ];
@@ -311,18 +306,14 @@ export class TelegramBot {
         return label;
       }
     }
-    return '🎵 TikTok draft at 7:30am ET (tomorrow)';
+    return '📸 Instagram prep at 9:00am ET (tomorrow)';
   }
 
   private async cmdStatus(chatId: number): Promise<void> {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
     const key = `daily-counts-${today}`;
 
-    const counts = (await this.memory.get<{ x: number; ig: number; fb: number; tiktok: number }>(
-      AGENT_NAME,
-      key,
-    )) ?? { x: 0, ig: 0, fb: 0, tiktok: 0 };
-
+    const counts = (await this.memory.get<{ ig: number }>(AGENT_NAME, key)) ?? { ig: 0 };
     const paused = await this.memory.get<boolean>(AGENT_NAME, 'posting-paused');
     const siteStatus = await this.memory.get<{ up: boolean }>('website-monitor', 'site-status');
 
@@ -344,7 +335,7 @@ export class TelegramBot {
       `Site: ${siteStatus?.up !== false ? '✅ Up' : '❌ Down'}`,
       `Next: ${nextPost}`,
       `\n<b>Today's counts (${today})</b>`,
-      `X: ${counts.x} | IG: ${counts.ig} | FB: ${counts.fb} | TikTok drafts: ${counts.tiktok}`,
+      `IG: ${counts.ig}`,
     ];
 
     if (lastPosts) {
@@ -355,31 +346,7 @@ export class TelegramBot {
     await this.sendMessage(chatId, lines.join('\n'));
   }
 
-  private async cmdTikTok(chatId: number): Promise<void> {
-    const { data, error } = await this.supabase
-      .from('content_drafts')
-      .select('content, created_at')
-      .eq('platform', 'tiktok')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) {
-      await this.sendMessage(chatId, 'No pending TikTok drafts found.');
-      return;
-    }
-
-    const preview = String(data.content).substring(0, 500);
-    const created = String(data.created_at).slice(0, 16).replace('T', ' ');
-    await this.sendMessage(
-      chatId,
-      `<b>Latest TikTok Draft</b> (${created})\n\n${preview}${data.content.length > 500 ? '...' : ''}`,
-    );
-  }
-
   private async cmdDbCheck(chatId: number): Promise<void> {
-    const { Intl: _I } = globalThis;
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
     const { data, error, count } = await this.supabase
       .from('content_calendar')
@@ -424,23 +391,15 @@ export class TelegramBot {
       await this.sendMessage(chatId, 'Agent not ready yet.');
       return;
     }
-    await this.sendMessage(chatId, '⏳ Testing all platforms — this may take 30 seconds...');
-
-    const results: string[] = [];
-
-    results.push('⏭ X — skipped (Twitter API requires paid plan)');
+    await this.sendMessage(chatId, '⏳ Testing Instagram — this may take 30 seconds...');
 
     try {
       await this.agent.postInstagram();
-      results.push('✅ Instagram — posted');
+      await this.sendMessage(chatId, '<b>Test Results</b>\n\n✅ Instagram — posted');
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err) ?? String(err);
-      results.push(`❌ Instagram — ${msg.substring(0, 150)}`);
+      await this.sendMessage(chatId, `<b>Test Results</b>\n\n❌ Instagram — ${msg.substring(0, 150)}`);
     }
-
-    results.push('⏭ Facebook — skipped (cross-posted from Instagram)');
-
-    await this.sendMessage(chatId, `<b>Test Results</b>\n\n${results.join('\n')}`);
   }
 
   private async cmdPost(chatId: number, fullText: string): Promise<void> {
@@ -453,39 +412,23 @@ export class TelegramBot {
     const platform = parts[1]?.toLowerCase();
 
     if (!platform) {
-      await this.sendMessage(chatId, 'Usage: /post x | /post ig | /post fb | /post tiktok');
+      await this.sendMessage(chatId, 'Usage: /post ig');
       return;
     }
 
-    const platformLabels: Record<string, string> = {
-      x: '𝕏',
-      ig: '📸 Instagram',
-      fb: '👥 Facebook',
-      tiktok: '🎵 TikTok',
-    };
-
-    const label = platformLabels[platform];
-    if (!label) {
-      await this.sendMessage(chatId, `Unknown platform: ${platform}\n\nAvailable: x, ig, fb, tiktok`);
+    if (platform !== 'ig') {
+      await this.sendMessage(chatId, `Unknown platform: ${platform}\n\nAvailable: ig`);
       return;
     }
 
-    await this.sendMessage(chatId, `⏳ Posting to ${label}...`);
+    await this.sendMessage(chatId, '⏳ Posting to 📸 Instagram...');
 
     try {
-      if (platform === 'x') {
-        await this.agent.postX('morning');
-      } else if (platform === 'ig') {
-        await this.agent.postInstagram();
-      } else if (platform === 'fb') {
-        await this.agent.postFacebook();
-      } else if (platform === 'tiktok') {
-        await this.agent.generateTikTokDraft();
-      }
-      await this.sendMessage(chatId, `✅ ${label} — done`);
+      await this.agent.postInstagram();
+      await this.sendMessage(chatId, '✅ 📸 Instagram — done');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      await this.sendMessage(chatId, `❌ ${label} — ${msg.substring(0, 200)}`);
+      await this.sendMessage(chatId, `❌ 📸 Instagram — ${msg.substring(0, 200)}`);
     }
   }
 
@@ -507,20 +450,12 @@ export class TelegramBot {
       return;
     }
 
-    const platformIcon: Record<string, string> = {
-      x: '𝕏',
-      instagram: '📸',
-      facebook: '👥',
-      tiktok: '🎵',
-    };
-
     const lines = ['<b>Last 5 Posts</b>\n'];
     for (const row of data) {
       const platform = String(row.platform);
-      const icon = platformIcon[platform] ?? platform.toUpperCase();
       const preview = String(row.content).substring(0, 60).replace(/\n/g, ' ');
       const time = String(row.posted_at).slice(0, 16).replace('T', ' ');
-      lines.push(`${icon} <b>${time}</b>`);
+      lines.push(`📸 <b>${time}</b>`);
       lines.push(`<i>${preview}…</i>\n`);
     }
 
@@ -567,10 +502,13 @@ export class TelegramBot {
       return;
     }
 
-    const pending = await this.memory.get<{ calendarId: string | null; caption: string; imageUrl: string | null }>(
-      AGENT_NAME,
-      'pending-instagram-post',
-    );
+    const pending = await this.memory.get<{
+      calendarId: string | null;
+      caption: string;
+      imageUrl: string | null;
+      pillar?: string | null;
+      format?: string | null;
+    }>(AGENT_NAME, 'pending-instagram-post');
 
     if (!pending) {
       await this.sendMessage(chatId, 'No pending Instagram post.');
@@ -578,7 +516,13 @@ export class TelegramBot {
     }
 
     try {
-      await this.agent.postInstagramNow(pending.caption, pending.imageUrl, pending.calendarId);
+      await this.agent.postInstagramNow(
+        pending.caption,
+        pending.imageUrl,
+        pending.calendarId,
+        pending.pillar,
+        pending.format,
+      );
       await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
       await this.sendMessage(chatId, '✅ Posted to Instagram!');
     } catch (err) {
@@ -588,10 +532,11 @@ export class TelegramBot {
   }
 
   private async cmdSkip(chatId: number): Promise<void> {
-    const pending = await this.memory.get<{ calendarId: string | null; caption: string; imageUrl: string | null }>(
-      AGENT_NAME,
-      'pending-instagram-post',
-    );
+    const pending = await this.memory.get<{
+      calendarId: string | null;
+      caption: string;
+      imageUrl: string | null;
+    }>(AGENT_NAME, 'pending-instagram-post');
 
     if (!pending) {
       await this.sendMessage(chatId, 'No pending Instagram post.');
@@ -621,15 +566,11 @@ export class TelegramBot {
       '/calendar — Next 7 days of scheduled content',
       '/logs — Last 5 published posts',
       '',
-      '/post x — Post to 𝕏 immediately',
       '/post ig — Post to Instagram immediately',
-      '/post fb — Post to Facebook immediately',
-      '/post tiktok — Generate a TikTok draft immediately',
       '',
-      '/tiktok — View the latest pending TikTok draft',
       '/pause — Pause all scheduled posting',
       '/resume — Resume scheduled posting',
-      '/test — Run a test post to all platforms',
+      '/test — Run a test post to Instagram',
       '',
       '/preview — Show the next scheduled Instagram post in full',
       '/approve — Post the pending Instagram content now',

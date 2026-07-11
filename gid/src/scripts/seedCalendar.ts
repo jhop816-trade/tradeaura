@@ -53,10 +53,7 @@ async function main(): Promise<void> {
       const title = $(cardEl).find('.card-lbl').first().text().trim() || null;
 
       const igId = `ig-d${day}${slot}`;
-      const ttId = `tt-d${day}${slot}`;
-
       const igContent = $(`#${igId}`).text().trim();
-      const ttContent = $(`#${ttId}`).text().trim();
 
       if (igContent) {
         rows.push({
@@ -67,19 +64,6 @@ async function main(): Promise<void> {
           title,
           content: igContent,
           image_url: `https://sjpltlbuxycwgehgxsul.supabase.co/storage/v1/object/public/Images/d${day}${slot}.jpg`,
-          status: 'scheduled',
-        });
-      }
-
-      if (ttContent) {
-        rows.push({
-          day_number: day,
-          scheduled_date: scheduledDate,
-          platform: 'tiktok',
-          slot: null,
-          title,
-          content: ttContent,
-          image_url: null,
           status: 'scheduled',
         });
       }

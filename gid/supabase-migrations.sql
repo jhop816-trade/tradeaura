@@ -53,3 +53,9 @@ CREATE TABLE IF NOT EXISTS content_calendar (
 
 ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS pillar TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS format TEXT;
+ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS utm_link TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS pillar TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS format TEXT;
+ALTER TABLE content_log ADD COLUMN IF NOT EXISTS utm_link TEXT;
