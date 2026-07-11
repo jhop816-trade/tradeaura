@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, tradesTable } from "@workspace/db";
+import { gradeTrade } from "../lib/grade-trade.js";
 import {
   ListTradesQueryParams,
   CreateTradeBody,
@@ -370,6 +371,63 @@ router.get("/stats/equity-curve", async (req, res): Promise<void> => {
   });
 
   res.json(GetEquityCurveResponse.parse(curve));
+});
+
+// Grade a single trade using the server-side grading function
+router.post("/trades/:id/grade", async (req, res): Promise<void> => {
+  const tradeId = parseInt(req.params.id, 10);
+  if (isNaN(tradeId)) {
+    res.status(400).json({ error: "Invalid trade ID" });
+    return;
+  }
+
+  const [row] = await db
+    .select()
+    .from(tradesTable)
+    .where(and(eq(tradesTable.id, tradeId), eq(tradesTable.userId, req.userId)));
+
+  if (!row) {
+    res.status(404).json({ error: "Trade not found" });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45_000);
+
+  try {
+    const result = await gradeTrade(
+      {
+        symbol: row.symbol,
+        direction: row.direction as "long" | "short",
+        entry: parseFloat(row.entryPrice),
+        exit: parseFloat(row.exitPrice),
+        pnl: parseFloat(row.pnl),
+        stopLoss: row.stopLoss ? parseFloat(row.stopLoss) : null,
+        setup: row.setup,
+        mood: row.mood,
+        rulesFollowed: row.rulesFollowed ? (JSON.parse(row.rulesFollowed) as string[]) : [],
+        notes: row.notes,
+        outcome: row.outcome as "win" | "loss" | "breakeven",
+      },
+      controller.signal,
+    );
+
+    await db
+      .update(tradesTable)
+      .set({ aiGrade: result.grade, aiFeedback: JSON.stringify(result) })
+      .where(eq(tradesTable.id, tradeId));
+
+    res.json(result);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Grading timed out" });
+      return;
+    }
+    req.log.error(err, "Grade trade error");
+    res.status(502).json({ error: "Grading failed" });
+  } finally {
+    clearTimeout(timeout);
+  }
 });
 
 // Stats: by day of week
