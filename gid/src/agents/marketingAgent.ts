@@ -10,6 +10,7 @@ import type { DailyCounts } from '../utils/alerter.js';
 import { getTodayKeyNY } from '../utils/date.js';
 import type { Logger } from '../utils/logger.js';
 import { withRetry } from '../utils/retry.js';
+import { buildUtmLink } from '../utils/utm.js';
 
 interface CalendarContent {
   id: string;
@@ -222,6 +223,7 @@ export class MarketingAgent {
       await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', pending);
 
       const imageLabel = postData.imageUrl ?? 'default image';
+      const utmLink = buildUtmLink(postData.pillar ?? 'general');
       const approvalText = [
         '📸 <b>Instagram Post Ready for Approval</b>',
         postData.pillar ? `Pillar: <code>${postData.pillar}</code> | Format: <code>${postData.format ?? 'feed-single'}</code>` : '',
@@ -229,6 +231,7 @@ export class MarketingAgent {
         postData.caption,
         '',
         `🖼 Image: ${imageLabel}`,
+        `🔗 UTM: ${utmLink}`,
       ].filter(Boolean).join('\n');
 
       const messageId = await this.alerter.sendWithButtons(approvalText, [
@@ -263,6 +266,7 @@ export class MarketingAgent {
       await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
 
       const imageLabel = postData.imageUrl ?? 'default image';
+      const utmLink = buildUtmLink(postData.pillar ?? 'general');
       const approvalText = [
         '📸 <b>Instagram Post Ready for Approval (regenerated)</b>',
         postData.pillar ? `Pillar: <code>${postData.pillar}</code> | Format: <code>${postData.format ?? 'feed-single'}</code>` : '',
@@ -270,6 +274,7 @@ export class MarketingAgent {
         postData.caption,
         '',
         `🖼 Image: ${imageLabel}`,
+        `🔗 UTM: ${utmLink}`,
       ].filter(Boolean).join('\n');
 
       const messageId = await this.alerter.sendWithButtons(approvalText, [

@@ -146,12 +146,15 @@ export class TelegramBot {
     }
 
     try {
+      const { buildUtmLink } = await import('../utils/utm.js');
+      const utmLink = buildUtmLink(pending.pillar ?? 'general');
       await this.agent.postInstagramNow(
         pending.caption,
         pending.imageUrl,
         pending.calendarId,
         pending.pillar,
         pending.format,
+        utmLink,
       );
       await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
       await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
@@ -656,12 +659,15 @@ export class TelegramBot {
     }
 
     try {
+      const { buildUtmLink } = await import('../utils/utm.js');
+      const utmLink = buildUtmLink(pending.pillar ?? 'general');
       await this.agent.postInstagramNow(
         pending.caption,
         pending.imageUrl,
         pending.calendarId,
         pending.pillar,
         pending.format,
+        utmLink,
       );
       await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
       await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
