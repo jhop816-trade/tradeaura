@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { callClaude } from "../lib/anthropic-client.js";
 
 interface FetchResponse {
   ok: boolean;
@@ -21,7 +22,9 @@ Rules you MUST follow:
 5. Speak like a knowledgeable, opinionated trading mentor. Be direct — say bullish or bearish, not "it could go either way."
 6. When you have live news context, reference specific headlines and explain exactly how they impact the instruments the user is asking about.`;
 
-router.post("/ai/chat", async (req, res) => {
+const JSON_SYSTEM = "You are TradeAura's AI assistant. Respond with valid JSON only — no markdown fences, no extra text, just the raw JSON object.";
+
+router.post("/ai/chat", async (req, res): Promise<void> => {
   const { messages } = req.body as { messages: { role: string; content: string }[] };
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -29,44 +32,18 @@ router.post("/ai/chat", async (req, res) => {
     return;
   }
 
-  // Cap conversation history to last 20 messages to prevent token abuse
-  const cappedMessages = messages.slice(-20);
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "AI not configured" });
-    return;
-  }
+  const cappedMessages = messages.slice(-20) as { role: "user" | "assistant"; content: string }[];
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 800,
-        system: TUTOR_SYSTEM,
-        messages: cappedMessages,
-      }),
+    const reply = await callClaude({
+      system: TUTOR_SYSTEM,
+      messages: cappedMessages,
+      maxTokens: 800,
       signal: controller.signal,
-    }) as unknown as FetchResponse;
-
-    if (!response.ok) {
-      const err = await response.text();
-      req.log.error({ status: response.status, err }, "Anthropic API error");
-      res.status(502).json({ error: "AI request failed" });
-      return;
-    }
-
-    const data = await response.json() as unknown as { content: { text?: string }[] };
-    const reply = data.content.map((b) => b.text || "").join("");
+    });
     res.json({ reply });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
@@ -74,14 +51,18 @@ router.post("/ai/chat", async (req, res) => {
       res.status(504).json({ error: "AI request timed out" });
       return;
     }
+    if (err instanceof Error && err.message === "ANTHROPIC_API_KEY is not set") {
+      res.status(500).json({ error: "AI not configured" });
+      return;
+    }
     req.log.error(err, "AI chat error");
-    res.status(500).json({ error: "Internal error" });
+    res.status(502).json({ error: "AI request failed" });
   } finally {
     clearTimeout(timeout);
   }
 });
 
-router.post("/ai/grade", async (req, res) => {
+router.post("/ai/grade", async (req, res): Promise<void> => {
   const { prompt, maxTokens: rawMaxTokens = 600 } = req.body as { prompt: string; maxTokens?: number };
   const maxTokens = Math.min(Math.max(Number(rawMaxTokens) || 600, 100), 2000);
 
@@ -90,40 +71,17 @@ router.post("/ai/grade", async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "AI not configured" });
-    return;
-  }
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: maxTokens,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    const text = await callClaude({
+      system: JSON_SYSTEM,
+      messages: [{ role: "user", content: prompt }],
+      maxTokens,
       signal: controller.signal,
-    }) as unknown as FetchResponse;
+    });
 
-    if (!response.ok) {
-      const err = await response.text();
-      req.log.error({ status: response.status, err }, "Anthropic API error");
-      res.status(502).json({ error: "AI request failed" });
-      return;
-    }
-
-    const data = await response.json() as unknown as { content: { text?: string }[] };
-    const text = data.content.map((b) => b.text || "").join("");
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) {
       res.status(502).json({ error: "No JSON in AI response" });
@@ -143,8 +101,12 @@ router.post("/ai/grade", async (req, res) => {
       res.status(504).json({ error: "AI request timed out" });
       return;
     }
-    req.log.error(err, "AI proxy error");
-    res.status(500).json({ error: "Internal error" });
+    if (err instanceof Error && err.message === "ANTHROPIC_API_KEY is not set") {
+      res.status(500).json({ error: "AI not configured" });
+      return;
+    }
+    req.log.error(err, "AI grade error");
+    res.status(502).json({ error: "AI request failed" });
   } finally {
     clearTimeout(timeout);
   }
