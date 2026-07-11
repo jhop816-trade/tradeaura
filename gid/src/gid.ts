@@ -25,6 +25,7 @@ import { MarketingAgent } from './agents/marketingAgent.js';
 import { AgentMemory } from './memory/agentMemory.js';
 import { TelegramBot } from './telegram/telegramBot.js';
 import { ContentGenerator } from './tools/contentGenerator.js';
+import { InstagramInsights } from './tools/instagramInsights.js';
 import { SocialPoster } from './tools/socialPoster.js';
 import { WebsiteMonitor } from './tools/websiteMonitor.js';
 import { Alerter, AlertMessages } from './utils/alerter.js';
@@ -60,6 +61,7 @@ async function main(): Promise<void> {
   const memory = new AgentMemory(supabase, logger);
   const contentGenerator = new ContentGenerator(anthropic, logger);
   const socialPoster = new SocialPoster(logger);
+  const insights = new InstagramInsights(supabase, logger);
   const monitor = new WebsiteMonitor(supabase, memory, alerter, logger);
   const agent = new MarketingAgent(
     supabase,
@@ -68,8 +70,9 @@ async function main(): Promise<void> {
     memory,
     alerter,
     logger,
+    insights,
   );
-  const scheduler = new Scheduler(agent, monitor, logger);
+  const scheduler = new Scheduler(agent, monitor, logger, insights);
   const telegramBot = new TelegramBot(supabase, memory, anthropic, logger);
   telegramBot.setAgent(agent);
 
