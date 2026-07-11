@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import type { MarketingAgent } from '../agents/marketingAgent.js';
+import type { CommentMonitor } from '../tools/commentMonitor.js';
 import type { InstagramInsights } from '../tools/instagramInsights.js';
 import type { WebsiteMonitor } from '../tools/websiteMonitor.js';
 import type { Logger } from './logger.js';
@@ -12,6 +13,7 @@ export class Scheduler {
     private readonly monitor: WebsiteMonitor,
     private readonly logger: Logger,
     private readonly insights?: InstagramInsights,
+    private readonly commentMonitor?: CommentMonitor,
   ) {}
 
   registerAll(): void {
@@ -24,6 +26,9 @@ export class Scheduler {
     cron.schedule('*/30 * * * *', () => this.wrap('approval-reminder', () => this.agent.checkPendingApprovalReminder()), { timezone: TZ });
     if (this.insights) {
       cron.schedule('0 * * * *', () => this.wrap('ig-insights', () => this.insights!.fetchPendingInsights()), { timezone: TZ });
+    }
+    if (this.commentMonitor) {
+      cron.schedule('*/30 * * * *', () => this.wrap('comment-monitor', () => this.commentMonitor!.poll()), { timezone: TZ });
     }
     this.logger.info('All cron jobs registered');
   }

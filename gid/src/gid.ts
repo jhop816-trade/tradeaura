@@ -24,6 +24,7 @@ async function axiosFetch(input: any, init?: any): Promise<any> {
 import { MarketingAgent } from './agents/marketingAgent.js';
 import { AgentMemory } from './memory/agentMemory.js';
 import { TelegramBot } from './telegram/telegramBot.js';
+import { CommentMonitor } from './tools/commentMonitor.js';
 import { ContentGenerator } from './tools/contentGenerator.js';
 import { InstagramInsights } from './tools/instagramInsights.js';
 import { SocialPoster } from './tools/socialPoster.js';
@@ -62,6 +63,7 @@ async function main(): Promise<void> {
   const contentGenerator = new ContentGenerator(anthropic, logger);
   const socialPoster = new SocialPoster(logger);
   const insights = new InstagramInsights(supabase, logger);
+  const commentMonitor = new CommentMonitor(supabase, alerter, logger);
   const monitor = new WebsiteMonitor(supabase, memory, alerter, logger);
   const agent = new MarketingAgent(
     supabase,
@@ -72,7 +74,7 @@ async function main(): Promise<void> {
     logger,
     insights,
   );
-  const scheduler = new Scheduler(agent, monitor, logger, insights);
+  const scheduler = new Scheduler(agent, monitor, logger, insights, commentMonitor);
   const telegramBot = new TelegramBot(supabase, memory, anthropic, logger);
   telegramBot.setAgent(agent);
 
