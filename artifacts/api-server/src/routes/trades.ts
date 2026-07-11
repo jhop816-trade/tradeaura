@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, tradesTable } from "@workspace/db";
 import { gradeTrade } from "../lib/grade-trade.js";
+import { runBatch } from "../lib/batch-queue.js";
 import {
   ListTradesQueryParams,
   CreateTradeBody,
@@ -157,6 +158,76 @@ router.post("/trades", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(GetTradeResponse.parse(mapRow(row)));
+});
+
+// Batch grade trades — must be defined before /trades/:id to avoid route conflict
+router.post("/trades/batch-grade", async (req, res): Promise<void> => {
+  const { tradeIds } = req.body as { tradeIds?: unknown };
+
+  if (!Array.isArray(tradeIds) || tradeIds.length === 0) {
+    res.status(400).json({ error: "tradeIds must be a non-empty array" });
+    return;
+  }
+  if (tradeIds.length > 50) {
+    res.status(400).json({ error: "tradeIds must contain at most 50 entries" });
+    return;
+  }
+  if (!tradeIds.every((id) => typeof id === "number" && Number.isInteger(id))) {
+    res.status(400).json({ error: "tradeIds must be an array of integers" });
+    return;
+  }
+
+  const ids = tradeIds as number[];
+
+  const rows = await db
+    .select()
+    .from(tradesTable)
+    .where(and(eq(tradesTable.userId, req.userId)));
+
+  const matching = rows.filter((r) => ids.includes(r.id));
+
+  const settled = await runBatch(
+    matching,
+    async (row) => {
+      const result = await gradeTrade({
+        symbol: row.symbol,
+        direction: row.direction as "long" | "short",
+        entry: parseFloat(row.entryPrice),
+        exit: parseFloat(row.exitPrice),
+        pnl: parseFloat(row.pnl),
+        stopLoss: row.stopLoss ? parseFloat(row.stopLoss) : null,
+        setup: row.setup,
+        mood: row.mood,
+        rulesFollowed: row.rulesFollowed ? (JSON.parse(row.rulesFollowed) as string[]) : [],
+        notes: row.notes,
+        outcome: row.outcome as "win" | "loss" | "breakeven",
+      });
+
+      await db
+        .update(tradesTable)
+        .set({ aiGrade: result.grade, aiFeedback: JSON.stringify(result) })
+        .where(eq(tradesTable.id, row.id));
+
+      return { id: row.id, ...result };
+    },
+    4,
+  );
+
+  let graded = 0;
+  let failed = 0;
+  const results: unknown[] = [];
+
+  for (const s of settled) {
+    if (s.status === "fulfilled") {
+      graded++;
+      results.push(s.value);
+    } else {
+      failed++;
+      results.push({ error: s.reason instanceof Error ? s.reason.message : String(s.reason) });
+    }
+  }
+
+  res.json({ graded, failed, results });
 });
 
 // Get single trade
