@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { z } from "zod/v4";
 import { callClaude } from "../lib/anthropic-client.js";
 
 interface FetchResponse {
@@ -24,15 +25,23 @@ Rules you MUST follow:
 
 const JSON_SYSTEM = "You are TradeAura's AI assistant. Respond with valid JSON only — no markdown fences, no extra text, just the raw JSON object.";
 
-router.post("/ai/chat", async (req, res): Promise<void> => {
-  const { messages } = req.body as { messages: { role: string; content: string }[] };
+const ChatBody = z.object({
+  messages: z.array(z.object({ role: z.string(), content: z.string() })).min(1),
+});
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    res.status(400).json({ error: "messages array is required" });
+const GradeBody = z.object({
+  prompt: z.string().min(1),
+  maxTokens: z.number().int().min(100).max(2000).optional(),
+});
+
+router.post("/ai/chat", async (req, res): Promise<void> => {
+  const parsed = ChatBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const cappedMessages = messages.slice(-20) as { role: "user" | "assistant"; content: string }[];
+  const cappedMessages = parsed.data.messages.slice(-20) as { role: "user" | "assistant"; content: string }[];
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -63,13 +72,14 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 });
 
 router.post("/ai/grade", async (req, res): Promise<void> => {
-  const { prompt, maxTokens: rawMaxTokens = 600 } = req.body as { prompt: string; maxTokens?: number };
-  const maxTokens = Math.min(Math.max(Number(rawMaxTokens) || 600, 100), 2000);
-
-  if (!prompt || typeof prompt !== "string") {
-    res.status(400).json({ error: "prompt is required" });
+  const parsed = GradeBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+
+  const { prompt, maxTokens: rawMaxTokens = 600 } = parsed.data;
+  const maxTokens = Math.min(Math.max(Number(rawMaxTokens) || 600, 100), 2000);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
