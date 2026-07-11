@@ -1,43 +1,10 @@
 import axios from 'axios';
-import { TwitterApi } from 'twitter-api-v2';
 import type { Logger } from '../utils/logger.js';
 
 export class SocialPoster {
-  private xClient: TwitterApi | null = null;
-
   constructor(private readonly logger: Logger) {}
 
-  private getXClient(): TwitterApi {
-    if (!this.xClient) {
-      if (!process.env.TWITTER_APP_KEY || !process.env.TWITTER_APP_SECRET) {
-        throw new Error('TWITTER_PAYMENT_REQUIRED');
-      }
-      this.xClient = new TwitterApi({
-        appKey: process.env.TWITTER_APP_KEY,
-        appSecret: process.env.TWITTER_APP_SECRET,
-        accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-        accessSecret: process.env.TWITTER_ACCESS_SECRET!,
-      });
-    }
-    return this.xClient;
-  }
-
-  async postToX(text: string): Promise<{ postId: string }> {
-    this.logger.info('Posting to X');
-    try {
-      const tweet = await this.getXClient().v2.tweet(text);
-      return { postId: tweet.data.id };
-    } catch (err: unknown) {
-      const status = (err as any)?.code ?? (err as any)?.status ?? (err as any)?.data?.status;
-      if (status === 402 || String((err as any)?.message ?? '').includes('402')) {
-        throw new Error('TWITTER_PAYMENT_REQUIRED');
-      }
-      throw err;
-    }
-  }
-
   private async getPageAccessToken(): Promise<string> {
-    // Direct page token takes priority
     if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN) {
       return process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
     }
@@ -45,7 +12,6 @@ export class SocialPoster {
     const userToken = process.env.META_ACCESS_TOKEN;
     if (!userToken) throw new Error('META_ACCESS_TOKEN is not set');
 
-    // Try to exchange user token for a never-expiring page token via /me/accounts
     try {
       const res = await axios.get('https://graph.facebook.com/v21.0/me/accounts', {
         params: { access_token: userToken },
@@ -55,26 +21,10 @@ export class SocialPoster {
       if (page) return page.access_token;
       this.logger.warn({ found: pages.map((p) => p.id) }, '/me/accounts returned pages but META_PAGE_ID not found — falling back to user token');
     } catch (err: unknown) {
-      // /me/accounts failed (e.g. missing pages_show_list) — fall through to user token
       this.logger.warn({ err: (err as any)?.response?.data ?? String(err) }, '/me/accounts failed — using user token directly');
     }
 
-    // Fall back: use the user token directly. Works if the token has
-    // pages_manage_posts + instagram_content_publish and the user is a page admin.
     return userToken;
-  }
-
-  async postToFacebook(message: string): Promise<{ postId: string }> {
-    this.logger.info('Posting to Facebook');
-    const pageToken = await this.getPageAccessToken();
-    const { data } = await axios.post(
-      `https://graph.facebook.com/v21.0/${process.env.META_PAGE_ID}/feed`,
-      {
-        message,
-        access_token: pageToken,
-      },
-    );
-    return { postId: data.id as string };
   }
 
   async postToInstagram(caption: string, imageUrl?: string): Promise<{ postId: string }> {
@@ -108,7 +58,6 @@ export class SocialPoster {
       throw new Error(`Instagram media container failed: ${JSON.stringify(container)}`);
     }
 
-    // Instagram needs a few seconds to process the image before it can be published
     await new Promise(resolve => setTimeout(resolve, 8000));
 
     let publishRes;
@@ -128,36 +77,6 @@ export class SocialPoster {
     }
 
     const published = publishRes.data;
-
     return { postId: published.id as string };
-  }
-
-  async postToTikTok(videoUrl: string, caption: string): Promise<{ postId: string }> {
-    this.logger.info('Posting to TikTok');
-    const { data: init } = await axios.post(
-      'https://open.tiktokapis.com/v2/post/publish/video/init/',
-      {
-        post_info: {
-          title: caption.substring(0, 150),
-          privacy_level: 'PUBLIC_TO_EVERYONE',
-          disable_duet: false,
-          disable_comment: false,
-          disable_stitch: false,
-          video_cover_timestamp_ms: 1000,
-        },
-        source_info: {
-          source: 'PULL_FROM_URL',
-          video_url: videoUrl,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.TIKTOK_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      },
-    );
-
-    return { postId: init.data?.publish_id ?? 'unknown' };
   }
 }

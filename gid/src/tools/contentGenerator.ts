@@ -1,11 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
   AuditReportPrompt,
-  FacebookPostPrompt,
   InstagramPostPrompt,
-  TikTokScriptPrompt,
   WeekCalendarPrompt,
-  XPostPrompt,
 } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
 
@@ -25,71 +22,43 @@ export class ContentGenerator {
     private readonly logger: Logger,
   ) {}
 
-  async generateXPost(
-    slot: 'morning' | 'midday' | 'afternoon' | 'evening',
-    recentTopics: string[] = [],
-  ): Promise<{ text: string }> {
-    this.logger.info({ slot }, 'Generating X post');
-    const response = await this.anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      messages: [{ role: 'user', content: XPostPrompt(slot, recentTopics) }],
-    });
-    return { text: extractText(response) };
-  }
-
-  async generateInstagramPost(recentTopics: string[] = []): Promise<{ caption: string }> {
+  async generateInstagramPost(recentTopics: string[] = [], weights?: Record<string, number>): Promise<{ caption: string }> {
     this.logger.info('Generating Instagram post');
     const response = await this.anthropic.messages.create({
       model: MODEL,
       max_tokens: 600,
-      messages: [{ role: 'user', content: InstagramPostPrompt(recentTopics) }],
+      messages: [{ role: 'user', content: InstagramPostPrompt(recentTopics, weights) }],
     });
     return { caption: extractText(response) };
   }
 
-  async generateFacebookPost(recentTopics: string[] = []): Promise<{ message: string }> {
-    this.logger.info('Generating Facebook post');
-    const response = await this.anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 800,
-      messages: [{ role: 'user', content: FacebookPostPrompt(recentTopics) }],
-    });
-    return { message: extractText(response) };
-  }
-
-  async generateTikTokScript(): Promise<{ script: string }> {
-    this.logger.info('Generating TikTok script');
-    const response = await this.anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 600,
-      messages: [{ role: 'user', content: TikTokScriptPrompt() }],
-    });
-    return { script: extractText(response) };
-  }
-
   async generateWeekCalendar(
     recentTopics: string[],
-  ): Promise<Array<{ platform: string; title: string; content: string }>> {
+    weights?: Record<string, number>,
+  ): Promise<Array<{ platform: string; title: string; content: string; pillar: string | null; format: string | null }>> {
     this.logger.info('Generating week calendar');
     const response = await this.anthropic.messages.create({
       model: MODEL,
       max_tokens: 4000,
-      messages: [{ role: 'user', content: WeekCalendarPrompt(recentTopics) }],
+      messages: [{ role: 'user', content: WeekCalendarPrompt(recentTopics, weights) }],
     });
     const raw = extractText(response);
 
-    const pieces: Array<{ platform: string; title: string; content: string }> = [];
+    const pieces: Array<{ platform: string; title: string; content: string; pillar: string | null; format: string | null }> = [];
     const blocks = raw.split('---').map((b) => b.trim()).filter(Boolean);
     for (const block of blocks) {
       const platformMatch = block.match(/^PLATFORM:\s*(.+)$/m);
       const titleMatch = block.match(/^TITLE:\s*(.+)$/m);
       const contentMatch = block.match(/^CONTENT:\s*([\s\S]+?)(?=\n[A-Z]+:|$)/m);
+      const pillarMatch = block.match(/^PILLAR:\s*(.+)$/m);
+      const formatMatch = block.match(/^FORMAT:\s*(.+)$/m);
       if (platformMatch && titleMatch && contentMatch) {
         pieces.push({
           platform: platformMatch[1].trim().toLowerCase(),
           title: titleMatch[1].trim(),
           content: contentMatch[1].trim(),
+          pillar: pillarMatch ? pillarMatch[1].trim().toLowerCase() : null,
+          format: formatMatch ? formatMatch[1].trim().toLowerCase() : null,
         });
       }
     }
