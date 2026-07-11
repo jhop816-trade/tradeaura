@@ -18,6 +18,7 @@ export class Scheduler {
     cron.schedule('30 17 * * *', () => this.wrap('daily-summary', () => this.agent.sendDailySummary()), { timezone: TZ });
     cron.schedule('0 6 * * 0', () => this.wrap('weekly-audit', () => this.agent.weeklyContentAudit()), { timezone: TZ });
     cron.schedule('*/5 * * * *', () => this.wrap('site-monitor', () => this.monitor.check()), { timezone: TZ });
+    cron.schedule('*/30 * * * *', () => this.wrap('approval-reminder', () => this.agent.checkPendingApprovalReminder()), { timezone: TZ });
     this.logger.info('All cron jobs registered');
   }
 

@@ -2,11 +2,18 @@ import axios from 'axios';
 import type Anthropic from '@anthropic-ai/sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentMemory } from '../memory/agentMemory.js';
-import type { MarketingAgent } from '../agents/marketingAgent.js';
+import type { MarketingAgent, PendingInstagramPost } from '../agents/marketingAgent.js';
 import { BRAND_VOICE } from '../prompts/marketingPrompts.js';
 import type { Logger } from '../utils/logger.js';
 
 const MODEL = 'claude-sonnet-4-6';
+
+interface CallbackQuery {
+  id: string;
+  from: { id: number; username?: string };
+  message?: { message_id: number; chat: { id: number }; text?: string };
+  data?: string;
+}
 
 interface TelegramUpdate {
   update_id: number;
@@ -16,6 +23,7 @@ interface TelegramUpdate {
     chat: { id: number };
     text?: string;
   };
+  callback_query?: CallbackQuery;
 }
 
 interface GetUpdatesResponse {
@@ -82,6 +90,11 @@ export class TelegramBot {
   }
 
   private async handleUpdate(update: TelegramUpdate): Promise<void> {
+    if (update.callback_query) {
+      await this.handleCallbackQuery(update.callback_query);
+      return;
+    }
+
     const msg = update.message;
     if (!msg?.text) return;
 
@@ -101,6 +114,80 @@ export class TelegramBot {
     }
   }
 
+  private async handleCallbackQuery(cb: CallbackQuery): Promise<void> {
+    const chatId = cb.message?.chat.id;
+    if (!chatId) return;
+
+    const allowedChatId = Number(process.env.TELEGRAM_CHAT_ID);
+    if (allowedChatId && cb.from.id !== allowedChatId) return;
+
+    await this.answerCallback(cb.id);
+
+    switch (cb.data) {
+      case 'approve_post':
+        await this.handleApproveCallback(chatId, cb.message?.message_id ?? 0);
+        break;
+      case 'reject_post':
+        await this.handleRejectCallback(chatId, cb.message?.message_id ?? 0);
+        break;
+      case 'regenerate_post':
+        await this.handleRegenerateCallback(chatId, cb.message?.message_id ?? 0);
+        break;
+    }
+  }
+
+  private async handleApproveCallback(chatId: number, messageId: number): Promise<void> {
+    if (!this.agent) return;
+
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+    if (!pending) {
+      await this.sendMessage(chatId, 'No pending Instagram post found.');
+      return;
+    }
+
+    try {
+      await this.agent.postInstagramNow(
+        pending.caption,
+        pending.imageUrl,
+        pending.calendarId,
+        pending.pillar,
+        pending.format,
+      );
+      await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+      await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
+      await this.editMessage(chatId, messageId, '✅ Posted to Instagram!');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.editMessage(chatId, messageId, `❌ Failed to post: ${msg.substring(0, 200)}`);
+    }
+  }
+
+  private async handleRejectCallback(chatId: number, messageId: number): Promise<void> {
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+    if (!pending) {
+      await this.editMessage(chatId, messageId, '❌ No pending post found.');
+      return;
+    }
+
+    if (pending.calendarId) {
+      await this.supabase
+        .from('content_calendar')
+        .update({ status: 'posted' })
+        .eq('id', pending.calendarId);
+    }
+
+    await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+    await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
+    await this.editMessage(chatId, messageId, '❌ Rejected — skipped.');
+  }
+
+  private async handleRegenerateCallback(chatId: number, messageId: number): Promise<void> {
+    if (!this.agent) return;
+
+    await this.editMessage(chatId, messageId, '🔄 Regenerating...');
+    await this.agent.regenerateInstagramPost();
+  }
+
   private async sendMessage(chatId: number, text: string): Promise<void> {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) return;
@@ -113,6 +200,51 @@ export class TelegramBot {
     } catch (err) {
       this.logger.error({ err, chatId }, 'Failed to send Telegram message');
     }
+  }
+
+  private async sendMessageWithButtons(
+    chatId: number,
+    text: string,
+    buttons: Array<Array<{ text: string; callback_data: string }>>,
+  ): Promise<number> {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return 0;
+    try {
+      const res = await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        reply_markup: { inline_keyboard: buttons },
+      });
+      return (res.data?.result?.message_id as number) ?? 0;
+    } catch (err) {
+      this.logger.error({ err, chatId }, 'Failed to send Telegram message with buttons');
+      return 0;
+    }
+  }
+
+  private async editMessage(chatId: number, messageId: number, text: string): Promise<void> {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token || !messageId) return;
+    try {
+      await axios.post(`https://api.telegram.org/bot${token}/editMessageText`, {
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: 'HTML',
+      });
+    } catch (_) {}
+  }
+
+  private async answerCallback(callbackQueryId: string, text?: string): Promise<void> {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return;
+    try {
+      await axios.post(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+        callback_query_id: callbackQueryId,
+        text,
+      });
+    } catch (_) {}
   }
 
   private async handleCommand(chatId: number, command: string, fullText: string): Promise<void> {
@@ -155,6 +287,12 @@ export class TelegramBot {
         break;
       case '/approve':
         await this.cmdApprove(chatId);
+        break;
+      case '/reject':
+        await this.cmdReject(chatId);
+        break;
+      case '/regenerate':
+        await this.cmdRegenerate(chatId);
         break;
       case '/skip':
         await this.cmdSkip(chatId);
@@ -316,6 +454,7 @@ export class TelegramBot {
     const counts = (await this.memory.get<{ ig: number }>(AGENT_NAME, key)) ?? { ig: 0 };
     const paused = await this.memory.get<boolean>(AGENT_NAME, 'posting-paused');
     const siteStatus = await this.memory.get<{ up: boolean }>('website-monitor', 'site-status');
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
 
     const { data: recentLog } = await this.supabase
       .from('content_log')
@@ -328,15 +467,21 @@ export class TelegramBot {
       .join('\n');
 
     const nextPost = this.getNextScheduledPost();
+    const autoPost = process.env.AUTO_POST === 'true';
 
     const lines = [
       '<b>GID Status</b>\n',
-      `Posting: ${paused ? '⏸ Paused' : '▶️ Active'}`,
+      `Posting: ${paused ? '⏸ Paused' : '▶️ Active'} | Mode: ${autoPost ? 'AUTO' : 'approval'}`,
       `Site: ${siteStatus?.up !== false ? '✅ Up' : '❌ Down'}`,
       `Next: ${nextPost}`,
       `\n<b>Today's counts (${today})</b>`,
       `IG: ${counts.ig}`,
     ];
+
+    if (pending) {
+      const preparedAt = new Date(pending.preparedAt).toISOString().slice(0, 16).replace('T', ' ');
+      lines.push(`\n⏳ Pending post from ${preparedAt} — /approve, /reject, or /regenerate`);
+    }
 
     if (lastPosts) {
       lines.push('\n<b>Recent posts</b>');
@@ -421,11 +566,13 @@ export class TelegramBot {
       return;
     }
 
-    await this.sendMessage(chatId, '⏳ Posting to 📸 Instagram...');
+    await this.sendMessage(chatId, '⏳ Preparing Instagram post...');
 
     try {
-      await this.agent.postInstagram();
-      await this.sendMessage(chatId, '✅ 📸 Instagram — done');
+      await this.agent.prepareInstagramPost(chatId);
+      if (process.env.AUTO_POST !== 'true') {
+        await this.sendMessage(chatId, '📸 Post prepared — check the approval message above.');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await this.sendMessage(chatId, `❌ 📸 Instagram — ${msg.substring(0, 200)}`);
@@ -452,7 +599,6 @@ export class TelegramBot {
 
     const lines = ['<b>Last 5 Posts</b>\n'];
     for (const row of data) {
-      const platform = String(row.platform);
       const preview = String(row.content).substring(0, 60).replace(/\n/g, ' ');
       const time = String(row.posted_at).slice(0, 16).replace('T', ' ');
       lines.push(`📸 <b>${time}</b>`);
@@ -502,13 +648,7 @@ export class TelegramBot {
       return;
     }
 
-    const pending = await this.memory.get<{
-      calendarId: string | null;
-      caption: string;
-      imageUrl: string | null;
-      pillar?: string | null;
-      format?: string | null;
-    }>(AGENT_NAME, 'pending-instagram-post');
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
 
     if (!pending) {
       await this.sendMessage(chatId, 'No pending Instagram post.');
@@ -524,19 +664,57 @@ export class TelegramBot {
         pending.format,
       );
       await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+      await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
       await this.sendMessage(chatId, '✅ Posted to Instagram!');
+      if (pending.telegramMessageId) {
+        await this.editMessage(chatId, pending.telegramMessageId, '✅ Posted to Instagram!');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await this.sendMessage(chatId, `❌ Failed to post: ${msg.substring(0, 200)}`);
     }
   }
 
+  private async cmdReject(chatId: number): Promise<void> {
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+
+    if (!pending) {
+      await this.sendMessage(chatId, 'No pending Instagram post.');
+      return;
+    }
+
+    if (pending.calendarId) {
+      await this.supabase
+        .from('content_calendar')
+        .update({ status: 'posted' })
+        .eq('id', pending.calendarId);
+    }
+
+    await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+    await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
+    if (pending.telegramMessageId) {
+      await this.editMessage(chatId, pending.telegramMessageId, '❌ Rejected — skipped.');
+    }
+    await this.sendMessage(chatId, '❌ Post rejected and skipped.');
+  }
+
+  private async cmdRegenerate(chatId: number): Promise<void> {
+    if (!this.agent) {
+      await this.sendMessage(chatId, 'Agent not ready yet.');
+      return;
+    }
+
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+    if (pending?.telegramMessageId) {
+      await this.editMessage(chatId, pending.telegramMessageId, '🔄 Regenerating...');
+    }
+
+    await this.agent.regenerateInstagramPost();
+    await this.sendMessage(chatId, '🔄 New post generated — check the approval message above.');
+  }
+
   private async cmdSkip(chatId: number): Promise<void> {
-    const pending = await this.memory.get<{
-      calendarId: string | null;
-      caption: string;
-      imageUrl: string | null;
-    }>(AGENT_NAME, 'pending-instagram-post');
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
 
     if (!pending) {
       await this.sendMessage(chatId, 'No pending Instagram post.');
@@ -554,28 +732,32 @@ export class TelegramBot {
     }
 
     await this.memory.delete(AGENT_NAME, 'pending-instagram-post');
+    await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
     await this.sendMessage(chatId, '⏭ Skipped — marked as done.');
   }
 
   private async cmdHelp(chatId: number): Promise<void> {
     const help = [
       '<b>GID Marketing Bot — Commands</b>\n',
-      '/status — Agent status and today\'s post counts',
+      '/status — Agent status, mode, and today\'s post counts',
       '/today — Content scheduled for today',
       '/week — This week\'s full calendar',
       '/calendar — Next 7 days of scheduled content',
       '/logs — Last 5 published posts',
       '',
-      '/post ig — Post to Instagram immediately',
+      '/post ig — Prepare an Instagram post for approval',
       '',
       '/pause — Pause all scheduled posting',
       '/resume — Resume scheduled posting',
-      '/test — Run a test post to Instagram',
+      '/test — Run a direct test post to Instagram',
       '',
       '/preview — Show the next scheduled Instagram post in full',
       '/approve — Post the pending Instagram content now',
-      '/skip — Skip the pending Instagram post (mark as done)',
+      '/reject — Reject the pending post (marks calendar row as done)',
+      '/regenerate — Generate a fresh Instagram post to replace the pending one',
+      '/skip — Skip the pending Instagram post (same as reject)',
       '',
+      'Inline buttons on approval messages also work for approve/reject/regenerate.',
       'You can also send a free-text message to ask GID a question.',
     ];
     await this.sendMessage(chatId, help.join('\n'));
