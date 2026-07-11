@@ -653,6 +653,79 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────────
+// ── WEEKLY RECAP CARD ─────────────────────────────────────────────────────────
+function WeeklyRecapCard() {
+  const [data,setData]=useState<any>(null);
+  const [loading,setLoading]=useState(true);
+  const [err,setErr]=useState<string|null>(null);
+  const [expanded,setExpanded]=useState(false);
+
+  useEffect(()=>{
+    let cancelled=false;
+    apiCall("GET","/api/recap/weekly").then(d=>{if(!cancelled){setData(d);setLoading(false);}}).catch(e=>{if(!cancelled){setErr(e?.message||"Failed to load recap");setLoading(false);}});
+    return()=>{cancelled=true;};
+  },[]);
+
+  if(loading)return(
+    <div style={{...CS,marginTop:12,display:"flex",alignItems:"center",gap:10}}>
+      <div style={{width:10,height:10,borderRadius:"50%",background:C.purp,opacity:0.7,animation:"pulse 1.2s infinite"}}/>
+      <span style={{fontSize:12,color:C.muted}}>Loading weekly recap…</span>
+    </div>
+  );
+  if(err||!data||data.stats?.totalTrades===0)return null;
+
+  const tiltColor=data.tiltDetected?C.red:C.green;
+  return(
+    <div style={{...CS,marginTop:12,border:`1px solid ${C.purp}40`}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <div style={{fontSize:9,color:C.purp,letterSpacing:"0.15em",fontWeight:700}}>WEEKLY RECAP — AI</div>
+        {data.cached&&<span style={{fontSize:9,color:C.muted,background:C.bord,borderRadius:4,padding:"2px 6px"}}>cached</span>}
+      </div>
+      <div style={{fontSize:14,fontWeight:700,color:C.txt,marginBottom:8,lineHeight:1.4}}>{data.focusForNextWeek}</div>
+      <div style={{fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10}}>{data.summary}</div>
+      {data.stats&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+          {[
+            {l:"TRADES",v:String(data.stats.totalTrades),c:C.txt},
+            {l:"WIN RATE",v:`${Math.round((data.stats.winRate||0)*100)/100}%`,c:data.stats.winRate>=50?C.green:C.red},
+            {l:"NET P&L",v:`${(data.stats.netPnl||0)>=0?"+":""}$${Math.abs(data.stats.netPnl||0).toFixed(0)}`,c:(data.stats.netPnl||0)>=0?C.green:C.red},
+          ].map(s=>(
+            <div key={s.l} style={{background:C.bg,borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
+              <div style={{fontSize:7,color:C.muted,letterSpacing:"0.08em",marginBottom:3}}>{s.l}</div>
+              <div style={{fontSize:13,fontWeight:700,color:s.c}}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={()=>setExpanded(e=>!e)} style={{background:"transparent",border:"none",color:C.purp,fontSize:11,fontWeight:600,cursor:"pointer",padding:0,fontFamily:"inherit"}}>
+        {expanded?"Hide details":"Show details"}
+      </button>
+      {expanded&&(
+        <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+          {data.bestPattern&&(
+            <div style={{background:C.green+"10",border:`1px solid ${C.green}25`,borderRadius:8,padding:"10px 12px"}}>
+              <div style={{fontSize:9,color:C.green,letterSpacing:"0.1em",marginBottom:4}}>WORKING WELL</div>
+              <div style={{fontSize:12,color:C.txt,lineHeight:1.5}}>{data.bestPattern}</div>
+            </div>
+          )}
+          {data.worstHabit&&(
+            <div style={{background:C.red+"10",border:`1px solid ${C.red}25`,borderRadius:8,padding:"10px 12px"}}>
+              <div style={{fontSize:9,color:C.red,letterSpacing:"0.1em",marginBottom:4}}>TOP WEAKNESS</div>
+              <div style={{fontSize:12,color:C.txt,lineHeight:1.5}}>{data.worstHabit}</div>
+            </div>
+          )}
+          {data.tiltDetected&&data.tiltEvidence&&(
+            <div style={{background:tiltColor+"10",border:`1px solid ${tiltColor}25`,borderRadius:8,padding:"10px 12px"}}>
+              <div style={{fontSize:9,color:tiltColor,letterSpacing:"0.1em",marginBottom:4}}>TILT DETECTED</div>
+              <div style={{fontSize:12,color:C.txt,lineHeight:1.5}}>{data.tiltEvidence}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],account:any,onEditBalance:(v:number)=>void,onNavigate:(v:string)=>void}) {
   const [editingBal,setEditingBal]=useState(false);
   const [balInput,setBalInput]=useState("");
@@ -830,6 +903,7 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
           </div>
         );
       })()}
+      <WeeklyRecapCard/>
     </div>
   );
 }
