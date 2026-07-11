@@ -1,3 +1,4 @@
+import axios from 'axios';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AgentMemory } from '../memory/agentMemory.js';
 import type { ContentGenerator } from '../tools/contentGenerator.js';
@@ -17,6 +18,17 @@ interface CalendarContent {
   video_url: string | null;
   pillar: string | null;
   format: string | null;
+}
+
+export interface PendingInstagramPost {
+  calendarId: string | null;
+  caption: string;
+  imageUrl: string | null;
+  pillar: string | null;
+  format: string | null;
+  preparedAt: string;
+  telegramMessageId: number;
+  chatId: number;
 }
 
 const AGENT_NAME = 'marketing-agent';
@@ -159,57 +171,117 @@ export class MarketingAgent {
     }
   }
 
-  async prepareInstagramPost(): Promise<void> {
+  private async buildPendingPost(): Promise<Omit<PendingInstagramPost, 'preparedAt' | 'telegramMessageId' | 'chatId'>> {
+    const calendarResult = await this.getCalendarContent('instagram');
+    if (calendarResult) {
+      this.logger.info({ id: calendarResult.row.id }, 'Prepared Instagram post from calendar');
+      return {
+        calendarId: calendarResult.row.id,
+        caption: calendarResult.row.content,
+        imageUrl: calendarResult.row.image_url,
+        pillar: calendarResult.row.pillar ?? null,
+        format: calendarResult.row.format ?? null,
+      };
+    }
+    const recentTopics = await this.getRecentTopics();
+    const { caption } = await this.contentGenerator.generateInstagramPost(recentTopics);
+    this.logger.info('Prepared Instagram post from Claude generation');
+    return {
+      calendarId: null,
+      caption,
+      imageUrl: process.env.INSTAGRAM_DEFAULT_IMAGE_URL ?? null,
+      pillar: null,
+      format: null,
+    };
+  }
+
+  async prepareInstagramPost(chatId?: number): Promise<void> {
     if (await this.isPostingPaused()) {
       this.logger.info('Posting paused — skipping Instagram post preparation');
       return;
     }
+
+    if (process.env.AUTO_POST === 'true') {
+      await this.postInstagram();
+      return;
+    }
+
     try {
-      let caption: string;
-      let imageUrl: string | null;
-      let calendarId: string | null;
-      let pillar: string | null = null;
-      let format: string | null = null;
+      const postData = await this.buildPendingPost();
+      const tgChatId = chatId ?? Number(process.env.TELEGRAM_CHAT_ID ?? '0');
 
-      const calendarResult = await this.getCalendarContent('instagram');
+      const pending: PendingInstagramPost = {
+        ...postData,
+        preparedAt: new Date().toISOString(),
+        telegramMessageId: 0,
+        chatId: tgChatId,
+      };
 
-      if (calendarResult) {
-        caption = calendarResult.row.content;
-        imageUrl = calendarResult.row.image_url;
-        calendarId = calendarResult.row.id;
-        pillar = calendarResult.row.pillar ?? null;
-        format = calendarResult.row.format ?? null;
-        this.logger.info({ id: calendarId }, 'Prepared Instagram post from calendar');
-      } else {
-        const recentTopics = await this.getRecentTopics();
-        ({ caption } = await this.contentGenerator.generateInstagramPost(recentTopics));
-        imageUrl = process.env.INSTAGRAM_DEFAULT_IMAGE_URL ?? null;
-        calendarId = null;
-        this.logger.info('Prepared Instagram post from Claude generation');
-      }
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', pending);
 
-      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', {
-        calendarId,
-        caption,
-        imageUrl,
-        pillar,
-        format,
-      });
-
-      const imageLabel = imageUrl ?? 'default image';
-      const notification = [
-        '📸 Instagram post ready',
+      const imageLabel = postData.imageUrl ?? 'default image';
+      const approvalText = [
+        '📸 <b>Instagram Post Ready for Approval</b>',
+        postData.pillar ? `Pillar: <code>${postData.pillar}</code> | Format: <code>${postData.format ?? 'feed-single'}</code>` : '',
         '',
-        caption,
+        postData.caption,
         '',
         `🖼 Image: ${imageLabel}`,
-        '',
-        'Reply /approve to auto-post, or post manually in Instagram with music then /skip to mark done.',
-      ].join('\n');
+      ].filter(Boolean).join('\n');
 
-      await this.alerter.send(notification);
+      const messageId = await this.alerter.sendWithButtons(approvalText, [
+        [
+          { text: '✅ Approve', callback_data: 'approve_post' },
+          { text: '❌ Reject', callback_data: 'reject_post' },
+          { text: '🔄 Regenerate', callback_data: 'regenerate_post' },
+        ],
+      ]);
+
+      pending.telegramMessageId = messageId;
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', pending);
     } catch (err) {
       await this.handlePostError('instagram', err);
+    }
+  }
+
+  async regenerateInstagramPost(): Promise<void> {
+    try {
+      const existing = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+      const postData = await this.buildPendingPost();
+      const tgChatId = existing?.chatId ?? Number(process.env.TELEGRAM_CHAT_ID ?? '0');
+
+      const pending: PendingInstagramPost = {
+        ...postData,
+        preparedAt: new Date().toISOString(),
+        telegramMessageId: 0,
+        chatId: tgChatId,
+      };
+
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', pending);
+      await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
+
+      const imageLabel = postData.imageUrl ?? 'default image';
+      const approvalText = [
+        '📸 <b>Instagram Post Ready for Approval (regenerated)</b>',
+        postData.pillar ? `Pillar: <code>${postData.pillar}</code> | Format: <code>${postData.format ?? 'feed-single'}</code>` : '',
+        '',
+        postData.caption,
+        '',
+        `🖼 Image: ${imageLabel}`,
+      ].filter(Boolean).join('\n');
+
+      const messageId = await this.alerter.sendWithButtons(approvalText, [
+        [
+          { text: '✅ Approve', callback_data: 'approve_post' },
+          { text: '❌ Reject', callback_data: 'reject_post' },
+          { text: '🔄 Regenerate', callback_data: 'regenerate_post' },
+        ],
+      ]);
+
+      pending.telegramMessageId = messageId;
+      await this.memory.upsert(AGENT_NAME, 'pending-instagram-post', pending);
+    } catch (err) {
+      this.logger.error({ err }, 'Failed to regenerate Instagram post');
     }
   }
 
@@ -230,11 +302,30 @@ export class MarketingAgent {
     }
     await this.incrementDailyCounter();
     await this.addRecentTopic(caption.substring(0, 60));
+    await this.memory.delete(AGENT_NAME, 'pending-ig-reminded');
     this.logger.info({ postId }, 'Instagram post published via /approve');
   }
 
   async postFacebook(): Promise<void> {
     this.logger.info('Facebook handled via Instagram cross-post — no action needed');
+  }
+
+  async checkPendingApprovalReminder(): Promise<void> {
+    const pending = await this.memory.get<PendingInstagramPost>(AGENT_NAME, 'pending-instagram-post');
+    if (!pending) return;
+
+    const preparedAt = new Date(pending.preparedAt);
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    const alreadyReminded = await this.memory.get<boolean>(AGENT_NAME, 'pending-ig-reminded');
+    if (alreadyReminded) return;
+
+    if (preparedAt < twoHoursAgo) {
+      await this.alerter.send(
+        '⚠️ <b>Held post reminder</b>\n\nAn Instagram post prepared 2+ hours ago is still waiting for approval. Use /approve, /reject, or /regenerate.',
+      );
+      await this.memory.upsert(AGENT_NAME, 'pending-ig-reminded', true);
+    }
   }
 
   async sendDailySummary(): Promise<void> {
@@ -339,6 +430,86 @@ export class MarketingAgent {
       }
     } catch (err) {
       this.logger.error({ err }, 'refillCalendarIfNeeded failed');
+    }
+  }
+
+  async weeklyAnalyticsReport(): Promise<void> {
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      let followerCount: number | null = null;
+      let followerChange: number | null = null;
+      try {
+        const token = process.env.META_ACCESS_TOKEN;
+        const igId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
+        if (token && igId) {
+          const res = await axios.get(`https://graph.facebook.com/v21.0/${igId}`, {
+            params: { fields: 'followers_count', access_token: token },
+          });
+          followerCount = res.data?.followers_count ?? null;
+          const lastCount = await this.memory.get<number>(AGENT_NAME, 'last-follower-count');
+          if (lastCount != null && followerCount != null) followerChange = followerCount - lastCount;
+          if (followerCount != null) await this.memory.upsert(AGENT_NAME, 'last-follower-count', followerCount);
+        }
+      } catch (err) {
+        this.logger.warn({ err }, 'Failed to fetch follower count');
+      }
+
+      const { data: insights } = await this.supabase
+        .from('post_insights')
+        .select('instagram_post_id, pillar, format, reach, saves, score')
+        .eq('window', '24h')
+        .gte('fetched_at', sevenDaysAgo)
+        .order('score', { ascending: false });
+
+      const totalReach = (insights ?? []).reduce((s: number, r: any) => s + Number(r.reach), 0);
+      const top3 = (insights ?? []).slice(0, 3);
+      const worst = (insights ?? []).length > 0 ? (insights ?? [])[(insights ?? []).length - 1] : null;
+
+      const { data: pillarScores } = await this.supabase
+        .from('pillar_scores')
+        .select('pillar, format, avg_score')
+        .order('avg_score', { ascending: false })
+        .limit(1);
+
+      const bestCombo = pillarScores?.[0];
+
+      const { report } = await this.contentGenerator.generateAuditReport(
+        (insights ?? []).slice(0, 10).map((r: any) => `[${r.pillar ?? 'unknown'}/${r.format ?? 'feed'}] score: ${r.score}`),
+      );
+
+      const followerLine = followerCount != null
+        ? `👥 Followers: ${followerCount.toLocaleString()}${followerChange != null ? ` (${followerChange >= 0 ? '+' : ''}${followerChange} WoW)` : ''}`
+        : '👥 Followers: data unavailable';
+
+      const lines = [
+        '📊 <b>Weekly Analytics Report</b>\n',
+        followerLine,
+        `📡 Total Reach: ${totalReach.toLocaleString()}`,
+        '',
+        '<b>Top 3 Posts</b>',
+        ...top3.map((r: any, i: number) => `  ${i + 1}. ${r.pillar ?? '?'} / ${r.format ?? '?'} — score ${Number(r.score).toFixed(1)}`),
+        worst ? `\n<b>Worst Post</b>\n  ${(worst as any).pillar ?? '?'} / ${(worst as any).format ?? '?'} — score ${Number((worst as any).score).toFixed(1)}` : '',
+        bestCombo ? `\n🏆 Best combo: <b>${bestCombo.pillar} / ${bestCombo.format}</b> (avg score ${Number(bestCombo.avg_score).toFixed(1)})` : '',
+        `\n<i>${report.substring(0, 300)}</i>`,
+      ].filter(Boolean);
+
+      const { data: utmPosts } = await this.supabase
+        .from('content_log')
+        .select('pillar, utm_link')
+        .eq('platform', 'instagram')
+        .gte('posted_at', sevenDaysAgo)
+        .not('utm_link', 'is', null);
+
+      const campaigns = [...new Set((utmPosts ?? []).map((r: any) => r.pillar ?? 'general'))];
+      if (campaigns.length > 0) {
+        lines.push(`\n🔗 Active campaigns this week: ${campaigns.join(', ')}`);
+      }
+
+      await this.alerter.send(lines.join('\n'));
+      this.logger.info('Weekly analytics report sent');
+    } catch (err) {
+      this.logger.error({ err }, 'Weekly analytics report failed');
     }
   }
 }
