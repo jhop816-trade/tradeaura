@@ -1,0 +1,115 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #06070a;
+  --color-charcoal: #0d0f13;
+  --color-panel: #13161c;
+  --color-line: #23262e;
+  --color-smoke: #8b93a1;
+  --color-chrome: #d7dce4;
+  --color-frost: #f4f6f9;
+  --color-electric: #4d8dff;
+  --color-electric-dim: #2f5fb3;
+
+  --font-display: var(--font-display), 'Arial Narrow', sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+html {
+  background: var(--color-ink);
+  color: var(--color-frost);
+  scroll-behavior: smooth;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+body {
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-electric);
+  color: var(--color-ink);
+}
+
+/* Display headline treatment */
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.92;
+}
+
+/* Chrome / metal gradient text */
+.text-chrome-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #c9cfd9 38%, #6e7684 52%, #e6eaf0 66%, #9aa2af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Soft blue glow used behind key elements */
+.glow-electric {
+  box-shadow: 0 0 60px 8px rgb(77 141 255 / 0.18);
+}
+
+/* Film grain overlay — keeps the site gritty, not flat */
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Drifting smoke layers (pure CSS, cheap on mobile) */
+.smoke-layer {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.35;
+  pointer-events: none;
+  will-change: transform;
+  animation: smoke-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes smoke-drift {
+  from { transform: translate3d(-6%, 2%, 0) scale(1); }
+  to { transform: translate3d(6%, -4%, 0) scale(1.15); }
+}
+
+/* Placeholder photo tiles (used until real photos are dropped in) */
+.photo-placeholder {
+  background:
+    radial-gradient(120% 90% at 20% 10%, rgb(77 141 255 / 0.12), transparent 55%),
+    radial-gradient(100% 100% at 85% 90%, rgb(215 220 228 / 0.08), transparent 50%),
+    linear-gradient(160deg, #171a21 0%, #0b0d11 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smoke-layer,
+  .animate-marquee {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
