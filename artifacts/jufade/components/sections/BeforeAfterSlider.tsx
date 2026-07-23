@@ -50,7 +50,7 @@ export function BeforeAfterSlider() {
         ) : (
           <PlaceholderFace text="AFTER — drop photo at config/site.ts → beforeAfter.after" tone="after" />
         )}
-        <span className="absolute bottom-4 right-4 rounded-full bg-ink/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-electric backdrop-blur">
+        <span className="absolute bottom-4 right-4 rounded-full bg-ink/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold backdrop-blur">
           After
         </span>
       </div>
@@ -72,7 +72,7 @@ export function BeforeAfterSlider() {
       {/* Handle */}
       <div className="absolute inset-y-0" style={{ left: `${pos}%` }}>
         <div className="absolute inset-y-0 -translate-x-1/2 border-l-2 border-frost/80" />
-        <div className="glow-electric absolute top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-frost/50 bg-ink/80 text-frost backdrop-blur">
+        <div className="glow-gold absolute top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-frost/50 bg-ink/80 text-frost backdrop-blur">
           <span className="text-xs">↔</span>
         </div>
       </div>
@@ -83,7 +83,7 @@ export function BeforeAfterSlider() {
 function PlaceholderFace({ text, tone }: { text: string; tone: 'before' | 'after' }) {
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
-      <p className={`max-w-xs text-center text-xs uppercase tracking-[0.2em] ${tone === 'after' ? 'text-electric/80' : 'text-smoke/70'}`}>
+      <p className={`max-w-xs text-center text-xs uppercase tracking-[0.2em] ${tone === 'after' ? 'text-gold/80' : 'text-smoke/70'}`}>
         {text}
       </p>
     </div>

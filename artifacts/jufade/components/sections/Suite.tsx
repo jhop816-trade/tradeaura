@@ -52,7 +52,7 @@ export function Suite() {
           return (
             <Reveal key={h.title} delay={i * 0.1}>
               <div className="h-full rounded-2xl border border-line bg-panel/50 p-6">
-                <Icon size={20} className="text-electric" />
+                <Icon size={20} className="text-gold" />
                 <p className="mt-4 font-semibold text-frost">{h.title}</p>
                 <p className="mt-2 text-sm leading-relaxed text-smoke">{h.text}</p>
               </div>

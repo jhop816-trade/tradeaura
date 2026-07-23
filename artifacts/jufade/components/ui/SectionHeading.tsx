@@ -13,7 +13,7 @@ export function SectionHeading({ kicker, title, intro, align = 'left' }: Props) 
   return (
     <div className={`mb-14 flex flex-col gap-4 ${alignCls}`}>
       <Reveal>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-electric">{kicker}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">{kicker}</p>
       </Reveal>
       <TextReveal text={title} className="display text-4xl text-frost sm:text-5xl lg:text-6xl" />
       {intro ? (

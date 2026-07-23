@@ -50,7 +50,7 @@ export function Booking() {
                   {site.services.map((s) => (
                     <Chip key={s.name} active={service === s.name} onClick={() => setService(s.name)}>
                       {s.name}
-                      <span className="ml-1 text-electric">${s.price}</span>
+                      <span className="ml-1 text-gold">${s.price}</span>
                     </Chip>
                   ))}
                 </div>
@@ -77,7 +77,7 @@ export function Booking() {
               <button
                 type="button"
                 onClick={() => openBooking('booking-section')}
-                className="glow-electric mt-8 w-full rounded-full bg-frost py-5 text-sm font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:bg-electric hover:text-frost"
+                className="glow-gold mt-8 w-full rounded-full bg-frost py-5 text-sm font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold hover:text-frost"
               >
                 Book Now — {service} · {day} · {time}
               </button>
@@ -92,7 +92,7 @@ export function Booking() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <Reveal delay={0.1}>
             <div className="flex gap-4 rounded-2xl border border-line bg-panel/40 p-5">
-              <CalendarX2 size={20} className="mt-0.5 shrink-0 text-electric" />
+              <CalendarX2 size={20} className="mt-0.5 shrink-0 text-gold" />
               <div>
                 <p className="text-sm font-semibold text-frost">Cancellations</p>
                 <p className="mt-1 text-sm leading-relaxed text-smoke">{site.booking.cancellationPolicy}</p>
@@ -101,7 +101,7 @@ export function Booking() {
           </Reveal>
           <Reveal delay={0.2}>
             <div className="flex gap-4 rounded-2xl border border-line bg-panel/40 p-5">
-              <AlarmClock size={20} className="mt-0.5 shrink-0 text-electric" />
+              <AlarmClock size={20} className="mt-0.5 shrink-0 text-gold" />
               <div>
                 <p className="text-sm font-semibold text-frost">Running late?</p>
                 <p className="mt-1 text-sm leading-relaxed text-smoke">{site.booking.latePolicy}</p>
@@ -117,7 +117,7 @@ export function Booking() {
 function Step({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-6">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-electric">{label}</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-gold">{label}</p>
       {children}
     </div>
   )
@@ -129,7 +129,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       type="button"
       onClick={onClick}
       className={`rounded-xl px-3 py-3 text-xs font-medium transition-colors ${
-        active ? 'bg-frost text-ink' : 'border border-line bg-ink/40 text-smoke hover:border-electric/50 hover:text-frost'
+        active ? 'bg-frost text-ink' : 'border border-line bg-ink/40 text-smoke hover:border-gold/50 hover:text-frost'
       }`}
     >
       {children}

@@ -2,6 +2,7 @@ import { Navbar } from '@/components/Navbar'
 import { StickyBookButton } from '@/components/StickyBookButton'
 import { Footer } from '@/components/Footer'
 import { CinematicStage } from '@/components/sections/CinematicStage'
+import { BrandStrip } from '@/components/sections/BrandStrip'
 import { About } from '@/components/sections/About'
 import { Work } from '@/components/sections/Work'
 import { Services } from '@/components/sections/Services'
@@ -16,6 +17,7 @@ export default function Home() {
     <main>
       <Navbar />
       <CinematicStage />
+      <BrandStrip />
       <About />
       <Work />
       <Services />

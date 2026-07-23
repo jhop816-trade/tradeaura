@@ -32,7 +32,7 @@ export function Location() {
           <div className="flex flex-col gap-4">
             <Reveal delay={0.1}>
               <div className="flex gap-4 rounded-2xl border border-line bg-panel/50 p-6">
-                <MapPin size={20} className="mt-1 shrink-0 text-electric" />
+                <MapPin size={20} className="mt-1 shrink-0 text-gold" />
                 <div>
                   <p className="font-semibold text-frost">{site.location.suiteName}</p>
                   <p className="mt-1 text-sm text-smoke">
@@ -46,7 +46,7 @@ export function Location() {
 
             <Reveal delay={0.2}>
               <div className="flex gap-4 rounded-2xl border border-line bg-panel/50 p-6">
-                <Clock size={20} className="mt-1 shrink-0 text-electric" />
+                <Clock size={20} className="mt-1 shrink-0 text-gold" />
                 <div className="w-full">
                   <p className="mb-3 font-semibold text-frost">Hours</p>
                   <dl className="space-y-1.5">
@@ -63,7 +63,7 @@ export function Location() {
 
             <Reveal delay={0.3}>
               <div className="flex gap-4 rounded-2xl border border-line bg-panel/50 p-6">
-                <SquareParking size={20} className="mt-1 shrink-0 text-electric" />
+                <SquareParking size={20} className="mt-1 shrink-0 text-gold" />
                 <div>
                   <p className="font-semibold text-frost">Parking</p>
                   <p className="mt-1 text-sm text-smoke">{site.location.parking}</p>
@@ -74,7 +74,7 @@ export function Location() {
             <Reveal delay={0.4}>
               <a
                 href={`tel:${site.contact.phone.replace(/\D/g, '')}`}
-                className="flex items-center justify-center gap-3 rounded-2xl border border-electric/40 bg-electric/10 p-5 text-sm font-bold uppercase tracking-[0.18em] text-electric transition-colors hover:bg-electric hover:text-ink"
+                className="flex items-center justify-center gap-3 rounded-2xl border border-gold/40 bg-gold/10 p-5 text-sm font-bold uppercase tracking-[0.18em] text-gold transition-colors hover:bg-gold hover:text-ink"
               >
                 <Phone size={16} />
                 Contact — {site.contact.phone}

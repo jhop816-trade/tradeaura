@@ -68,7 +68,7 @@ export function AssemblyParticles({ anim }: { anim: ParticlesAnim }) {
       </bufferGeometry>
       <pointsMaterial
         ref={material}
-        color="#6ea8ff"
+        color="#ffcf6b"
         size={0.035}
         transparent
         opacity={0}

@@ -50,7 +50,7 @@ function Tile({ item }: { item: PortfolioItem }) {
       <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-ink/95 via-ink/20 to-transparent p-4 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         <div>
           <p className="text-sm font-semibold text-frost">{item.title}</p>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-electric">{item.category}</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-gold">{item.category}</p>
         </div>
       </figcaption>
     </motion.figure>
@@ -79,7 +79,7 @@ export function Work() {
             className={`rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-colors ${
               filter === f.id
                 ? 'bg-frost text-ink'
-                : 'border border-line bg-panel/40 text-smoke hover:border-electric/50 hover:text-frost'
+                : 'border border-line bg-panel/40 text-smoke hover:border-gold/50 hover:text-frost'
             }`}
           >
             {f.label}
@@ -99,7 +99,7 @@ export function Work() {
       {/* Before / after */}
       <div className="mt-20">
         <Reveal>
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.3em] text-electric">
+          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.3em] text-gold">
             Before / After — drag the handle
           </p>
         </Reveal>
@@ -114,7 +114,7 @@ export function Work() {
           href={site.contact.instagram}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-3 rounded-full border border-line bg-panel/50 px-7 py-4 text-sm font-semibold text-frost transition-colors hover:border-electric/60 hover:text-electric"
+          className="inline-flex items-center gap-3 rounded-full border border-line bg-panel/50 px-7 py-4 text-sm font-semibold text-frost transition-colors hover:border-gold/60 hover:text-gold"
         >
           <Instagram size={18} />
           Daily cuts on Instagram — {site.contact.instagramHandle}

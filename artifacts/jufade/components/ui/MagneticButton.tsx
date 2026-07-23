@@ -38,8 +38,8 @@ export function MagneticButton({ children, onClick, href, variant = 'primary', c
 
   const styles =
     variant === 'primary'
-      ? 'bg-frost text-ink hover:bg-electric hover:text-frost glow-electric'
-      : 'border border-line bg-panel/40 text-frost backdrop-blur hover:border-electric/60 hover:text-electric'
+      ? 'bg-frost text-ink hover:bg-gold hover:text-frost glow-gold'
+      : 'border border-line bg-panel/40 text-frost backdrop-blur hover:border-gold/60 hover:text-gold'
 
   const inner = (
     <motion.span

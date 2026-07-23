@@ -29,17 +29,17 @@ export function Services() {
               transition={{ duration: 0.6, delay: (i % 2) * 0.08, ease: [0.22, 1, 0.36, 1] }}
               className={`group relative overflow-hidden rounded-2xl border p-6 transition-colors ${
                 s.featured
-                  ? 'border-electric/40 bg-gradient-to-br from-panel to-electric-dim/10'
-                  : 'border-line bg-panel/50 hover:border-electric/40'
+                  ? 'border-gold/40 bg-gradient-to-br from-panel to-gold-dim/10'
+                  : 'border-line bg-panel/50 hover:border-gold/40'
               }`}
             >
               {s.featured && (
-                <span className="absolute right-4 top-4 rounded-full bg-electric/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-electric">
+                <span className="absolute right-4 top-4 rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
                   Most booked
                 </span>
               )}
               <div className="flex items-baseline justify-between gap-4 pr-24 md:pr-0">
-                <h3 className="text-lg font-semibold text-frost group-hover:text-electric">{s.name}</h3>
+                <h3 className="text-lg font-semibold text-frost group-hover:text-gold">{s.name}</h3>
               </div>
               <p className="mt-2 max-w-sm text-sm text-smoke">{s.description}</p>
               <div className="mt-5 flex items-center justify-between">

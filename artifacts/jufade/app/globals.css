@@ -8,8 +8,8 @@
   --color-smoke: #8b93a1;
   --color-chrome: #d7dce4;
   --color-frost: #f4f6f9;
-  --color-electric: #4d8dff;
-  --color-electric-dim: #2f5fb3;
+  --color-gold: #e8b23a;
+  --color-gold-dim: #8a6a1e;
 
   --font-display: var(--font-display), 'Arial Narrow', sans-serif;
   --font-body: var(--font-body), system-ui, sans-serif;
@@ -44,7 +44,7 @@ body {
 }
 
 ::selection {
-  background: var(--color-electric);
+  background: var(--color-gold);
   color: var(--color-ink);
 }
 
@@ -64,9 +64,9 @@ body {
   color: transparent;
 }
 
-/* Soft blue glow used behind key elements */
-.glow-electric {
-  box-shadow: 0 0 60px 8px rgb(77 141 255 / 0.18);
+/* Warm gold glow used behind key elements */
+.glow-gold {
+  box-shadow: 0 0 60px 8px rgb(232 178 58 / 0.22);
 }
 
 /* Film grain overlay — keeps the site gritty, not flat */
@@ -99,7 +99,7 @@ body {
 /* Placeholder photo tiles (used until real photos are dropped in) */
 .photo-placeholder {
   background:
-    radial-gradient(120% 90% at 20% 10%, rgb(77 141 255 / 0.12), transparent 55%),
+    radial-gradient(120% 90% at 20% 10%, rgb(232 178 58 / 0.12), transparent 55%),
     radial-gradient(100% 100% at 85% 90%, rgb(215 220 228 / 0.08), transparent 50%),
     linear-gradient(160deg, #171a21 0%, #0b0d11 70%);
 }

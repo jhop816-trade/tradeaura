@@ -56,7 +56,7 @@ export function About() {
           </Reveal>
           <Reveal delay={0.3}>
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-electric">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-gold">
                 Specialties
               </p>
               <div className="flex flex-wrap gap-2">
@@ -65,7 +65,7 @@ export function About() {
                     key={s}
                     className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/60 px-4 py-2 text-sm text-frost"
                   >
-                    <Scissors size={13} className="text-electric" />
+                    <Scissors size={13} className="text-gold" />
                     {s}
                   </span>
                 ))}
@@ -73,7 +73,7 @@ export function About() {
             </div>
           </Reveal>
           <Reveal delay={0.4}>
-            <p className="border-l-2 border-electric pl-4 text-sm italic text-smoke">
+            <p className="border-l-2 border-gold pl-4 text-sm italic text-smoke">
               “The suite is private for a reason. When you're in the chair, the appointment is
               about you — not the next guy in line.”
             </p>

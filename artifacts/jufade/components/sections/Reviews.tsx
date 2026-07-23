@@ -10,7 +10,7 @@ function Stars() {
   return (
     <div className="flex gap-1" aria-label="5 out of 5 stars">
       {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} size={14} className="fill-electric text-electric" />
+        <Star key={i} size={14} className="fill-gold text-gold" />
       ))}
     </div>
   )
@@ -36,7 +36,7 @@ function ReviewCard({ review, index }: { review: ReviewItem; index: number }) {
         {review.photo ? (
           <Image src={review.photo} alt={review.name} width={36} height={36} className="rounded-full object-cover" />
         ) : (
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-electric/40 bg-electric/10 text-xs font-bold text-electric">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-xs font-bold text-gold">
             {initials}
           </span>
         )}

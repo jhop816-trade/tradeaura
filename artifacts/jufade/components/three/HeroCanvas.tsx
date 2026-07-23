@@ -13,7 +13,7 @@ export function HeroFallback() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden>
       <div className="smoke-layer left-[-10%] top-[20%] h-[50vh] w-[60vw] bg-slate-500/40" />
-      <div className="smoke-layer right-[-15%] top-[45%] h-[45vh] w-[55vw] bg-electric/20 [animation-delay:-8s]" />
+      <div className="smoke-layer right-[-15%] top-[45%] h-[45vh] w-[55vw] bg-gold/20 [animation-delay:-8s]" />
       {/* Chair silhouette — replace with a real photo at public/images/hero-fallback.jpg if preferred */}
       <svg
         viewBox="0 0 400 480"
@@ -26,8 +26,8 @@ export function HeroFallback() {
             <stop offset="1" stopColor="#c9cfd9" />
           </linearGradient>
           <radialGradient id="glowFall" cx="0.5" cy="0.55" r="0.55">
-            <stop offset="0" stopColor="#4d8dff" stopOpacity="0.35" />
-            <stop offset="1" stopColor="#4d8dff" stopOpacity="0" />
+            <stop offset="0" stopColor="#e8b23a" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#e8b23a" stopOpacity="0" />
           </radialGradient>
         </defs>
         <rect x="0" y="0" width="400" height="480" fill="url(#glowFall)" />
@@ -40,7 +40,7 @@ export function HeroFallback() {
           <rect x="188" y="252" width="24" height="86" rx="8" fill="url(#chromeFall)" />
           <ellipse cx="200" cy="360" rx="92" ry="18" fill="url(#chromeFall)" />
           <rect x="150" y="284" width="100" height="8" rx="4" fill="url(#chromeFall)" transform="rotate(18 200 288)" />
-          <ellipse cx="200" cy="400" rx="120" ry="10" fill="#4d8dff" opacity="0.12" />
+          <ellipse cx="200" cy="400" rx="120" ry="10" fill="#e8b23a" opacity="0.12" />
         </g>
       </svg>
     </div>

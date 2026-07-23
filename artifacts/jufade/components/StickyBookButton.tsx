@@ -32,7 +32,7 @@ export function StickyBookButton() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackBookClick('sticky-mobile')}
-            className="glow-electric flex w-full items-center justify-center rounded-full bg-frost py-4 text-sm font-bold uppercase tracking-[0.18em] text-ink active:scale-[0.98]"
+            className="glow-gold flex w-full items-center justify-center rounded-full bg-frost py-4 text-sm font-bold uppercase tracking-[0.18em] text-ink active:scale-[0.98]"
           >
             Book Now — {site.name}
           </a>

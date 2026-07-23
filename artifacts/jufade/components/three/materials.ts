@@ -33,9 +33,9 @@ export const matteBlack = () =>
 
 export const blueLed = () =>
   new THREE.MeshStandardMaterial({
-    color: '#0a1524',
-    emissive: '#4d8dff',
-    emissiveIntensity: 2.4,
+    color: '#241a08',
+    emissive: '#ffb43a',
+    emissiveIntensity: 2.6,
     toneMapped: false,
   })
 

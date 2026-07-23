@@ -107,7 +107,7 @@ export function CinematicStage() {
 
         {/* Atmosphere */}
         <div className="smoke-layer left-[-12%] top-[55%] h-[45vh] w-[55vw] bg-slate-500/30" aria-hidden />
-        <div className="smoke-layer right-[-10%] top-[10%] h-[40vh] w-[45vw] bg-electric/15 [animation-delay:-12s]" aria-hidden />
+        <div className="smoke-layer right-[-10%] top-[10%] h-[40vh] w-[45vw] bg-gold/15 [animation-delay:-12s]" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/70" aria-hidden />
 
         {/* Phase 1 — hero copy */}
@@ -121,7 +121,7 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end pb-24 text-center will-change-[opacity]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-electric">The Craft</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">The Craft</p>
           <h2 className="display mt-3 text-3xl text-frost sm:text-5xl">
             Precision in <span className="text-chrome-gradient">every tool</span>
           </h2>
@@ -136,7 +136,7 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="absolute inset-0 flex flex-col items-center justify-center px-5 will-change-[opacity,transform]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-electric">This Week</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">This Week</p>
           <h2 className="display mt-3 text-center text-3xl text-frost sm:text-5xl">The book is open</h2>
           <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
             {site.sampleSlots.map((slot, i) => (
@@ -148,12 +148,12 @@ export function CinematicStage() {
                 onClick={() => trackBookClick('stage-slot-card')}
                 animate={{ y: [0, i % 2 === 0 ? -10 : 10, 0] }}
                 transition={{ duration: 4 + i * 0.6, repeat: Infinity, ease: 'easeInOut' }}
-                className="group rounded-2xl border border-line bg-panel/70 p-4 backdrop-blur transition-colors hover:border-electric/70"
+                className="group rounded-2xl border border-line bg-panel/70 p-4 backdrop-blur transition-colors hover:border-gold/70"
               >
-                <CalendarClock size={16} className="text-electric" />
+                <CalendarClock size={16} className="text-gold" />
                 <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-smoke">{slot.day}</p>
-                <p className="mt-1 text-lg font-semibold text-frost group-hover:text-electric">{slot.time}</p>
-                {slot.tag ? <p className="mt-1 text-[10px] text-electric/80">{slot.tag}</p> : null}
+                <p className="mt-1 text-lg font-semibold text-frost group-hover:text-gold">{slot.time}</p>
+                {slot.tag ? <p className="mt-1 text-[10px] text-gold/80">{slot.tag}</p> : null}
               </motion.a>
             ))}
           </div>
@@ -166,7 +166,7 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="absolute inset-0 flex flex-col items-center justify-center px-5 will-change-[opacity,transform]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-electric">The Proof</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">The Proof</p>
           <h2 className="display mt-3 text-center text-3xl text-frost sm:text-5xl">Fresh off the chair</h2>
           <div className="mt-10 flex items-center justify-center gap-4 sm:gap-8">
             {[-6, 0, 5].map((tilt, i) => (
@@ -185,7 +185,7 @@ export function CinematicStage() {
           </div>
           <a
             href="#work"
-            className="mt-10 text-xs font-semibold uppercase tracking-[0.25em] text-electric underline-offset-8 hover:underline"
+            className="mt-10 text-xs font-semibold uppercase tracking-[0.25em] text-gold underline-offset-8 hover:underline"
           >
             See the full portfolio ↓
           </a>
@@ -203,7 +203,7 @@ function HeroCopy({ static: isStatic = false }: { static?: boolean }) {
         custom={0}
         initial={isStatic ? undefined : 'hidden'}
         animate={isStatic ? undefined : 'show'}
-        className="text-xs font-semibold uppercase tracking-[0.4em] text-electric"
+        className="text-xs font-semibold uppercase tracking-[0.4em] text-gold"
       >
         {site.name} — Private Barber Suite
       </motion.p>

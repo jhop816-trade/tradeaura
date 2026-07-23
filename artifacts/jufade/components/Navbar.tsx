@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { site } from '@/config/site'
 import { trackBookClick } from '@/lib/analytics'
+import { BrandLogo } from '@/components/ui/BrandLogo'
 
 const links = [
   { href: '#about', label: 'About' },
@@ -33,8 +34,11 @@ export function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <a href="#top" className="display text-xl tracking-[0.08em] text-frost">
-          JU<span className="text-electric">FADE</span>
+        <a href="#top" className="flex items-center gap-2 text-frost">
+          <BrandLogo className="h-9 w-9" />
+          <span className="display text-xl tracking-[0.08em]">
+            JU<span className="text-gold">FADE</span>
+          </span>
         </a>
         <div className="hidden items-center gap-8 md:flex">
           {links.map((l) => (
@@ -52,7 +56,7 @@ export function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackBookClick('navbar')}
-          className="rounded-full border border-frost/20 bg-frost px-5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-electric hover:text-frost"
+          className="rounded-full border border-frost/20 bg-frost px-5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold hover:text-frost"
         >
           Book Now
         </a>
