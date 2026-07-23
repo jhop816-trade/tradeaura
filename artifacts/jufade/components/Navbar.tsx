@@ -56,7 +56,7 @@ export function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackBookClick('navbar')}
-          className="rounded-full border border-frost/20 bg-frost px-5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold hover:text-frost"
+          className="display -rotate-2 bg-gold px-5 py-2.5 text-sm uppercase tracking-[0.02em] text-ink shadow-[3px_3px_0_#000] transition-all hover:rotate-0 hover:-translate-y-0.5"
         >
           Book Now
         </a>

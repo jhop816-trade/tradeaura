@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Archivo_Black, Inter } from 'next/font/google'
+import { Anton, Inter } from 'next/font/google'
 import { site } from '@/config/site'
 import { Analytics } from '@/components/Analytics'
 import { SmoothScroll } from '@/components/providers/SmoothScroll'
@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { ThemeSwitcher } from '@/components/ui/ThemeSwitcher'
 import './globals.css'
 
-const display = Archivo_Black({
+const display = Anton({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-display',

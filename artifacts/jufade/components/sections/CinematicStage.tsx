@@ -9,8 +9,6 @@ import { site } from '@/config/site'
 import { stageState } from '@/lib/scrollState'
 import { trackBookClick } from '@/lib/analytics'
 import { HeroCanvas } from '@/components/three/HeroCanvas'
-import { MagneticButton } from '@/components/ui/MagneticButton'
-import { BookButton } from '@/components/ui/BookButton'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -86,19 +84,19 @@ export function CinematicStage() {
     return () => trigger.kill()
   }, [reduced])
 
-  // Reduced motion: a single calm hero screen, no 500vh scroll theater.
+  // Reduced motion: a single calm 3D scene, no 500vh scroll theater.
   if (reduced) {
     return (
-      <section id="top" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
+      <section className="relative flex min-h-[90svh] items-center justify-center overflow-hidden">
         <HeroCanvas />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/60" />
-        <HeroCopy static />
+        <StageIntro static />
       </section>
     )
   }
 
   return (
-    <div ref={container} id="top" className="relative h-[520vh]">
+    <div ref={container} className="relative h-[520vh]">
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* 3D stage */}
         <div ref={canvasWrap} className="absolute inset-0">
@@ -110,9 +108,9 @@ export function CinematicStage() {
         <div className="smoke-layer right-[-10%] top-[10%] h-[40vh] w-[45vw] bg-gold/15 [animation-delay:-12s]" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/70" aria-hidden />
 
-        {/* Phase 1 — hero copy */}
+        {/* Phase 1 — stage intro */}
         <div ref={hero} className="absolute inset-0 will-change-[opacity,transform]">
-          <HeroCopy />
+          <StageIntro />
         </div>
 
         {/* Phase 2 — the craft (floating tools) */}
@@ -121,8 +119,8 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end pb-24 text-center will-change-[opacity]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">The Craft</p>
-          <h2 className="display mt-3 text-3xl text-frost sm:text-5xl">
+          <span className="poster-tag">The Craft</span>
+          <h2 className="display mt-4 text-4xl text-frost sm:text-6xl">
             Precision in <span className="text-chrome-gradient">every tool</span>
           </h2>
           <p className="mt-3 max-w-md px-6 text-sm text-smoke">
@@ -136,8 +134,8 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="absolute inset-0 flex flex-col items-center justify-center px-5 will-change-[opacity,transform]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">This Week</p>
-          <h2 className="display mt-3 text-center text-3xl text-frost sm:text-5xl">The book is open</h2>
+          <span className="poster-tag">This Week</span>
+          <h2 className="display mt-4 text-center text-4xl text-frost sm:text-6xl">The Book Is Open</h2>
           <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
             {site.sampleSlots.map((slot, i) => (
               <motion.a
@@ -166,8 +164,8 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="absolute inset-0 flex flex-col items-center justify-center px-5 will-change-[opacity,transform]"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gold">The Proof</p>
-          <h2 className="display mt-3 text-center text-3xl text-frost sm:text-5xl">Fresh off the chair</h2>
+          <span className="poster-tag">The Proof</span>
+          <h2 className="display mt-4 text-center text-4xl text-frost sm:text-6xl">Fresh Off The Chair</h2>
           <div className="mt-10 flex items-center justify-center gap-4 sm:gap-8">
             {[-6, 0, 5].map((tilt, i) => (
               <div
@@ -195,52 +193,40 @@ export function CinematicStage() {
   )
 }
 
-function HeroCopy({ static: isStatic = false }: { static?: boolean }) {
+function StageIntro({ static: isStatic = false }: { static?: boolean }) {
   return (
-    <div className="relative z-10 flex h-full min-h-[100svh] flex-col items-center justify-center px-5 text-center">
-      <motion.p
+    <div className="relative z-10 flex h-full min-h-[90svh] flex-col items-center justify-center px-5 text-center">
+      <motion.span
         variants={entrance}
         custom={0}
         initial={isStatic ? undefined : 'hidden'}
         animate={isStatic ? undefined : 'show'}
-        className="text-xs font-semibold uppercase tracking-[0.4em] text-gold"
+        className="poster-tag"
       >
-        {site.name} — Private Barber Suite
-      </motion.p>
-      <motion.h1
+        The Suite
+      </motion.span>
+      <motion.h2
         variants={entrance}
         custom={1}
         initial={isStatic ? undefined : 'hidden'}
         animate={isStatic ? undefined : 'show'}
-        className="display mt-6 max-w-4xl text-5xl text-frost sm:text-7xl lg:text-8xl"
+        className="display mt-6 max-w-3xl text-6xl text-frost sm:text-8xl"
       >
-        Your next cut <span className="text-chrome-gradient">starts here.</span>
-      </motion.h1>
+        Take <span className="text-chrome-gradient">the chair.</span>
+      </motion.h2>
       <motion.p
         variants={entrance}
         custom={2}
         initial={isStatic ? undefined : 'hidden'}
         animate={isStatic ? undefined : 'show'}
-        className="mt-6 text-base text-smoke sm:text-lg"
+        className="mt-5 text-base text-smoke sm:text-lg"
       >
-        {site.tagline}
+        Scroll to see the setup — chair, tools, and the open book.
       </motion.p>
-      <motion.div
-        variants={entrance}
-        custom={3}
-        initial={isStatic ? undefined : 'hidden'}
-        animate={isStatic ? undefined : 'show'}
-        className="mt-10 flex flex-col items-center gap-4 sm:flex-row"
-      >
-        <BookButton placement="hero" />
-        <MagneticButton href="#work" variant="ghost">
-          View My Work
-        </MagneticButton>
-      </motion.div>
       <motion.div
         initial={isStatic ? undefined : { opacity: 0 }}
         animate={isStatic ? undefined : { opacity: 1 }}
-        transition={{ delay: 2.4, duration: 1 }}
+        transition={{ delay: 1.4, duration: 1 }}
         className="absolute bottom-8 flex flex-col items-center gap-2 text-smoke/70"
       >
         <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>

@@ -20,7 +20,8 @@ const filters = [
 
 type FilterId = (typeof filters)[number]['id']
 
-function Tile({ item }: { item: PortfolioItem }) {
+function Tile({ item, index }: { item: PortfolioItem; index: number }) {
+  const tilt = index % 2 === 0 ? '-rotate-1' : 'rotate-1'
   return (
     <motion.figure
       layout
@@ -28,7 +29,7 @@ function Tile({ item }: { item: PortfolioItem }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.92 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className={`group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-line ${item.tall ? 'aspect-[3/4]' : 'aspect-square'}`}
+      className={`group relative mb-4 break-inside-avoid overflow-hidden border-2 border-line transition-transform duration-300 hover:z-10 hover:!rotate-0 hover:border-gold ${tilt} ${item.tall ? 'aspect-[3/4]' : 'aspect-square'}`}
     >
       {item.src ? (
         <Image
@@ -46,12 +47,11 @@ function Tile({ item }: { item: PortfolioItem }) {
           </div>
         </div>
       )}
-      {/* Hover overlay */}
-      <figcaption className="absolute inset-0 flex items-end bg-gradient-to-t from-ink/95 via-ink/20 to-transparent p-4 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-        <div>
-          <p className="text-sm font-semibold text-frost">{item.title}</p>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-gold">{item.category}</p>
-        </div>
+      <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-ink/95 to-transparent p-3">
+        <span className="display text-lg text-frost">{item.title}</span>
+        <span className="poster-tag !text-xs opacity-0 transition-opacity group-hover:opacity-100">
+          {item.category}
+        </span>
       </figcaption>
     </motion.figure>
   )
@@ -65,21 +65,21 @@ export function Work() {
     <section id="work" className="relative mx-auto max-w-6xl px-5 py-28">
       <SectionHeading
         kicker="My Work"
-        title="The portfolio"
+        title="The Portfolio"
         intro="Fades, tapers, beard sculpting, designs — every photo below left the suite looking exactly like this."
       />
 
       {/* Filters */}
-      <Reveal className="mb-10 flex flex-wrap gap-2">
+      <Reveal className="mb-10 flex flex-wrap gap-2.5">
         {filters.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => setFilter(f.id)}
-            className={`rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition-colors ${
+            className={`display -rotate-1 px-4 py-2 text-sm uppercase tracking-[0.02em] transition-all hover:-translate-y-0.5 ${
               filter === f.id
-                ? 'bg-frost text-ink'
-                : 'border border-line bg-panel/40 text-smoke hover:border-gold/50 hover:text-frost'
+                ? 'bg-gold text-ink shadow-[3px_3px_0_#000]'
+                : 'border-2 border-line text-smoke hover:border-gold hover:text-frost'
             }`}
           >
             {f.label}
@@ -87,11 +87,11 @@ export function Work() {
         ))}
       </Reveal>
 
-      {/* Masonry gallery */}
+      {/* Collage */}
       <div className="columns-2 gap-4 lg:columns-3">
         <AnimatePresence mode="popLayout">
-          {items.map((item) => (
-            <Tile key={item.title} item={item} />
+          {items.map((item, i) => (
+            <Tile key={item.title} item={item} index={i} />
           ))}
         </AnimatePresence>
       </div>
@@ -99,9 +99,7 @@ export function Work() {
       {/* Before / after */}
       <div className="mt-20">
         <Reveal>
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.3em] text-gold">
-            Before / After — drag the handle
-          </p>
+          <span className="poster-tag mb-6 inline-block">Before / After — drag it</span>
         </Reveal>
         <Reveal delay={0.1}>
           <BeforeAfterSlider />
@@ -114,10 +112,10 @@ export function Work() {
           href={site.contact.instagram}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-3 rounded-full border border-line bg-panel/50 px-7 py-4 text-sm font-semibold text-frost transition-colors hover:border-gold/60 hover:text-gold"
+          className="display inline-flex -rotate-1 items-center gap-3 border-2 border-gold px-7 py-4 text-lg uppercase text-gold transition-all hover:rotate-0 hover:bg-gold hover:text-ink"
         >
-          <Instagram size={18} />
-          Daily cuts on Instagram — {site.contact.instagramHandle}
+          <Instagram size={20} />
+          {site.contact.instagramHandle}
         </a>
       </Reveal>
     </section>

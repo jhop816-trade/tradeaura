@@ -1,8 +1,8 @@
 import { Navbar } from '@/components/Navbar'
 import { StickyBookButton } from '@/components/StickyBookButton'
 import { Footer } from '@/components/Footer'
+import { PosterHero } from '@/components/sections/PosterHero'
 import { CinematicStage } from '@/components/sections/CinematicStage'
-import { BrandStrip } from '@/components/sections/BrandStrip'
 import { About } from '@/components/sections/About'
 import { Work } from '@/components/sections/Work'
 import { Services } from '@/components/sections/Services'
@@ -16,8 +16,8 @@ export default function Home() {
   return (
     <main>
       <Navbar />
+      <PosterHero />
       <CinematicStage />
-      <BrandStrip />
       <About />
       <Work />
       <Services />

@@ -7,15 +7,15 @@ type Props = {
   align?: 'left' | 'center'
 }
 
-/** Consistent section header: small blue kicker, big display title, intro line. */
+/** Poster-style section header: tilted gold sticker tag + condensed title. */
 export function SectionHeading({ kicker, title, intro, align = 'left' }: Props) {
-  const alignCls = align === 'center' ? 'text-center items-center' : 'text-left items-start'
+  const alignCls = align === 'center' ? 'items-center text-center' : 'items-start text-left'
   return (
-    <div className={`mb-14 flex flex-col gap-4 ${alignCls}`}>
+    <div className={`mb-12 flex flex-col gap-5 ${alignCls}`}>
       <Reveal>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">{kicker}</p>
+        <span className="poster-tag">{kicker}</span>
       </Reveal>
-      <TextReveal text={title} className="display text-4xl text-frost sm:text-5xl lg:text-6xl" />
+      <TextReveal text={title} className="display text-5xl text-frost sm:text-6xl lg:text-7xl" />
       {intro ? (
         <Reveal delay={0.15}>
           <p className="max-w-xl text-base leading-relaxed text-smoke">{intro}</p>

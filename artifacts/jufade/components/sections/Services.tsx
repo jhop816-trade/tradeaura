@@ -3,19 +3,21 @@
 import { motion } from 'framer-motion'
 import { site } from '@/config/site'
 import { SectionHeading } from '@/components/ui/SectionHeading'
-import { BookButton } from '@/components/ui/BookButton'
+import { BookSticker } from '@/components/ui/Sticker'
 import { trackBookClick } from '@/lib/analytics'
 
 export function Services() {
   return (
     <section id="services" className="relative bg-charcoal py-28">
-      <div className="mx-auto max-w-6xl px-5">
+      <div className="mx-auto max-w-5xl px-5">
         <SectionHeading
           kicker="Services & Pricing"
-          title="Pick your service"
+          title="The Menu"
           intro="Every service is a full private-suite appointment — your time, your chair, no rush."
         />
-        <div className="grid gap-4 md:grid-cols-2">
+
+        {/* Flyer menu */}
+        <div className="flyer-bg rounded-lg border-2 border-gold p-4 sm:p-8">
           {site.services.map((s, i) => (
             <motion.a
               key={s.name}
@@ -23,35 +25,32 @@ export function Services() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackBookClick(`service-${s.name}`)}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.6, delay: (i % 2) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className={`group relative overflow-hidden rounded-2xl border p-6 transition-colors ${
-                s.featured
-                  ? 'border-gold/40 bg-gradient-to-br from-panel to-gold-dim/10'
-                  : 'border-line bg-panel/50 hover:border-gold/40'
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5, delay: i * 0.05 }}
+              className={`group flex items-center justify-between gap-4 py-5 ${
+                i < site.services.length - 1 ? 'border-b-2 border-dashed border-line' : ''
               }`}
             >
-              {s.featured && (
-                <span className="absolute right-4 top-4 rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
-                  Most booked
-                </span>
-              )}
-              <div className="flex items-baseline justify-between gap-4 pr-24 md:pr-0">
-                <h3 className="text-lg font-semibold text-frost group-hover:text-gold">{s.name}</h3>
+              <div>
+                <h3 className="display text-3xl text-frost transition-colors group-hover:text-gold sm:text-4xl">
+                  {s.name}
+                </h3>
+                <p className="mt-1 text-sm text-smoke">
+                  {s.duration} · {s.description}
+                </p>
               </div>
-              <p className="mt-2 max-w-sm text-sm text-smoke">{s.description}</p>
-              <div className="mt-5 flex items-center justify-between">
-                <span className="text-xs uppercase tracking-[0.2em] text-smoke/70">{s.duration}</span>
-                {/* REPLACE: prices live at config/site.ts → services */}
-                <span className="display text-3xl text-chrome-gradient">${s.price}</span>
-              </div>
+              {/* REPLACE: prices live at config/site.ts → services */}
+              <span className="price-tag shrink-0 text-2xl sm:text-3xl">${s.price}</span>
             </motion.a>
           ))}
         </div>
+
         <div className="mt-12 flex justify-center">
-          <BookButton placement="services">Book a Service</BookButton>
+          <BookSticker placement="services" size="lg">
+            Book a Service
+          </BookSticker>
         </div>
       </div>
     </section>
