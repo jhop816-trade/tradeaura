@@ -5,6 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
 import * as THREE from 'three'
 import { easeInOut, phase, stageState } from '@/lib/scrollState'
+import { themeColors } from '@/lib/themeColors'
 import { BarberChair, type ChairAnim } from './BarberChair'
 import { FloatingTools, type ToolsAnim } from './FloatingTools'
 import { AssemblyParticles, type ParticlesAnim } from './AssemblyParticles'
@@ -89,17 +90,17 @@ export default function Scene({ quality }: { quality: 'high' | 'low' }) {
     >
       <ambientLight intensity={0.18} />
       <spotLight position={[3, 6, 5]} angle={0.5} penumbra={0.8} intensity={60} color="#ffffff" />
-      <pointLight position={[-4, 2, -3]} intensity={22} color="#ffb14a" />
-      <pointLight position={[0, 1.5, -3.5]} intensity={12} color="#e8951e" />
-      <pointLight position={[4, 0, 4]} intensity={5} color="#cdd6e4" />
+      <pointLight position={[-4, 2, -3]} intensity={22} color={themeColors.keyLight} />
+      <pointLight position={[0, 1.5, -3.5]} intensity={12} color={themeColors.backLight} />
+      <pointLight position={[4, 0, 4]} intensity={5} color={themeColors.rimNeutral} />
       <pointLight position={[-3, -1, 4]} intensity={5} color="#8b93a1" />
 
       {/* Local light-strip environment map → clean chrome reflections, no network fetch */}
       <Environment resolution={256} frames={1}>
         <Lightformer intensity={2.5} position={[0, 4, 2]} rotation={[Math.PI / 2, 0, 0]} scale={[8, 3, 1]} color="#ffffff" />
         <Lightformer intensity={1.4} position={[-5, 1, -1]} rotation={[0, Math.PI / 2, 0]} scale={[6, 1.5, 1]} color="#dfe6f0" />
-        <Lightformer intensity={2.2} position={[5, 0, 1]} rotation={[0, -Math.PI / 2, 0]} scale={[6, 1, 1]} color="#ffb14a" />
-        <Lightformer intensity={0.9} position={[0, -3, 3]} rotation={[-Math.PI / 2, 0, 0]} scale={[7, 3, 1]} color="#8a6a1e" />
+        <Lightformer intensity={2.2} position={[5, 0, 1]} rotation={[0, -Math.PI / 2, 0]} scale={[6, 1, 1]} color={themeColors.envRim} />
+        <Lightformer intensity={0.9} position={[0, -3, 3]} rotation={[-Math.PI / 2, 0, 0]} scale={[7, 3, 1]} color={themeColors.envFill} />
       </Environment>
 
       <Rig quality={quality} />

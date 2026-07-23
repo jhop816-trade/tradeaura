@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { stageState } from '@/lib/scrollState'
+import { useTheme } from '@/components/providers/ThemeProvider'
 
 // The whole three.js bundle stays out of the critical path — it only loads
 // after hydration, and only on devices that can handle it.
@@ -26,8 +27,8 @@ export function HeroFallback() {
             <stop offset="1" stopColor="#c9cfd9" />
           </linearGradient>
           <radialGradient id="glowFall" cx="0.5" cy="0.55" r="0.55">
-            <stop offset="0" stopColor="#e8b23a" stopOpacity="0.35" />
-            <stop offset="1" stopColor="#e8b23a" stopOpacity="0" />
+            <stop offset="0" stopColor="var(--color-gold)" stopOpacity="0.35" />
+            <stop offset="1" stopColor="var(--color-gold)" stopOpacity="0" />
           </radialGradient>
         </defs>
         <rect x="0" y="0" width="400" height="480" fill="url(#glowFall)" />
@@ -40,7 +41,7 @@ export function HeroFallback() {
           <rect x="188" y="252" width="24" height="86" rx="8" fill="url(#chromeFall)" />
           <ellipse cx="200" cy="360" rx="92" ry="18" fill="url(#chromeFall)" />
           <rect x="150" y="284" width="100" height="8" rx="4" fill="url(#chromeFall)" transform="rotate(18 200 288)" />
-          <ellipse cx="200" cy="400" rx="120" ry="10" fill="#e8b23a" opacity="0.12" />
+          <ellipse cx="200" cy="400" rx="120" ry="10" fill="var(--color-gold)" opacity="0.12" />
         </g>
       </svg>
     </div>
@@ -53,6 +54,7 @@ export function HeroFallback() {
  */
 export function HeroCanvas() {
   const [mode, setMode] = useState<'pending' | 'high' | 'low' | 'fallback'>('pending')
+  const { id: themeId } = useTheme()
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -87,7 +89,8 @@ export function HeroCanvas() {
   if (mode === 'pending') return <div className="absolute inset-0" aria-hidden />
   return (
     <div className="absolute inset-0" aria-hidden>
-      <Scene quality={mode} />
+      {/* key forces a scene rebuild so materials/lights pick up a new theme */}
+      <Scene key={themeId} quality={mode} />
     </div>
   )
 }

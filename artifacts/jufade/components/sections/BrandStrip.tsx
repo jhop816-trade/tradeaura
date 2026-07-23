@@ -30,7 +30,7 @@ export function BrandStrip() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           >
-            <BrandLogo className="relative h-72 w-auto drop-shadow-[0_0_50px_rgba(232,178,58,0.2)] sm:h-80" />
+            <BrandLogo className="relative h-72 w-auto drop-shadow-[0_0_50px_rgb(var(--accent-rgb)/0.2)] sm:h-80" />
           </motion.div>
         </div>
 

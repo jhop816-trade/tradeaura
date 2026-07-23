@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { themeColors } from '@/lib/themeColors'
 
 export const chrome = () =>
   new THREE.MeshStandardMaterial({
@@ -33,8 +34,8 @@ export const matteBlack = () =>
 
 export const blueLed = () =>
   new THREE.MeshStandardMaterial({
-    color: '#241a08',
-    emissive: '#ffb43a',
+    color: themeColors.ledBase,
+    emissive: themeColors.led,
     emissiveIntensity: 2.6,
     toneMapped: false,
   })

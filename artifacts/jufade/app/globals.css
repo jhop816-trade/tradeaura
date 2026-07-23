@@ -22,6 +22,11 @@
   }
 }
 
+:root {
+  /* Overridden at runtime by ThemeProvider; default matches the gold theme. */
+  --accent-rgb: 232 178 58;
+}
+
 html {
   background: var(--color-ink);
   color: var(--color-frost);
@@ -66,7 +71,7 @@ body {
 
 /* Warm gold glow used behind key elements */
 .glow-gold {
-  box-shadow: 0 0 60px 8px rgb(232 178 58 / 0.22);
+  box-shadow: 0 0 60px 8px rgb(var(--accent-rgb) / 0.22);
 }
 
 /* Film grain overlay — keeps the site gritty, not flat */
@@ -99,7 +104,7 @@ body {
 /* Placeholder photo tiles (used until real photos are dropped in) */
 .photo-placeholder {
   background:
-    radial-gradient(120% 90% at 20% 10%, rgb(232 178 58 / 0.12), transparent 55%),
+    radial-gradient(120% 90% at 20% 10%, rgb(var(--accent-rgb) / 0.12), transparent 55%),
     radial-gradient(100% 100% at 85% 90%, rgb(215 220 228 / 0.08), transparent 50%),
     linear-gradient(160deg, #171a21 0%, #0b0d11 70%);
 }
