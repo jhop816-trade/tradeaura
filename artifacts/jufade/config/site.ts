@@ -12,11 +12,15 @@ export const site = {
   name: 'JuFade',
   tagline: 'Premium cuts. Private suite. Clean experience.',
 
-  // REPLACE: your real booking platform link (Booksy, Squire, TheCut, Acuity…)
+  // Booksy booking link. Every "Book" button opens this in a new tab, where the
+  // client picks service/date/time and pays (if prepayment is enabled in Booksy).
+  // NOTE: confirm this opens your booking page in a browser — if it 404s, grab the
+  // full link from Booksy Biz → your profile → Share, and replace it here.
   booking: {
-    url: 'https://booksy.com/REPLACE-WITH-YOUR-BOOKING-LINK',
-    // Set to true if your platform gives you an embeddable widget URL,
-    // and put that URL in embedUrl. If false, all buttons open `url` in a new tab.
+    url: 'https://jufadedd.booksy.com/a/',
+    // Booksy doesn't offer a clean inline embed, so this stays false (button/link
+    // hand-off). If you get a Booksy "Book Now" widget snippet later, tell me and
+    // I'll wire the overlay instead.
     embed: false,
     embedUrl: '',
     cancellationPolicy:
