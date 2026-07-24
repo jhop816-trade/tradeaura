@@ -29,29 +29,26 @@ export const site = {
       'A 10-minute grace period is included. After 15 minutes the appointment is marked as a no-show and the chair goes to the next client.',
   },
 
-  // REPLACE: your real contact + social links
   contact: {
     instagram: 'https://instagram.com/Ju_Fadedd',
     instagramHandle: '@Ju_Fadedd',
-    phone: '(555) 555-5555', // REPLACE
-    email: 'book@jufade.com', // REPLACE
+    phone: '(954) 261-7884',
+    email: 'book@jufade.com', // REPLACE with your real email (or tell me to remove it)
   },
 
-  // REPLACE: your real suite address + hours + parking
   location: {
     suiteName: 'JuFade Private Suite',
-    addressLine1: '123 Main Street, Suite 12', // REPLACE
-    addressLine2: 'Your City, ST 00000', // REPLACE
-    // REPLACE: paste your address into this query for the embedded map
-    mapQuery: '123 Main Street Suite 12 Your City ST 00000',
-    parking: 'Free parking directly in front of the building. Rear lot available on weekends.', // REPLACE
+    addressLine1: '146 E McNab Road',
+    addressLine2: 'Pompano Beach, FL 33060',
+    mapQuery: '146 E McNab Road Pompano Beach FL 33060',
+    parking: 'Free parking on-site.', // REPLACE if you want to add detail
     hours: [
-      { day: 'Monday', hours: '9:00 AM – 7:00 PM' },
-      { day: 'Tuesday', hours: '9:00 AM – 7:00 PM' },
-      { day: 'Wednesday', hours: '9:00 AM – 7:00 PM' },
-      { day: 'Thursday', hours: '9:00 AM – 8:00 PM' },
-      { day: 'Friday', hours: '8:00 AM – 8:00 PM' },
-      { day: 'Saturday', hours: '8:00 AM – 6:00 PM' },
+      { day: 'Monday', hours: '10:00 AM – 8:00 PM' },
+      { day: 'Tuesday', hours: '10:00 AM – 8:00 PM' },
+      { day: 'Wednesday', hours: '10:00 AM – 8:00 PM' },
+      { day: 'Thursday', hours: '10:00 AM – 8:00 PM' },
+      { day: 'Friday', hours: '10:00 AM – 8:00 PM' },
+      { day: 'Saturday', hours: '10:00 AM – 9:00 PM' },
       { day: 'Sunday', hours: 'Closed' },
     ],
   },
@@ -160,7 +157,7 @@ export const site = {
 
   // Suite experience highlights — photos go in public/images/suite/
   suite: {
-    photos: ['', '', '', ''], // REPLACE e.g. '/images/suite/chair.jpg'
+    photos: ['/images/suite/suite-01.jpg', '/images/suite/suite-02.jpg'], // add more anytime
     highlights: [
       { title: 'Private, one-on-one', text: 'The suite is yours for the whole appointment. No walk-ins, no audience.' },
       { title: 'Clean, every time', text: 'Fresh capes, sanitized tools, and a spotless chair for every single client.' },
@@ -174,7 +171,7 @@ export const site = {
     title: 'JuFade | Premium Private Suite Barber',
     description:
       'JuFade is a premium private-suite barber experience. Skin fades, tapers, beard sculpting, and designs — one-on-one appointments, no waiting room. Book your next cut today.',
-    city: 'Your City', // REPLACE
+    city: 'Pompano Beach', // REPLACE if different
     region: 'FL', // REPLACE with your state (Broward County noted from reviews)
     url: 'https://jufade.com', // REPLACE with your real domain
   },

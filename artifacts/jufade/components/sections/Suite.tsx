@@ -15,23 +15,19 @@ export function Suite() {
         intro="No waiting room. No crowd. The whole space is set up for one client at a time."
       />
 
-      {/* Suite photo grid — REPLACE photos at config/site.ts → suite.photos */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {/* Suite photo grid — add more at config/site.ts → suite.photos */}
+      <div className="grid gap-4 sm:grid-cols-2">
         {site.suite.photos.map((src, i) => (
-          <Reveal key={i} delay={i * 0.08} className={i % 3 === 0 ? 'md:row-span-2' : ''}>
-            <div
-              className={`photo-placeholder group relative overflow-hidden rounded-xl border border-line ${
-                i % 3 === 0 ? 'aspect-[3/4] md:h-full md:aspect-auto' : 'aspect-square'
-              }`}
-            >
+          <Reveal key={i} delay={i * 0.08}>
+            <div className="photo-placeholder group relative aspect-[4/5] overflow-hidden rounded-xl border-2 border-line transition-colors hover:border-gold">
               {src ? (
                 <Image
                   src={src}
                   alt={`JuFade private suite — photo ${i + 1}`}
                   fill
                   loading="lazy"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-108"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center p-4">
