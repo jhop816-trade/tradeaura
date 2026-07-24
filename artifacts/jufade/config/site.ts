@@ -104,18 +104,35 @@ export const site = {
   // and set `src` to e.g. '/images/work/fade-01.jpg'. While src is '', a
   // styled placeholder tile renders instead so the layout never breaks.
   portfolio: [
-    { title: 'Mid Skin Fade', category: 'fades', src: '', tall: true },
-    { title: 'Clean Taper', category: 'tapers', src: '', tall: false },
-    { title: 'Beard Sculpt', category: 'beard', src: '', tall: false },
-    { title: 'Freestyle Design', category: 'designs', src: '', tall: true },
-    { title: 'High Fade + Part', category: 'fades', src: '', tall: false },
-    { title: 'Kids’ Fade', category: 'kids', src: '', tall: false },
-    { title: 'Drop Fade', category: 'fades', src: '', tall: true },
-    { title: 'Taper + Waves', category: 'tapers', src: '', tall: false },
-    { title: 'Full Beard Lineup', category: 'beard', src: '', tall: false },
-    { title: 'Burst Fade Design', category: 'designs', src: '', tall: false },
-    { title: 'First Cut', category: 'kids', src: '', tall: true },
-    { title: 'Low Taper', category: 'tapers', src: '', tall: false },
+    { title: 'Twists + Taper', category: 'tapers', src: '/images/work/cut-01.jpg', tall: true },
+    { title: 'Curly Taper', category: 'tapers', src: '/images/work/cut-02.jpg', tall: true },
+    { title: 'Sponge Twist Fade', category: 'fades', src: '/images/work/cut-03.jpg', tall: false },
+    { title: 'Loc Taper', category: 'tapers', src: '/images/work/cut-04.jpg', tall: true },
+    { title: 'Twist-Out Fade', category: 'tapers', src: '/images/work/cut-05.jpg', tall: true },
+    { title: 'Low Fade', category: 'fades', src: '/images/work/cut-06.jpg', tall: false },
+    { title: 'Waves + Lineup', category: 'fades', src: '/images/work/cut-07.jpg', tall: true },
+    { title: 'Beard Detail', category: 'beard', src: '/images/work/cut-08.jpg', tall: true },
+    { title: 'Curly Top Fade', category: 'tapers', src: '/images/work/cut-09.jpg', tall: false },
+    { title: 'Bald Fade', category: 'fades', src: '/images/work/cut-10.jpg', tall: true },
+    { title: 'Loc Lineup', category: 'designs', src: '/images/work/cut-11.jpg', tall: true },
+    { title: 'Beard Blend', category: 'beard', src: '/images/work/cut-12.jpg', tall: false },
+    { title: 'Sponge Drop Fade', category: 'fades', src: '/images/work/cut-13.jpg', tall: true },
+    { title: 'High Top + Lineup', category: 'tapers', src: '/images/work/cut-14.jpg', tall: true },
+    { title: 'Twist Burst Fade', category: 'tapers', src: '/images/work/cut-15.jpg', tall: false },
+    { title: 'Clean Low Fade', category: 'fades', src: '/images/work/cut-16.jpg', tall: true },
+    { title: 'Waves Fade', category: 'fades', src: '/images/work/cut-17.jpg', tall: true },
+    { title: 'Full Beard Sculpt', category: 'beard', src: '/images/work/cut-18.jpg', tall: false },
+    { title: 'Freeform Locs', category: 'tapers', src: '/images/work/cut-19.jpg', tall: true },
+    { title: 'Braid Design', category: 'designs', src: '/images/work/cut-20.jpg', tall: true },
+    { title: 'Twist Taper', category: 'tapers', src: '/images/work/cut-21.jpg', tall: false },
+    { title: 'Kids’ First Cut', category: 'kids', src: '/images/work/cut-22.jpg', tall: true },
+    { title: 'Fade + Beard', category: 'fades', src: '/images/work/cut-23.jpg', tall: true },
+    { title: 'Textured Mullet', category: 'tapers', src: '/images/work/cut-24.jpg', tall: false },
+    { title: 'Low Fade Lineup', category: 'fades', src: '/images/work/cut-25.jpg', tall: true },
+    { title: 'Curly High Top', category: 'fades', src: '/images/work/cut-26.jpg', tall: true },
+    { title: 'Mullet Taper', category: 'tapers', src: '/images/work/cut-27.jpg', tall: false },
+    { title: 'Fade + Lineup', category: 'fades', src: '/images/work/cut-28.jpg', tall: true },
+    { title: 'Braids + Design', category: 'designs', src: '/images/work/cut-29.jpg', tall: true },
   ] as PortfolioItem[],
 
   // REPLACE: before/after pairs. Drop photos in public/images/work/ and set paths.
@@ -125,16 +142,20 @@ export const site = {
     label: 'Skin fade transformation',
   },
 
-  // REPLACE: your real 5-star reviews (copy them from Google/Booksy).
-  // Set photo to '/images/reviews/name.jpg' if the client is cool with it, or
-  // leave '' for a clean initials avatar.
+  // Real 5-star reviews pulled from Booksy (JuFade: 5.0 · 57 reviews).
+  // Add/replace anytime; set photo to '/images/reviews/name.jpg' or leave '' for
+  // a clean initials avatar.
+  reviewStats: { rating: '5.0', count: 57, source: 'Booksy' },
   reviews: [
-    { name: 'Marcus T.', text: 'Cleanest fade I’ve ever had. The private suite is a different experience — no waiting around, just straight to the chair.', photo: '' },
-    { name: 'Devon R.', text: 'Been going to Ju for a year. Never had to fix a single lineup after. Books up fast for a reason.', photo: '' },
-    { name: 'Chris M.', text: 'Took my son for his first real cut. Patient, professional, and the fade was crazy. We’re both clients now.', photo: '' },
-    { name: 'Andre W.', text: 'The beard work is on another level. Hot towel, razor finish, walked out feeling brand new.', photo: '' },
-    { name: 'Jalen P.', text: 'Suite is spotless, music is right, and the cut speaks for itself. Worth every dollar.', photo: '' },
-    { name: 'Tony S.', text: 'Booked the haircut + beard before a wedding. Got more compliments on the cut than the suit.', photo: '' },
+    { name: 'Devon W.', text: '10 outta 10!! Knows how to cut, he’s clean, good music, good vibes. Went off a recommendation — and I recommend him to y’all! 🔥🔥', photo: '' },
+    { name: 'Renaldo F.', text: 'Blending skills are top-tier. Made the impossible, POSSIBLE! People’s person.', photo: '' },
+    { name: 'Maxwell S.', text: 'Quality haircuts anytime you can book with him. Fades, blowouts, simple lineups always come out top notch.', photo: '' },
+    { name: 'C. H.', text: 'The shop is welcoming and the service is always top-notch. My son leaves feeling confident after every visit. Highly recommend — and the prices are good. 👍🏽', photo: '' },
+    { name: 'Kobe F.', text: 'I go to him on the regular. Pays attention to detail. HIGHLY RECOMMENDED.', photo: '' },
+    { name: 'Ruby A.', text: 'Best barber in Broward — check him out, you won’t be disappointed. 💯💯', photo: '' },
+    { name: 'Kevin T.', text: 'After I get my cut, I run errands just so I can show off my haircut.', photo: '' },
+    { name: 'Anne R.', text: '10/10 the best!!!! Great cut, excellent service — best barber my son has gone to.', photo: '' },
+    { name: 'Moi T.', text: 'Best barber — any style you need, he can achieve.', photo: '' },
   ] as ReviewItem[],
 
   // Suite experience highlights — photos go in public/images/suite/
@@ -154,7 +175,7 @@ export const site = {
     description:
       'JuFade is a premium private-suite barber experience. Skin fades, tapers, beard sculpting, and designs — one-on-one appointments, no waiting room. Book your next cut today.',
     city: 'Your City', // REPLACE
-    region: 'ST', // REPLACE
+    region: 'FL', // REPLACE with your state (Broward County noted from reviews)
     url: 'https://jufade.com', // REPLACE with your real domain
   },
 }
