@@ -74,23 +74,21 @@ export const site = {
   about: {
     intro:
       "I'm Ju — the barber behind JuFade. Every cut happens one-on-one in my private suite: no crowd, no waiting room, no rushing. Just you, the chair, and a cut that's sharp when you leave and still sharp two weeks later.",
-    // Set this to your real number and the About stat becomes "N+ years behind
-    // the chair". While it's null, the site shows your verified 5.0 Booksy
-    // rating there instead — true, and frankly more convincing than a year count.
-    years: null as number | null,
+    // Years behind the chair. Shown alongside the verified Booksy rating.
+    years: 4.5 as number | null,
     specialties: ['Skin Fades', 'Tapers', 'Beard Sculpting', 'Freestyle Designs', 'Kids’ Cuts'],
     photo: '/images/barber.jpg',
   },
 
-  // REPLACE: prices with your real prices (all placeholders)
+  // Real prices as given by Ju. `duration` is optional and left off on purpose —
+  // it isn't shown unless a real length is filled in, so nothing is invented.
   services: [
-    { name: 'Haircut', price: 45, duration: '45 min', description: 'Full cut, fade or taper, styled and finished.', featured: true },
-    { name: 'Haircut + Beard', price: 60, duration: '60 min', description: 'The full reset. Cut plus a sculpted, lined beard.', featured: true },
-    { name: 'Kids’ Haircut', price: 35, duration: '30 min', description: 'Ages 12 and under. Patient, clean, parent-approved.', featured: false },
-    { name: 'Lineup', price: 25, duration: '20 min', description: 'Edge-up and touch-up between full cuts.', featured: false },
-    { name: 'Beard Service', price: 30, duration: '30 min', description: 'Shape, line, hot lather razor finish.', featured: false },
-    { name: 'Enhancements', price: 15, duration: '10 min', description: 'Hairline and beard enhancement for extra definition.', featured: false },
-    { name: 'Facial Add-On', price: 25, duration: '20 min', description: 'Steam towel, black mask, and moisturizer finish.', featured: false },
+    { name: 'Haircut', price: 40, description: 'Any style — fades, brush cuts, tapers. Cut, lined, and finished.', featured: true },
+    { name: 'VIP', price: 100, description: 'The full experience — cut plus a steam facial.', featured: true },
+    { name: 'Teen Cut', price: 30, description: 'Same cut, teen pricing.', featured: false },
+    { name: 'Child Cut', price: 25, description: 'Same cut, kids’ pricing.', featured: false },
+    { name: 'Tape Up & Shave', price: 25, description: 'Edge-up and shave between full cuts.', featured: false },
+    { name: 'House Call', price: 120, description: 'I come to you.', featured: false },
   ] as ServiceItem[],
 
   // Cards shown in the cinematic "The Book Is Open" beat.
@@ -190,7 +188,8 @@ export const site = {
 export type ServiceItem = {
   name: string
   price: number
-  duration: string
+  /** Optional — only rendered when set, so no appointment length is invented. */
+  duration?: string
   description: string
   featured: boolean
 }

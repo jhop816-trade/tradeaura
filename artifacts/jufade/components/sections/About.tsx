@@ -46,28 +46,23 @@ export function About() {
             <p className="text-lg leading-relaxed text-smoke">{site.about.intro}</p>
           </Reveal>
           <Reveal delay={0.2}>
-            <div className="flex items-center gap-6 rounded-2xl border border-line bg-panel/50 p-6">
+            <div className="grid gap-3 sm:grid-cols-2">
               {site.about.years ? (
-                <>
-                  <p className="display text-6xl text-chrome-gradient">{site.about.years}+</p>
-                  <div>
-                    <p className="font-semibold text-frost">Years behind the chair</p>
-                    <p className="text-sm text-smoke">Cutting since day one — private suite by choice.</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="display text-6xl text-gold">{site.reviewStats.rating}</p>
-                  <div>
-                    <p className="font-semibold text-frost">
-                      {site.reviewStats.count} five-star reviews
-                    </p>
-                    <p className="text-sm text-smoke">
-                      Verified on {site.reviewStats.source} — not a single rating under five.
-                    </p>
-                  </div>
-                </>
-              )}
+                <div className="rounded-2xl border border-line bg-panel/50 p-6">
+                  <p className="display text-5xl text-chrome-gradient">{site.about.years}</p>
+                  <p className="mt-2 font-semibold text-frost">Years behind the chair</p>
+                  <p className="text-sm text-smoke">Private suite by choice.</p>
+                </div>
+              ) : null}
+              <div className="rounded-2xl border border-line bg-panel/50 p-6">
+                <p className="display text-5xl text-gold">{site.reviewStats.rating}</p>
+                <p className="mt-2 font-semibold text-frost">
+                  {site.reviewStats.count} five-star reviews
+                </p>
+                <p className="text-sm text-smoke">
+                  Verified on {site.reviewStats.source}.
+                </p>
+              </div>
             </div>
           </Reveal>
           <Reveal delay={0.3}>

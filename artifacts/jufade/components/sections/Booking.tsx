@@ -57,7 +57,7 @@ export function Booking() {
               <div className="mt-6 flex items-baseline justify-between border-t-2 border-dashed border-line pt-5">
                 <div>
                   <p className="display text-2xl text-frost">{selected.name}</p>
-                  <p className="text-sm text-smoke">{selected.duration}</p>
+                  <p className="text-sm text-smoke">{selected.duration ?? selected.description}</p>
                 </div>
                 <span className="price-tag text-2xl">${selected.price}</span>
               </div>

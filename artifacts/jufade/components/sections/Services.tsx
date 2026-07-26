@@ -38,7 +38,8 @@ export function Services() {
                   {s.name}
                 </h3>
                 <p className="mt-1 text-sm text-smoke">
-                  {s.duration} · {s.description}
+                  {s.duration ? `${s.duration} · ` : ''}
+                  {s.description}
                 </p>
               </div>
               {/* REPLACE: prices live at config/site.ts → services */}

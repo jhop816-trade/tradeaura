@@ -12,6 +12,22 @@ pnpm --filter @workspace/jufade dev    # http://localhost:3004
 pnpm --filter @workspace/jufade build  # production build
 ```
 
+## Deploy
+
+This site deploys as its **own** project from this repo. The repo-root
+`netlify.toml` belongs to `car-rentals` — don't repoint it, or that site goes
+down. Create a new site instead:
+
+**Vercel** — New Project → import this repo → set **Root Directory** to
+`artifacts/jufade`. It picks up `vercel.json` from there; no other setup needed.
+
+**Netlify** — Add new site → import this repo → set **Base directory** to
+`artifacts/jufade`. It reads `artifacts/jufade/netlify.toml`, which already sets
+the build command and the `@netlify/plugin-nextjs` plugin.
+
+After the first deploy, point `seo.url` in `config/site.ts` at the real domain —
+the share card, sitemap, canonical URL, and JSON-LD all build their URLs from it.
+
 ## Make it yours — everything lives in `config/site.ts`
 
 Open **`config/site.ts`** and search for `REPLACE`. That one file controls:
