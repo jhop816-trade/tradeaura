@@ -23,17 +23,23 @@ export const site = {
     // I'll wire the overlay instead.
     embed: false,
     embedUrl: '',
+    // ⚠️ CONFIRM THESE. These are deliberately non-specific because I don't know
+    // your actual rules. If you charge a late-cancel fee, take deposits, or have
+    // a hard grace period, tell me the real numbers and I'll state them exactly.
+    // Whatever you set in Booksy is what actually gets enforced at booking.
     cancellationPolicy:
-      'Cancel or reschedule at least 24 hours before your appointment. Late cancellations are charged 50% of the service.',
+      'Life happens — just cancel or reschedule through Booksy as early as you can so the slot can go to someone else. Any deposit or cancellation terms are shown when you book.',
     latePolicy:
-      'A 10-minute grace period is included. After 15 minutes the appointment is marked as a no-show and the chair goes to the next client.',
+      'Running late? Call or text and I’ll tell you if the slot still works. Show up too late and we may have to rebook, since the next client is already on the clock.',
   },
 
   contact: {
     instagram: 'https://instagram.com/Ju_Fadedd',
     instagramHandle: '@Ju_Fadedd',
     phone: '(954) 261-7884',
-    email: 'book@jufade.com', // REPLACE with your real email (or tell me to remove it)
+    // Leave '' to hide the email icon entirely. Only put a real inbox here —
+    // a made-up address silently loses clients when their mail bounces.
+    email: '',
   },
 
   location: {
@@ -68,7 +74,10 @@ export const site = {
   about: {
     intro:
       "I'm Ju — the barber behind JuFade. Every cut happens one-on-one in my private suite: no crowd, no waiting room, no rushing. Just you, the chair, and a cut that's sharp when you leave and still sharp two weeks later.",
-    years: 8, // REPLACE with your years of experience
+    // Set this to your real number and the About stat becomes "N+ years behind
+    // the chair". While it's null, the site shows your verified 5.0 Booksy
+    // rating there instead — true, and frankly more convincing than a year count.
+    years: null as number | null,
     specialties: ['Skin Fades', 'Tapers', 'Beard Sculpting', 'Freestyle Designs', 'Kids’ Cuts'],
     // REPLACE: drop your professional photo at public/images/barber.jpg and
     // set this to '/images/barber.jpg'. While '' a styled placeholder shows.
@@ -86,15 +95,16 @@ export const site = {
     { name: 'Facial Add-On', price: 25, duration: '20 min', description: 'Steam towel, black mask, and moisturizer finish.', featured: false },
   ] as ServiceItem[],
 
-  // Placeholder next-available slots shown in the floating appointment cards.
-  // These are just visuals to create urgency — real availability lives on your
-  // booking platform. REPLACE with times that look like your real book.
-  sampleSlots: [
-    { day: 'Today', time: '4:30 PM', tag: 'Last one today' },
-    { day: 'Tomorrow', time: '10:00 AM', tag: 'Morning slot' },
-    { day: 'Tomorrow', time: '2:15 PM', tag: '' },
-    { day: 'Friday', time: '11:45 AM', tag: 'Going fast' },
-    { day: 'Saturday', time: '9:00 AM', tag: 'Weekend' },
+  // Cards shown in the cinematic "The Book Is Open" beat.
+  // These state your REAL schedule — not invented open slots. (Faking specific
+  // times like "Today 4:30 — last one!" reads as pressure-selling and burns
+  // trust the moment someone opens Booksy and sees different availability.)
+  scheduleCards: [
+    { day: 'Mon – Fri', time: '10a – 8p', tag: 'Open' },
+    { day: 'Saturday', time: '10a – 9p', tag: 'Late nights' },
+    { day: 'Sunday', time: 'Closed', tag: '' },
+    { day: 'Book online', time: '24 / 7', tag: 'Booksy' },
+    { day: 'Private suite', time: '1 at a time', tag: 'By appointment' },
   ],
 
   // REPLACE: portfolio items. Drop real photos into public/images/work/

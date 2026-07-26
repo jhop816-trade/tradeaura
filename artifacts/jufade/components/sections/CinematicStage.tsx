@@ -134,10 +134,10 @@ export function CinematicStage() {
           style={{ opacity: 0, visibility: 'hidden' }}
           className="absolute inset-0 flex flex-col items-center justify-center px-5 will-change-[opacity,transform]"
         >
-          <span className="poster-tag">This Week</span>
+          <span className="poster-tag">The Schedule</span>
           <h2 className="display mt-4 text-center text-4xl text-frost sm:text-6xl">The Book Is Open</h2>
           <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            {site.sampleSlots.map((slot, i) => (
+            {site.scheduleCards.map((slot, i) => (
               <motion.a
                 key={`${slot.day}-${slot.time}`}
                 href={site.booking.url}
@@ -155,7 +155,7 @@ export function CinematicStage() {
               </motion.a>
             ))}
           </div>
-          <p className="mt-6 text-xs text-smoke/80">Live availability is on the booking page — these go fast.</p>
+          <p className="mt-6 text-xs text-smoke/80">Tap any card to see live openings on Booksy.</p>
         </div>
 
         {/* Phase 4 — framed work teaser */}

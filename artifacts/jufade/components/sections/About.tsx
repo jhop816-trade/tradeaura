@@ -47,11 +47,27 @@ export function About() {
           </Reveal>
           <Reveal delay={0.2}>
             <div className="flex items-center gap-6 rounded-2xl border border-line bg-panel/50 p-6">
-              <p className="display text-6xl text-chrome-gradient">{site.about.years}+</p>
-              <div>
-                <p className="font-semibold text-frost">Years behind the chair</p>
-                <p className="text-sm text-smoke">Cutting since day one — private suite by choice.</p>
-              </div>
+              {site.about.years ? (
+                <>
+                  <p className="display text-6xl text-chrome-gradient">{site.about.years}+</p>
+                  <div>
+                    <p className="font-semibold text-frost">Years behind the chair</p>
+                    <p className="text-sm text-smoke">Cutting since day one — private suite by choice.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="display text-6xl text-gold">{site.reviewStats.rating}</p>
+                  <div>
+                    <p className="font-semibold text-frost">
+                      {site.reviewStats.count} five-star reviews
+                    </p>
+                    <p className="text-sm text-smoke">
+                      Verified on {site.reviewStats.source} — not a single rating under five.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </Reveal>
           <Reveal delay={0.3}>

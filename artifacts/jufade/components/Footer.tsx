@@ -28,9 +28,11 @@ export function Footer() {
           <a href={`tel:${site.contact.phone.replace(/\D/g, '')}`} aria-label="Call JuFade" className="text-smoke transition-colors hover:text-gold">
             <Phone size={20} />
           </a>
-          <a href={`mailto:${site.contact.email}`} aria-label="Email JuFade" className="text-smoke transition-colors hover:text-gold">
-            <Mail size={20} />
-          </a>
+          {site.contact.email ? (
+            <a href={`mailto:${site.contact.email}`} aria-label="Email JuFade" className="text-smoke transition-colors hover:text-gold">
+              <Mail size={20} />
+            </a>
+          ) : null}
         </div>
         <p className="text-xs text-smoke/70">
           © {new Date().getFullYear()} {site.name}. {site.location.addressLine2}

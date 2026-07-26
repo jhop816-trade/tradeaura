@@ -7,26 +7,24 @@ import { SectionHeading } from '@/components/ui/SectionHeading'
 import { Reveal } from '@/components/ui/Reveal'
 import { openBooking } from '@/lib/analytics'
 
-const days = ['Today', 'Tomorrow', 'Wed', 'Thu', 'Fri', 'Sat']
-const times = ['9:00 AM', '10:30 AM', '12:00 PM', '2:15 PM', '4:30 PM', '6:00 PM']
-
 /**
- * Mobile-first booking flow. The picker below is a quick-select that hands off
- * to the real booking platform (config/site.ts → booking.url). If your
- * platform provides an embeddable widget, set booking.embed = true and paste
- * the widget URL in booking.embedUrl — it will render in place of the picker.
+ * Mobile-first booking hand-off. Pick a service here, then finish on Booksy
+ * where the real calendar and payment live (config/site.ts → booking.url).
+ *
+ * Deliberately does NOT show day/time chips: this page has no access to the
+ * Booksy calendar, so any times rendered here would be invented — and a client
+ * who picks "2:15 PM" only to find it was never available loses trust instantly.
  */
 export function Booking() {
   const [service, setService] = useState(site.services[0].name)
-  const [day, setDay] = useState(days[0])
-  const [time, setTime] = useState(times[3])
+  const selected = site.services.find((s) => s.name === service) ?? site.services[0]
 
   return (
     <section id="booking" className="relative mx-auto max-w-6xl px-5 py-28">
       <SectionHeading
         kicker="Booking"
         title="Lock in the chair"
-        intro="Pick a service and a time that works — you'll finish the booking on my booking page in under a minute."
+        intro="Pick your service, then grab a live time on Booksy — takes under a minute."
         align="center"
       />
 
@@ -44,8 +42,8 @@ export function Booking() {
           </Reveal>
         ) : (
           <Reveal>
-            <div className="rounded-3xl border border-line bg-panel/60 p-6 backdrop-blur sm:p-8">
-              <Step label="1 · Service">
+            <div className="rounded-3xl border-2 border-line bg-panel/60 p-6 backdrop-blur sm:p-8">
+              <Step label="Choose your service">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {site.services.map((s) => (
                     <Chip key={s.name} active={service === s.name} onClick={() => setService(s.name)}>
@@ -55,34 +53,24 @@ export function Booking() {
                   ))}
                 </div>
               </Step>
-              <Step label="2 · Day">
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {days.map((d) => (
-                    <Chip key={d} active={day === d} onClick={() => setDay(d)}>
-                      {d}
-                    </Chip>
-                  ))}
+
+              <div className="mt-6 flex items-baseline justify-between border-t-2 border-dashed border-line pt-5">
+                <div>
+                  <p className="display text-2xl text-frost">{selected.name}</p>
+                  <p className="text-sm text-smoke">{selected.duration}</p>
                 </div>
-              </Step>
-              <Step label="3 · Time">
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {times.map((t) => (
-                    <Chip key={t} active={time === t} onClick={() => setTime(t)}>
-                      {t}
-                    </Chip>
-                  ))}
-                </div>
-              </Step>
+                <span className="price-tag text-2xl">${selected.price}</span>
+              </div>
 
               <button
                 type="button"
                 onClick={() => openBooking('booking-section')}
-                className="glow-gold mt-8 w-full rounded-full bg-frost py-5 text-sm font-bold uppercase tracking-[0.2em] text-ink transition-colors hover:bg-gold hover:text-frost"
+                className="display glow-gold mt-6 w-full bg-gold py-5 text-xl uppercase tracking-[0.03em] text-ink shadow-[4px_4px_0_#000] transition-colors hover:bg-frost"
               >
-                Book Now — {service} · {day} · {time}
+                See Live Times & Book
               </button>
               <p className="mt-3 text-center text-xs text-smoke/70">
-                You'll confirm the exact slot on the booking page.
+                Opens Booksy — pick your day and time there, and pay if a deposit is required.
               </p>
             </div>
           </Reveal>
