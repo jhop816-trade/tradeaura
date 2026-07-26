@@ -41,7 +41,9 @@ export function BeforeAfterSlider() {
       }}
       onPointerMove={(e) => dragging.current && updateFromClientX(e.clientX)}
       onPointerUp={() => (dragging.current = false)}
-      className="relative aspect-[16/10] w-full cursor-ew-resize touch-pan-y select-none overflow-hidden rounded-2xl border border-line"
+      // Portrait frame: barber shots are shot vertically, so a wide box would
+      // crop the fade line and beard right out of view.
+      className="relative mx-auto aspect-[4/5] w-full max-w-lg cursor-ew-resize touch-pan-y select-none overflow-hidden rounded-2xl border-2 border-line"
     >
       {/* AFTER side (full) */}
       <div className="photo-placeholder absolute inset-0">

@@ -79,9 +79,7 @@ export const site = {
     // rating there instead — true, and frankly more convincing than a year count.
     years: null as number | null,
     specialties: ['Skin Fades', 'Tapers', 'Beard Sculpting', 'Freestyle Designs', 'Kids’ Cuts'],
-    // REPLACE: drop your professional photo at public/images/barber.jpg and
-    // set this to '/images/barber.jpg'. While '' a styled placeholder shows.
-    photo: '',
+    photo: '/images/barber.jpg',
   },
 
   // REPLACE: prices with your real prices (all placeholders)
@@ -140,13 +138,15 @@ export const site = {
     { title: 'Mullet Taper', category: 'tapers', src: '/images/work/cut-27.jpg', tall: false },
     { title: 'Fade + Lineup', category: 'fades', src: '/images/work/cut-28.jpg', tall: true },
     { title: 'Braids + Design', category: 'designs', src: '/images/work/cut-29.jpg', tall: true },
+    { title: 'Fade + Lineup', category: 'fades', src: '/images/work/cut-30.jpg', tall: true },
   ] as PortfolioItem[],
 
-  // REPLACE: before/after pairs. Drop photos in public/images/work/ and set paths.
+  // Before/after pair. To swap in another, drop both shots in public/images/work/
+  // and point these at them — shoot the pair from the same angle so it wipes cleanly.
   beforeAfter: {
-    before: '', // e.g. '/images/work/before-01.jpg'
-    after: '', // e.g. '/images/work/after-01.jpg'
-    label: 'Skin fade transformation',
+    before: '/images/work/before-01.jpg',
+    after: '/images/work/after-01.jpg',
+    label: 'Cut + beard sculpt transformation',
   },
 
   // Real 5-star reviews pulled from Booksy (JuFade: 5.0 · 57 reviews).
