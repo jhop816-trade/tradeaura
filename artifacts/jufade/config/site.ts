@@ -59,14 +59,14 @@ export const site = {
     ],
   },
 
-  // REPLACE: your Google Ads + Analytics IDs to track ad performance.
-  // 1. Google Ads tag ID looks like "AW-123456789"
-  // 2. Conversion label comes from your "Book appointment" conversion action,
-  //    it looks like "AbCdEfGhIjK-D12345678"
-  // Leave empty ('') to disable tracking until you have them.
+  // Google Ads + Analytics.
+  // googleAdsId — the Google tag from Ads → Tools → Data manager → Google tag.
+  // conversionLabel — created separately under Goals → Conversions. Until it's
+  // filled in, the tag still loads and collects traffic, and every Book click
+  // fires a `book_click` event, but no Ads *conversion* is counted.
   analytics: {
-    googleAdsId: '', // REPLACE e.g. 'AW-123456789'
-    conversionLabel: '', // REPLACE e.g. 'AbCdEfGhIjK-D12345678'
+    googleAdsId: 'AW-18095937011',
+    conversionLabel: '', // NEEDED: the part after the slash in `send_to`
     ga4Id: '', // OPTIONAL e.g. 'G-XXXXXXXXXX'
   },
 
