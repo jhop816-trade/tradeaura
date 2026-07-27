@@ -181,7 +181,10 @@ export const site = {
       'JuFade is a premium private-suite barber experience. Skin fades, tapers, beard sculpting, and designs — one-on-one appointments, no waiting room. Book your next cut today.',
     city: 'Pompano Beach', // REPLACE if different
     region: 'FL', // REPLACE with your state (Broward County noted from reviews)
-    url: 'https://jufade.com', // REPLACE with your real domain
+    // The live domain. Canonical URL, sitemap, share card, and JSON-LD all build
+    // from this — if the site ends up on a different host (e.g. a .vercel.app
+    // subdomain), point this at whatever URL clients actually visit.
+    url: 'https://jufaded.com',
   },
 }
 
