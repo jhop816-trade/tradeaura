@@ -153,3 +153,29 @@ values
     'mercedes-cla-35-amg'
   )
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- Phase 2: owner-managed blackout dates + availability indexes
+-- ============================================================
+
+create table if not exists vehicle_blackouts (
+  id         uuid primary key default gen_random_uuid(),
+  vehicle_id uuid references vehicles(id) on delete cascade not null,
+  start_date date not null,
+  end_date   date not null,
+  reason     text not null default '',
+  created_at timestamptz not null default now(),
+  constraint blackout_dates_ordered check (end_date >= start_date)
+);
+
+alter table vehicle_blackouts enable row level security;
+
+-- Blackouts are read and written only through the service role (server-side).
+create policy "service role all blackouts" on vehicle_blackouts
+  for all to service_role using (true);
+
+-- Availability lookups filter by vehicle + overlapping date range.
+create index if not exists bookings_vehicle_dates_idx
+  on bookings (vehicle_id, start_date, end_date);
+create index if not exists blackouts_vehicle_dates_idx
+  on vehicle_blackouts (vehicle_id, start_date, end_date);

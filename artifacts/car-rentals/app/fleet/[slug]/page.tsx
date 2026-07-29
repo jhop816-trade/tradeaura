@@ -2,14 +2,23 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getBlockedRanges } from '@/lib/availability'
 import PhotoCarousel from '@/components/PhotoCarousel'
-import type { Vehicle } from '@/types'
+import AvailabilityPreview from '@/components/AvailabilityPreview'
+import type { DateRangeRow, Vehicle } from '@/types'
 
 async function getVehicle(slug: string): Promise<Vehicle | null> {
   try {
     const supabase = await createServiceClient()
     const { data } = await supabase.from('vehicles').select('*').eq('slug', slug).eq('active', true).single()
     return data
+  } catch { return null }
+}
+
+async function getBlocked(vehicleId: string): Promise<DateRangeRow[] | null> {
+  try {
+    const supabase = await createServiceClient()
+    return await getBlockedRanges(supabase, vehicleId)
   } catch { return null }
 }
 
@@ -24,6 +33,8 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params
   const vehicle = await getVehicle(slug)
   if (!vehicle) notFound()
+
+  const blockedRanges = await getBlocked(vehicle.id)
 
   return (
     <div className="bg-black min-h-screen pt-[76px]">
@@ -69,6 +80,23 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Availability */}
+        <div className="mt-20 pt-16 border-t border-white/6">
+          <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Availability</p>
+          <h2 className="font-playfair font-bold text-3xl text-white mb-3">When You Can Take It</h2>
+          <p className="text-white/40 text-sm max-w-lg leading-relaxed mb-8">
+            Greyed-out days are already booked or blocked for maintenance. Pick your dates on the booking page
+            and I&apos;ll confirm pickup details personally.
+          </p>
+          {blockedRanges === null ? (
+            <p className="text-white/40 text-sm">
+              Availability isn&apos;t loading right now — call or text and I&apos;ll check the calendar for you.
+            </p>
+          ) : (
+            <AvailabilityPreview blockedRanges={blockedRanges} />
+          )}
         </div>
 
         {/* What's Included */}

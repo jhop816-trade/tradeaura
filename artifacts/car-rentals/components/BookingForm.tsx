@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { parseISO } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
 import type { Vehicle } from '@/types'
 import BookingCalendar from './BookingCalendar'
@@ -8,12 +9,18 @@ import PricingSummary from './PricingSummary'
 interface Props {
   vehicles: Vehicle[]
   defaultVehicleSlug?: string
+  defaultStart?: string
+  defaultEnd?: string
 }
 
-export default function BookingForm({ vehicles, defaultVehicleSlug }: Props) {
+export default function BookingForm({ vehicles, defaultVehicleSlug, defaultStart, defaultEnd }: Props) {
   const defaultVehicle = vehicles.find(v => v.slug === defaultVehicleSlug) ?? vehicles[0]
   const [vehicleId, setVehicleId] = useState(defaultVehicle?.id ?? '')
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(
+    defaultStart && defaultEnd
+      ? { from: parseISO(defaultStart), to: parseISO(defaultEnd) }
+      : undefined
+  )
   const [bookedRanges, setBookedRanges] = useState<{ start_date: string; end_date: string }[]>([])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -152,7 +159,7 @@ export default function BookingForm({ vehicles, defaultVehicleSlug }: Props) {
         {loading ? 'Processing…' : 'Continue to Payment →'}
       </button>
       <p className="text-xs text-white/30 text-center">
-        You'll pay the deposit securely via Stripe. Balance is due at pickup.
+        You'll pay the rental total plus the refundable security deposit securely via Stripe.
       </p>
     </form>
   )

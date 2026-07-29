@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
+import { parseDateRange } from '@/lib/availability'
 import BookingForm from '@/components/BookingForm'
 import type { Vehicle } from '@/types'
 
@@ -16,9 +17,14 @@ async function getVehicles(): Promise<Vehicle[]> {
   } catch { return [] }
 }
 
-export default async function BookingPage({ searchParams }: { searchParams: Promise<{ vehicle?: string }> }) {
-  const { vehicle } = await searchParams
+export default async function BookingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ vehicle?: string; start?: string; end?: string }>
+}) {
+  const { vehicle, start, end } = await searchParams
   const vehicles = await getVehicles()
+  const range = parseDateRange(start, end)
 
   return (
     <div className="bg-black min-h-screen pt-[76px]">
@@ -26,7 +32,7 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
         <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#D4A853] mb-3">Reserve</p>
         <h1 className="font-playfair font-black text-5xl text-white leading-tight mb-4">Book a Vehicle</h1>
         <p className="text-white/40 text-[15px] leading-relaxed mb-6">
-          Select your vehicle, pick your dates, and pay the deposit online. I'll reach out personally to confirm pickup details.
+          Select your vehicle, pick your dates, and pay online. I'll reach out personally to confirm pickup details.
         </p>
 
         <div className="bg-[#D4A853]/10 border border-[#D4A853]/20 px-5 py-4 mb-10 text-sm text-[#D4A853]">
@@ -36,7 +42,12 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
         {vehicles.length === 0 ? (
           <p className="text-white/40">No vehicles available at this time. Please check back soon.</p>
         ) : (
-          <BookingForm vehicles={vehicles} defaultVehicleSlug={vehicle} />
+          <BookingForm
+            vehicles={vehicles}
+            defaultVehicleSlug={vehicle}
+            defaultStart={range?.start}
+            defaultEnd={range?.end}
+          />
         )}
       </div>
     </div>
