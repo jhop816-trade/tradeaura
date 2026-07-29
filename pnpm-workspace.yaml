@@ -1,0 +1,3 @@
+# SECURITY: npm packages must be at least 1 day old before pnpm installs them,
+# as a supply-chain safeguard. Do not set this to 0.
+minimumReleaseAge: 1440
