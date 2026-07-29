@@ -29,6 +29,18 @@ export interface Booking {
   vehicles?: Pick<Vehicle, 'name' | 'make' | 'model' | 'year'>
 }
 
+export interface DateRangeRow {
+  start_date: string
+  end_date: string
+}
+
+export interface Blackout extends DateRangeRow {
+  id: string
+  vehicle_id: string
+  reason: string
+  created_at: string
+}
+
 export interface Inquiry {
   id: string
   name: string
