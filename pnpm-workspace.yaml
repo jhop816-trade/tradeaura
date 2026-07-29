@@ -1,0 +1,14 @@
+# ============================================================================
+# SECURITY: Minimum release age for npm packages (supply-chain defence)
+# ============================================================================
+#
+# A package version must have been published for at least 1 day (1440 minutes)
+# before pnpm will install it. Malicious npm releases are typically discovered
+# and pulled within hours, so this delay is a meaningful safety buffer.
+#
+# DO NOT set this to 0. If you genuinely need a package inside the 1-day
+# window (an urgent security fix, say), add it to minimumReleaseAgeExclude
+# below and remove the exclusion once the window has passed.
+# ============================================================================
+
+minimumReleaseAge: 1440
