@@ -1,0 +1,13 @@
+# Netlify config for the JuFade site ONLY.
+#
+# This file is scoped to artifacts/jufade and is read when a Netlify site sets
+# its Base directory to `artifacts/jufade`. The repo-root netlify.toml still
+# builds car-rentals and is untouched by this — the two sites deploy
+# independently from the same repo.
+[build]
+  base = "artifacts/jufade"
+  command = "pnpm install --filter @workspace/jufade... && pnpm --filter @workspace/jufade run build"
+  publish = "artifacts/jufade/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -1,0 +1,32 @@
+{
+  "name": "@workspace/jufade",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3004",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.3.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "three": "^0.180.0",
+    "@react-three/fiber": "^9.0.0",
+    "@react-three/drei": "^10.0.0",
+    "gsap": "^3.13.0",
+    "framer-motion": "catalog:",
+    "lenis": "^1.3.0",
+    "lucide-react": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
+    "tailwindcss": "catalog:",
+    "typescript": "~5.9.3",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "^0.180.0"
+  }
+}
