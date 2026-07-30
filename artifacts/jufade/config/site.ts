@@ -16,8 +16,11 @@ export const site = {
   // client picks service/date/time and pays (if prepayment is enabled in Booksy).
   // NOTE: confirm this opens your booking page in a browser — if it 404s, grab the
   // full link from Booksy Biz → your profile → Share, and replace it here.
+  // Booksy Instant Experience widget — opens directly in-browser, no
+  // "download the app" interstitial (unlike the jufadedd.booksy.com/a/ short
+  // link, which is Booksy's app-install link and was prompting an app download).
   booking: {
-    url: 'https://jufadedd.booksy.com/a/',
+    url: 'https://booksy.com/en-us/instant-experiences/widget/1133760',
     // Booksy doesn't offer a clean inline embed, so this stays false (button/link
     // hand-off). If you get a Booksy "Book Now" widget snippet later, tell me and
     // I'll wire the overlay instead.
