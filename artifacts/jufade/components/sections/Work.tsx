@@ -47,12 +47,6 @@ function Tile({ item, index }: { item: PortfolioItem; index: number }) {
           </div>
         </div>
       )}
-      <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-ink/95 to-transparent p-3">
-        <span className="display text-lg text-frost">{item.title}</span>
-        <span className="poster-tag !text-xs opacity-0 transition-opacity group-hover:opacity-100">
-          {item.category}
-        </span>
-      </figcaption>
     </motion.figure>
   )
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Image from 'next/image'
 import { ArrowDown, CalendarClock } from 'lucide-react'
 import { site } from '@/config/site'
 import { stageState } from '@/lib/scrollState'
@@ -33,6 +34,22 @@ const entrance = {
     transition: { duration: 1, delay: 1 + i * 0.15, ease: [0.22, 1, 0.36, 1] as const },
   }),
 }
+
+/** Real photos for the "Fresh Off The Chair" teaser — pulled from the portfolio
+ * and before/after config rather than hardcoded, so they stay in sync. */
+const teaserFrames = [
+  {
+    label: 'Skin Fade',
+    tilt: -6,
+    src: site.portfolio.find((p) => p.title === 'Clean Low Fade')?.src ?? site.portfolio[0].src,
+  },
+  { label: 'Before / After', tilt: 0, src: site.beforeAfter.after || site.portfolio[1].src },
+  {
+    label: 'Beard Sculpt',
+    tilt: 5,
+    src: site.portfolio.find((p) => p.title === 'Full Beard Sculpt')?.src ?? site.portfolio[2].src,
+  },
+]
 
 /**
  * The pinned cinematic experience: a sticky full-screen 3D stage the visitor
@@ -167,16 +184,21 @@ export function CinematicStage() {
           <span className="poster-tag">The Proof</span>
           <h2 className="display mt-4 text-center text-4xl text-frost sm:text-6xl">Fresh Off The Chair</h2>
           <div className="mt-10 flex items-center justify-center gap-4 sm:gap-8">
-            {[-6, 0, 5].map((tilt, i) => (
+            {teaserFrames.map((frame, i) => (
               <div
-                key={tilt}
-                className={`photo-placeholder relative h-48 w-32 rounded-lg border border-line/80 p-1.5 shadow-2xl shadow-black/60 sm:h-72 sm:w-52 ${i === 1 ? 'z-10 scale-110' : 'opacity-80'}`}
-                style={{ transform: `rotate(${tilt}deg)` }}
+                key={frame.label}
+                className={`relative h-48 w-32 overflow-hidden rounded-lg border border-line/80 p-1.5 shadow-2xl shadow-black/60 sm:h-72 sm:w-52 ${i === 1 ? 'z-10 scale-110' : 'opacity-80'}`}
+                style={{ transform: `rotate(${frame.tilt}deg)` }}
               >
-                <div className="photo-placeholder flex h-full w-full items-end rounded-md border border-line/50 p-3">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-smoke">
-                    {['Skin Fade', 'Before / After', 'Beard Sculpt'][i]}
-                  </span>
+                <div className="relative h-full w-full overflow-hidden rounded-md border border-line/50">
+                  <Image
+                    src={frame.src}
+                    alt={frame.label}
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 640px) 128px, 208px"
+                    className="object-cover"
+                  />
                 </div>
               </div>
             ))}
