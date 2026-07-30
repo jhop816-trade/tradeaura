@@ -92,7 +92,7 @@ export const site = {
   ] as ServiceItem[],
 
   // After-hours up-charge — shown as a second panel below the main menu.
-  // No House Call entry: none was given, so none is invented.
+  // House Call stays the same price regardless of time.
   afterHours: {
     note: 'After 8:00 PM',
     services: [
@@ -101,6 +101,7 @@ export const site = {
       { name: 'Tape Up & Shave', price: 50 },
       { name: 'Kid Cut', price: 50 },
       { name: 'Teen Cut', price: 50 },
+      { name: 'House Call', price: 150 },
     ],
   },
 
