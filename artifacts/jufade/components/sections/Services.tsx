@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Moon } from 'lucide-react'
 import { site } from '@/config/site'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { BookSticker } from '@/components/ui/Sticker'
@@ -46,6 +47,23 @@ export function Services() {
               <span className="price-tag shrink-0 text-2xl sm:text-3xl">${s.price}</span>
             </motion.a>
           ))}
+        </div>
+
+        {/* After-hours up-charge */}
+        <div className="mt-8 rounded-lg border-2 border-dashed border-gold/50 bg-charcoal p-4 sm:p-6">
+          <div className="mb-4 flex items-center gap-2 text-gold">
+            <Moon size={16} />
+            <span className="display text-xl sm:text-2xl">After Hours</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-smoke">— {site.afterHours.note}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+            {site.afterHours.services.map((s) => (
+              <div key={s.name} className="flex items-baseline justify-between gap-3">
+                <span className="text-sm text-frost">{s.name}</span>
+                <span className="price-tag text-sm">${s.price}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-12 flex justify-center">

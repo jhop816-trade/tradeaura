@@ -85,11 +85,24 @@ export const site = {
   services: [
     { name: 'Haircut', price: 40, description: 'Any style — fades, brush cuts, tapers. Cut, lined, and finished.', featured: true },
     { name: 'VIP', price: 100, description: 'The full experience — cut plus a steam facial.', featured: true },
-    { name: 'Teen Cut', price: 30, description: 'Same cut, teen pricing.', featured: false },
-    { name: 'Child Cut', price: 25, description: 'Same cut, kids’ pricing.', featured: false },
     { name: 'Tape Up & Shave', price: 25, description: 'Edge-up and shave between full cuts.', featured: false },
-    { name: 'House Call', price: 120, description: 'I come to you.', featured: false },
+    { name: 'Kid Cut', price: 25, description: 'Same cut, kids’ pricing.', featured: false },
+    { name: 'Teen Cut', price: 30, description: 'Same cut, teen pricing.', featured: false },
+    { name: 'House Call', price: 150, description: 'I come to you.', featured: false },
   ] as ServiceItem[],
+
+  // After-hours up-charge — shown as a second panel below the main menu.
+  // No House Call entry: none was given, so none is invented.
+  afterHours: {
+    note: 'After 8:00 PM',
+    services: [
+      { name: 'Haircut', price: 80 },
+      { name: 'VIP', price: 100 },
+      { name: 'Tape Up & Shave', price: 50 },
+      { name: 'Kid Cut', price: 50 },
+      { name: 'Teen Cut', price: 50 },
+    ],
+  },
 
   // Cards shown in the cinematic "The Book Is Open" beat.
   // These state your REAL schedule — not invented open slots. (Faking specific
