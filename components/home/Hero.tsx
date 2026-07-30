@@ -2,33 +2,42 @@ import Link from 'next/link'
 import { ArrowRight, MessageSquareText } from 'lucide-react'
 import BrandMark from '@/components/brand/BrandMark'
 import FogCanvas from './FogCanvas'
+import ParticlesCanvas from './ParticlesCanvas'
+import HeroParallax from './HeroParallax'
 
 const TRUST = ['Secure Payments', 'Verified Fleet', 'Concierge Delivery']
 
 /**
- * Opening sequence: near-black, fog drifts in, headlights bloom, the vehicle
- * silhouette resolves, then the copy settles.
+ * Opening sequence: near-black, fog drifts in, headlights bloom, dust drifts
+ * through the beams, then the copy settles.
  *
  * Entrances are CSS animations rather than JS, so this stays a server
- * component (no hydration cost, no reduced-motion mismatch). Only the fog
- * canvas ships JavaScript. The silhouette is a CSS stand-in occupying the same
- * box the client's photography will fill, so swapping it in won't reflow.
+ * component (no hydration cost, no reduced-motion mismatch). The lighting
+ * layers pass through HeroParallax, a client component that renders with an
+ * identity transform on first paint and only starts nudging on pointer move,
+ * so it can't cause a mismatch either. FogCanvas and ParticlesCanvas are the
+ * only pieces that ship real per-frame JavaScript. The silhouette is a CSS
+ * stand-in occupying the same box the client's photography will fill, so
+ * swapping it in won't reflow.
  */
 export default function Hero() {
   return (
     <section className="relative min-h-[100svh] flex flex-col justify-center overflow-hidden bg-ink-000 pt-24 pb-28">
       <FogCanvas />
+      <ParticlesCanvas className="opacity-70" />
 
       {/* Headlights — two hot spots blooming out of the dark. */}
-      <div
-        aria-hidden="true"
+      <HeroParallax
+        strength={10}
         className="anim-bloom absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[min(1100px,120vw)] h-[420px] pointer-events-none"
       >
-        <div className="absolute left-[24%] top-1/2 -translate-y-1/2 w-40 h-16 rounded-full bg-white/80 blur-[42px]" />
-        <div className="absolute right-[24%] top-1/2 -translate-y-1/2 w-40 h-16 rounded-full bg-white/80 blur-[42px]" />
-        <div className="absolute left-[18%] top-1/2 -translate-y-1/2 w-72 h-40 rounded-full bg-amber/25 blur-[70px]" />
-        <div className="absolute right-[18%] top-1/2 -translate-y-1/2 w-72 h-40 rounded-full bg-amber/25 blur-[70px]" />
-      </div>
+        <div aria-hidden="true" className="relative w-full h-full">
+          <div className="absolute left-[24%] top-1/2 -translate-y-1/2 w-40 h-16 rounded-full bg-white/80 blur-[42px]" />
+          <div className="absolute right-[24%] top-1/2 -translate-y-1/2 w-40 h-16 rounded-full bg-white/80 blur-[42px]" />
+          <div className="absolute left-[18%] top-1/2 -translate-y-1/2 w-72 h-40 rounded-full bg-amber/25 blur-[70px]" />
+          <div className="absolute right-[18%] top-1/2 -translate-y-1/2 w-72 h-40 rounded-full bg-amber/25 blur-[70px]" />
+        </div>
+      </HeroParallax>
 
       {/*
         Hero media slot.
@@ -37,17 +46,19 @@ export default function Hero() {
         intentional, whereas a CSS-drawn car silhouette reads as an unidentified
         dark shape and cheapens the whole section. Drop the client's cutout
         photography (or a Three.js scene) into this container when it arrives;
-        it is already positioned and sized for it.
+        it is already positioned and sized for it. Parallax strength is lower
+        here than the headlights so the floor reads as further back.
       */}
-      <div
-        aria-hidden="true"
+      <HeroParallax
+        strength={6}
         className="anim-settle absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 w-[min(1000px,96vw)] h-[300px] pointer-events-none"
-        style={{ animationDelay: '600ms' }}
       >
-        {/* Floor light pool the vehicle will eventually sit in. */}
-        <div className="absolute inset-x-[6%] bottom-8 h-24 rounded-[50%] bg-amber/10 blur-[60px]" />
-        <div className="absolute inset-x-[22%] bottom-[52px] h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-      </div>
+        <div aria-hidden="true" className="relative w-full h-full" style={{ animationDelay: '600ms' }}>
+          {/* Floor light pool the vehicle will eventually sit in. */}
+          <div className="absolute inset-x-[6%] bottom-8 h-24 rounded-[50%] bg-amber/10 blur-[60px]" />
+          <div className="absolute inset-x-[22%] bottom-[52px] h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+        </div>
+      </HeroParallax>
 
       {/* Vignette keeps the centre bright and the edges cinematic. */}
       <div
