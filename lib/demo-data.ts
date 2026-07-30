@@ -13,7 +13,7 @@
  * until real inventory is actually being served.
  */
 
-import type { Review, Vehicle } from './types'
+import type { CustomerStory, MembershipTier, Review, Vehicle } from './types'
 
 export const IS_DEMO_DATA = true
 
@@ -154,5 +154,63 @@ export const demoReviews: readonly Review[] = [
     body: 'Placeholder testimonial copy. Short entry, used to confirm the card still balances beside longer ones.',
     date: '2026-05-02',
     verified: false,
+  },
+]
+
+/**
+ * ⚠️  Illustrative tier structure — names and qualitative benefits only.
+ * No pricing, points thresholds or enrollment mechanism exists yet; none is
+ * invented here. Full terms are published, and an actual way to join is
+ * built, before this goes live.
+ */
+export const demoMembershipTiers: readonly MembershipTier[] = [
+  {
+    id: 'signature',
+    name: 'Signature',
+    tagline: 'For the regular renter',
+    benefits: ['Priority booking during peak periods', 'Waived delivery fee within the service area', 'Direct line to the concierge'],
+    featured: false,
+  },
+  {
+    id: 'reserve',
+    name: 'Reserve',
+    tagline: 'For the standing plan',
+    benefits: ['Everything in Signature', 'First access to new arrivals', 'Flexible cancellation window', 'Complimentary vehicle swap, once per rental'],
+    featured: true,
+  },
+  {
+    id: 'platinum',
+    name: 'Platinum',
+    tagline: 'For the account, not the rental',
+    benefits: ['Everything in Reserve', 'Dedicated account concierge', 'Airport meet-and-greet handoff', 'Rates held for the season'],
+    featured: false,
+  },
+]
+
+/**
+ * ⚠️  Fictional narrative vignettes, not real customer accounts. Same rule
+ * as demoReviews — replace with real, moderated stories before launch.
+ */
+export const demoStories: readonly CustomerStory[] = [
+  {
+    id: 'story-1',
+    occasion: 'Wedding',
+    vehicleName: 'Rolls-Royce Ghost',
+    title: 'The arrival',
+    body: 'Sample story. Booked for a Saturday morning ceremony — the Ghost was staged curbside twenty minutes early, engine off, doors held. Nobody was watching the time anymore.',
+  },
+  {
+    id: 'story-2',
+    occasion: 'Airport',
+    vehicleName: 'Porsche 911 Turbo S',
+    title: 'The delayed flight',
+    body: "Sample story. Landed three hours late into a red-eye connection. The concierge had already pushed the pickup window — car was waiting, no rebooking fee, no conversation needed.",
+  },
+  {
+    id: 'story-3',
+    occasion: 'Weekend Escape',
+    vehicleName: 'Ferrari 488 Spider',
+    title: 'The long way back',
+    body: 'Sample story. Two days became three. A short call moved the return date and adjusted the total on the spot — no desk, no line, no surprise at drop-off.',
   },
 ]

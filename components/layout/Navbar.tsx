@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useLenis } from 'lenis/react'
 import { Menu, X } from 'lucide-react'
 import BrandMark from '@/components/brand/BrandMark'
 import { brand } from '@/lib/brand'
@@ -12,6 +13,26 @@ const LINKS = [
   { href: '/#reviews', label: 'Reviews' },
   { href: '/#contact', label: 'Contact' },
 ]
+
+/**
+ * Thin progress line along the bottom edge of the nav, tracking scroll
+ * position. `useLenis` returns `undefined` whenever Lenis isn't running
+ * (reduced motion, or before it mounts), in which case the callback below
+ * simply never fires and the bar stays at 0 width — an inert no-op rather
+ * than something that needs its own reduced-motion branch.
+ */
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0)
+  useLenis(lenis => setProgress(lenis.progress), [])
+
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute bottom-0 left-0 h-px bg-amber/70"
+      style={{ width: `${progress * 100}%` }}
+    />
+  )
+}
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -62,9 +83,13 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-[11px] font-semibold tracking-[0.16em] uppercase text-white/50 hover:text-amber transition-colors"
+                className="group relative text-[11px] font-semibold tracking-[0.16em] uppercase text-white/50 hover:text-amber transition-colors"
               >
                 {link.label}
+                <span
+                  aria-hidden="true"
+                  className="absolute -bottom-1.5 left-0 h-px w-0 bg-amber transition-all duration-300 group-hover:w-full"
+                />
               </Link>
             </li>
           ))}
@@ -89,6 +114,8 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+
+      <ScrollProgress />
 
       <AnimatePresence>
         {open && (

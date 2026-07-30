@@ -1,6 +1,6 @@
 import { Car, CalendarRange, IdCard, PenLine, KeyRound } from 'lucide-react'
 import Section from '@/components/ui/Section'
-import Reveal from '@/components/ui/Reveal'
+import StaggerGrid from '@/components/ui/StaggerGrid'
 
 const STEPS = [
   { icon: Car, title: 'Choose Your Vehicle', body: 'Browse the collection and pick the car that fits the occasion.' },
@@ -18,25 +18,37 @@ export default function HowItWorks() {
       title="Five steps, start to keys"
       intro="The whole reservation runs online. A human steps in only when something genuinely needs one."
     >
-      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <StaggerGrid
+        as="ol"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+        y={28}
+      >
         {STEPS.map((step, i) => (
-          <Reveal key={step.title} index={i} className="h-full">
-            <li className="relative h-full glass p-6 flex flex-col gap-4 hover:border-amber/30 transition-colors">
+          <li
+            key={step.title}
+            className="group relative h-full glass p-6 flex flex-col gap-5 overflow-hidden hover:border-amber/30 transition-colors"
+          >
+            <span
+              aria-hidden="true"
+              className="text-numeral text-6xl text-amber/15 transition-colors duration-500 group-hover:text-amber/25"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <step.icon size={20} className="text-amber" aria-hidden="true" />
+            <div>
+              <h3 className="font-display text-lg text-white mb-2">{step.title}</h3>
+              <p className="text-[13px] text-white/45 leading-relaxed">{step.body}</p>
+            </div>
+            {/* Connective thread to the next step — desktop only. */}
+            {i < STEPS.length - 1 && (
               <span
                 aria-hidden="true"
-                className="font-display text-5xl text-amber/15 leading-none"
-              >
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <step.icon size={20} className="text-amber" aria-hidden="true" />
-              <div>
-                <h3 className="font-display text-lg text-white mb-2">{step.title}</h3>
-                <p className="text-[13px] text-white/45 leading-relaxed">{step.body}</p>
-              </div>
-            </li>
-          </Reveal>
+                className="hidden lg:block absolute top-1/2 -right-2.5 w-5 h-px bg-gradient-to-r from-amber/25 to-transparent"
+              />
+            )}
+          </li>
         ))}
-      </ol>
+      </StaggerGrid>
     </Section>
   )
 }

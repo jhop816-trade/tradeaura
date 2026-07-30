@@ -45,8 +45,17 @@ function ContactRow({ label, value, href }: { label: string; value: string; href
 
 export default function Footer() {
   return (
-    <footer id="contact" className="bg-ink-050 border-t hairline px-6 sm:px-10 lg:px-20 pt-20 pb-28">
-      <div className="max-w-6xl mx-auto">
+    <footer id="contact" className="relative bg-ink-050 border-t hairline px-6 sm:px-10 lg:px-20 pt-20 pb-28 overflow-hidden">
+      {/* Oversized ghost wordmark — a common editorial footer flourish,
+          pure type, no asset. Clipped by the footer's own overflow-hidden. */}
+      <p
+        aria-hidden="true"
+        className="font-display absolute -bottom-[6vw] left-1/2 -translate-x-1/2 text-[24vw] leading-none text-white/[0.025] whitespace-nowrap select-none pointer-events-none"
+      >
+        {brand.shortName}
+      </p>
+
+      <div className="relative max-w-6xl mx-auto">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 pb-12 border-b hairline">
           <div className="col-span-2 lg:col-span-1">
             <BrandMark size="md" splitWordmark className="mb-4" />

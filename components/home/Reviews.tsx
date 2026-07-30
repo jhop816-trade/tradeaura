@@ -1,6 +1,8 @@
-import { BadgeCheck, Star } from 'lucide-react'
+'use client'
+import { useEffect, useState } from 'react'
+import { BadgeCheck, ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react'
 import Section from '@/components/ui/Section'
-import Reveal from '@/components/ui/Reveal'
+import { prefersReducedMotion } from '@/lib/motion'
 import type { Review } from '@/lib/types'
 
 function Stars({ rating }: { rating: number }) {
@@ -25,7 +27,28 @@ function formatDate(iso: string): string {
   })
 }
 
+/**
+ * One large quote at a time rather than three cramped into equal cards — the
+ * words are the point, so they get the room a magazine pull-quote would.
+ *
+ * Auto-advances slowly and pauses entirely under reduced motion, where
+ * content that changes on its own without the visitor asking is exactly the
+ * kind of thing that setting is meant to suppress. The arrows and dots give
+ * full manual control regardless.
+ */
 export default function Reviews({ reviews }: { reviews: readonly Review[] }) {
+  const [active, setActive] = useState(0)
+
+  useEffect(() => {
+    if (prefersReducedMotion() || reviews.length <= 1) return
+    const id = setInterval(() => setActive(a => (a + 1) % reviews.length), 6500)
+    return () => clearInterval(id)
+  }, [reviews.length])
+
+  if (reviews.length === 0) return null
+  const review = reviews[active]
+  if (!review) return null
+
   return (
     <Section
       id="reviews"
@@ -34,35 +57,78 @@ export default function Reviews({ reviews }: { reviews: readonly Review[] }) {
       intro="Placeholder entries below. Real reviews are collected after a completed rental and published once approved."
       className="bg-ink-050 border-y hairline"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {reviews.map((review, i) => (
-          <Reveal key={review.id} index={i} className="h-full">
-            <figure className="h-full glass p-7 flex flex-col hover:border-amber/25 transition-colors">
-              <Stars rating={review.rating} />
-              <blockquote className="mt-5 text-[15px] text-white/70 leading-relaxed flex-1">
-                {review.body}
-              </blockquote>
-              <figcaption className="mt-6 pt-5 border-t hairline">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold tracking-[0.16em] uppercase text-white">
-                    {review.author}
+      <div className="relative glass p-8 sm:p-14 lg:p-20 overflow-hidden">
+        <Quote
+          size={140}
+          strokeWidth={1}
+          className="absolute -top-6 -left-4 text-amber/[0.07] pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative">
+          <Stars rating={review.rating} />
+
+          <blockquote
+            key={review.id}
+            className="anim-rise mt-8 font-display normal-case tracking-normal text-2xl sm:text-3xl lg:text-4xl text-white leading-[1.2] max-w-3xl"
+          >
+            “{review.body}”
+          </blockquote>
+
+          <figcaption className="mt-10">
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] font-bold tracking-[0.16em] uppercase text-white">
+                {review.author}
+              </span>
+              {review.verified && (
+                <span className="inline-flex items-center gap-1 text-amber">
+                  <BadgeCheck size={13} aria-hidden="true" />
+                  <span className="text-[9px] font-bold tracking-[0.12em] uppercase">
+                    Verified rental
                   </span>
-                  {review.verified && (
-                    <span className="inline-flex items-center gap-1 text-amber">
-                      <BadgeCheck size={13} aria-hidden="true" />
-                      <span className="text-[9px] font-bold tracking-[0.12em] uppercase">
-                        Verified rental
-                      </span>
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-white/30 mt-1.5">
-                  {review.vehicleName} · {formatDate(review.date)}
-                </p>
-              </figcaption>
-            </figure>
-          </Reveal>
-        ))}
+                </span>
+              )}
+            </div>
+            <p className="text-[12px] text-white/30 mt-1.5">
+              {review.vehicleName} · {formatDate(review.date)}
+            </p>
+          </figcaption>
+
+          {reviews.length > 1 && (
+            <div className="flex items-center gap-5 mt-12 pt-8 border-t hairline">
+              <button
+                type="button"
+                onClick={() => setActive(a => (a - 1 + reviews.length) % reviews.length)}
+                aria-label="Previous review"
+                className="text-white/40 hover:text-amber transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="flex items-center gap-2">
+                {reviews.map((r, i) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-label={`Show review ${i + 1} of ${reviews.length}`}
+                    aria-current={i === active}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === active ? 'w-7 bg-amber' : 'w-1.5 bg-white/20 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActive(a => (a + 1) % reviews.length)}
+                aria-label="Next review"
+                className="text-white/40 hover:text-amber transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </Section>
   )

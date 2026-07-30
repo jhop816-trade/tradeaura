@@ -1,6 +1,6 @@
 import { ShieldCheck, CreditCard, FileText, Sparkles, Clock, MapPin } from 'lucide-react'
 import Section from '@/components/ui/Section'
-import Reveal from '@/components/ui/Reveal'
+import StaggerGrid from '@/components/ui/StaggerGrid'
 
 const ITEMS = [
   { icon: CreditCard, title: 'Secure payments', body: 'Card details are handled by the payment processor and never stored on this site.' },
@@ -18,17 +18,18 @@ export default function TrustSection() {
       title="No surprises at the counter"
       intro="Policies are published in full before launch and reviewed by the company's legal counsel."
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {ITEMS.map((item, i) => (
-          <Reveal key={item.title} index={i % 3} className="h-full">
-            <div className="h-full glass p-6 hover:border-amber/25 transition-colors">
-              <item.icon size={19} className="text-amber mb-4" aria-hidden="true" />
-              <h3 className="font-display text-lg text-white mb-2">{item.title}</h3>
-              <p className="text-[13px] text-white/45 leading-relaxed">{item.body}</p>
-            </div>
-          </Reveal>
+      <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" y={28}>
+        {ITEMS.map(item => (
+          <div
+            key={item.title}
+            className="h-full glass p-6 sm:p-7 hover:border-amber/25 transition-colors"
+          >
+            <item.icon size={20} className="text-amber mb-5" aria-hidden="true" />
+            <h3 className="font-display text-lg text-white mb-2">{item.title}</h3>
+            <p className="text-[13px] text-white/45 leading-relaxed">{item.body}</p>
+          </div>
         ))}
-      </div>
+      </StaggerGrid>
     </Section>
   )
 }

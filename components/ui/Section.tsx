@@ -22,9 +22,7 @@ export default function Section({ id, eyebrow, title, intro, children, className
           <Reveal className="mb-12 sm:mb-16">
             {eyebrow && <p className="eyebrow mb-4">{eyebrow}</p>}
             {title && (
-              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-white max-w-3xl">
-                {title}
-              </h2>
+              <h2 className="font-display text-display-xl text-white max-w-3xl">{title}</h2>
             )}
             {intro && (
               <p className="mt-5 text-white/45 text-[15px] leading-relaxed max-w-xl">{intro}</p>

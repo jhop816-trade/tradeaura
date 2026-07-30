@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { Gauge, Timer, Users, Cog, Route, ShieldCheck } from 'lucide-react'
 import Section from '@/components/ui/Section'
 import Reveal from '@/components/ui/Reveal'
+import StaggerGrid from '@/components/ui/StaggerGrid'
 import VehicleCard from '@/components/ui/VehicleCard'
 import { demoFleet } from '@/lib/demo-data'
 import { AVAILABILITY_LABELS, type Vehicle } from '@/lib/types'
@@ -73,7 +74,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
           {/* Gallery slot — sized now so client photography drops straight in. */}
           <Reveal>
-            <div className="relative aspect-[4/3] glass overflow-hidden flex flex-col items-center justify-center gap-3 bg-[radial-gradient(ellipse_at_50%_120%,#26262b_0%,#0d0d0f_70%)]">
+            <div className="plate relative aspect-[4/3] glass overflow-hidden flex flex-col items-center justify-center gap-3">
               <span className="font-display text-5xl text-white/10">{vehicle.make}</span>
               <span className="text-[10px] tracking-[0.2em] uppercase text-white/20">
                 Photography to be supplied
@@ -81,14 +82,14 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
             </div>
             <div className="grid grid-cols-4 gap-2 mt-2">
               {Array.from({ length: 4 }, (_, i) => (
-                <div key={i} className="aspect-square glass bg-ink-200" aria-hidden="true" />
+                <div key={i} className="plate aspect-square glass" aria-hidden="true" style={{ animationDelay: `${i * 400}ms` }} />
               ))}
             </div>
           </Reveal>
 
           <Reveal index={1}>
             <p className="eyebrow mb-3">{vehicle.category}</p>
-            <h1 className="font-display text-5xl lg:text-6xl text-white">
+            <h1 className="font-display text-display-lg text-white">
               {vehicle.make} {vehicle.model}
             </h1>
             <p className="text-white/35 mt-2">{vehicle.year}</p>
@@ -96,7 +97,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
             <p className="text-white/55 text-[15px] leading-relaxed mt-6">{vehicle.description}</p>
 
             <div className="flex items-baseline gap-3 mt-8 pt-8 border-t hairline">
-              <span className="font-display text-5xl text-white">
+              <span className="text-numeral text-5xl text-white">
                 ${vehicle.dailyRate.toLocaleString()}
               </span>
               <span className="text-[11px] tracking-[0.14em] uppercase text-white/35">Per day</span>
@@ -106,8 +107,8 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
               {specs.map(s => (
                 <div key={s.label} className="flex flex-col gap-1.5">
                   <s.icon size={15} className="text-amber/70" aria-hidden="true" />
-                  <dd className="text-[15px] text-white font-medium leading-none">{s.value}</dd>
-                  <dt className="text-[9px] tracking-[0.12em] uppercase text-white/30">{s.label}</dt>
+                  <dd className="text-numeral text-xl text-white leading-none">{s.value}</dd>
+                  <dt className="text-[9px] tracking-[0.12em] uppercase text-white/30 mt-1">{s.label}</dt>
                 </div>
               ))}
             </dl>
@@ -155,13 +156,11 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
         title="You might also consider"
         className="bg-ink-050 border-t hairline"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {related.map((v, i) => (
-            <Reveal key={v.id} index={i}>
-              <VehicleCard vehicle={v} />
-            </Reveal>
+        <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {related.map(v => (
+            <VehicleCard key={v.id} vehicle={v} />
           ))}
-        </div>
+        </StaggerGrid>
       </Section>
     </div>
   )

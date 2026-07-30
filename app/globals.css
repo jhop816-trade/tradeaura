@@ -11,6 +11,7 @@
   --color-ink-100: #0f0f10;
   --color-ink-200: #161618;
   --color-ink-300: #1f1f22;
+  --color-ink-400: #29292d;
 
   --color-amber: #e5a812;
   --color-amber-bright: #f5c542;
@@ -34,7 +35,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Lenis owns scroll smoothing once it initializes (SmoothScrollProvider);
+     native smooth-scroll left on here would fight it on anchor jumps. Under
+     reduced motion Lenis never initializes, so plain `auto` is correct there
+     too — no separate override needed. */
+  scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -63,6 +68,24 @@ body {
   color: var(--color-amber);
 }
 
+/* Fluid display scale — one source of truth so every scene's headline sizes
+   in step with the viewport instead of each component hand-rolling its own
+   text-[Nvw] sm:text-[…] lg:text-[…] stack (the old Hero did exactly that). */
+.text-display-hero { font-size: clamp(3.5rem, 5.5rem + 6vw, 11rem); }
+.text-display-xl { font-size: clamp(2.75rem, 2rem + 5vw, 6rem); }
+.text-display-lg { font-size: clamp(2.25rem, 1.6rem + 3.4vw, 4rem); }
+.text-display-md { font-size: clamp(1.75rem, 1.4rem + 2vw, 2.75rem); }
+
+/* Large graphic numerals — used where a spec, step number or stat is meant to
+   read as a typographic object in its own right, not a small card label. */
+.text-numeral {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.01em;
+}
+
 /* --- Surfaces ------------------------------------------------------------ */
 
 .glass {
@@ -73,6 +96,37 @@ body {
 
 .hairline {
   border-color: rgb(255 255 255 / 0.07);
+}
+
+/* Film grain — generated in CSS (SVG feTurbulence data URI), no image asset.
+   The single biggest cheap-vs-expensive tell between a flat dark background
+   and one that reads as deliberately graded footage. Applied at low opacity
+   with `overlay` blending so it never muddies content underneath. */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Photography plate — the treatment for every image slot waiting on real
+   vehicle photography. A slow light sweep across a textured surface reads as
+   an intentional design choice rather than a missing asset; swapping in a
+   real photo means dropping an <Image> over the same box, nothing else
+   changes. */
+@keyframes plate-sheen {
+  0%, 100% { background-position: -140% 0; }
+  50% { background-position: 240% 0; }
+}
+.plate {
+  position: relative;
+  background:
+    linear-gradient(115deg, transparent 40%, rgb(245 197 66 / 0.06) 50%, transparent 60%),
+    radial-gradient(ellipse at 50% 120%, var(--color-ink-300) 0%, var(--color-ink-050) 70%);
+  background-size: 320% 100%, 100% 100%;
+  animation: plate-sheen 7s ease-in-out infinite;
 }
 
 /* Slow amber sweep used behind section headings. */
@@ -123,6 +177,23 @@ body {
 .anim-bloom { animation: bloom 3.4s ease-out both; }
 .anim-settle { animation: settle 2.6s ease-out both; }
 
+/* Headlight "ignition" — a flare past full brightness before settling, in
+   place of a flat fade-in. This is the one visual stand-in for the engine-
+   ignition moment in the brief; there's no licensed audio to pair with it. */
+@keyframes flare {
+  0% { opacity: 0; transform: scale(0.82); }
+  55% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.anim-flare { animation: flare 2.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Slow-drifting light rays behind the hero copy. */
+@keyframes ray-drift {
+  0%, 100% { transform: rotate(var(--ray-angle, 8deg)) translateX(0); opacity: 0.5; }
+  50% { transform: rotate(calc(var(--ray-angle, 8deg) + 2deg)) translateX(2%); opacity: 0.85; }
+}
+.anim-ray { animation: ray-drift 11s ease-in-out infinite; }
+
 /* Page loader: brief hold on the mark, then the whole overlay dissolves.
    pointer-events flips at the same keyframe boundary as the opacity so the
    overlay stops intercepting clicks the instant it's no longer visible. */
@@ -152,9 +223,6 @@ body {
    Canvas-driven effects check the same query in JS and stop their loops. */
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
   *,
   *::before,
   *::after {
@@ -162,7 +230,8 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .sheen::after {
+  .sheen::after,
+  .grain {
     display: none;
   }
 }

@@ -62,6 +62,28 @@ export interface Review {
   verified: boolean
 }
 
+/**
+ * Illustrative loyalty-tier content — qualitative benefits only, no invented
+ * pricing or points thresholds, since neither would be a real commitment the
+ * business has actually made yet.
+ */
+export interface MembershipTier {
+  id: string
+  name: string
+  tagline: string
+  benefits: string[]
+  featured: boolean
+}
+
+/** A short narrative vignette, distinct from a star-rated Review. */
+export interface CustomerStory {
+  id: string
+  occasion: string
+  vehicleName: string
+  title: string
+  body: string
+}
+
 export const AVAILABILITY_LABELS: Record<AvailabilityStatus, string> = {
   available: 'Available',
   reserved: 'Reserved',

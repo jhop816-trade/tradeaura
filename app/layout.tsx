@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer'
 import ConciergeLauncher from '@/components/concierge/ConciergeLauncher'
 import DemoDataBanner from '@/components/ui/DemoDataBanner'
 import PageLoader from '@/components/layout/PageLoader'
+import SmoothScrollProvider from '@/components/layout/SmoothScrollProvider'
 import { brand, isPlaceholder, socialProfiles } from '@/lib/brand'
 
 const anton = Anton({ subsets: ['latin'], weight: '400', variable: '--font-anton', display: 'swap' })
@@ -59,18 +60,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased">
-        <PageLoader />
-        <DemoDataBanner />
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-amber focus:text-black focus:px-5 focus:py-3 focus:text-xs focus:font-bold focus:uppercase focus:tracking-widest"
-        >
-          Skip to content
-        </a>
-        <Navbar />
-        <main id="main">{children}</main>
-        <Footer />
-        <ConciergeLauncher />
+        <SmoothScrollProvider>
+          <PageLoader />
+          <DemoDataBanner />
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-amber focus:text-black focus:px-5 focus:py-3 focus:text-xs focus:font-bold focus:uppercase focus:tracking-widest"
+          >
+            Skip to content
+          </a>
+          <Navbar />
+          <main id="main">{children}</main>
+          <Footer />
+          <ConciergeLauncher />
+        </SmoothScrollProvider>
       </body>
     </html>
   )

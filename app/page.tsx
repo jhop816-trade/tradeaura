@@ -1,9 +1,11 @@
 import Hero from '@/components/home/Hero'
 import FleetPreview from '@/components/home/FleetPreview'
 import Occasions from '@/components/home/Occasions'
+import CustomerStories from '@/components/home/CustomerStories'
 import HowItWorks from '@/components/home/HowItWorks'
 import Reviews from '@/components/home/Reviews'
 import TrustSection from '@/components/home/TrustSection'
+import VipMembership from '@/components/home/VipMembership'
 import LeadCaptureStrip from '@/components/home/LeadCaptureStrip'
 import { demoFleet, demoReviews } from '@/lib/demo-data'
 
@@ -19,9 +21,11 @@ export default function HomePage() {
       <Hero />
       <FleetPreview vehicles={featured} />
       <Occasions />
+      <CustomerStories />
       <HowItWorks />
       <Reviews reviews={demoReviews} />
       <TrustSection />
+      <VipMembership />
       <LeadCaptureStrip />
     </>
   )

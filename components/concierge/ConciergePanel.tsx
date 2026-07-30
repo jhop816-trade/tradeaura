@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { X, Sparkles, Lock } from 'lucide-react'
 import { brand, contactLinks, isPlaceholder } from '@/lib/brand'
+import { prefersReducedMotion } from '@/lib/motion'
 
 /**
  * Illustrative exchange showing the flow the concierge will run in Phase 4.
@@ -29,6 +30,22 @@ const CAPABILITIES = [
   'Hand off to a human whenever you ask',
 ]
 
+const TYPING_MS = 850
+
+function TypingDots() {
+  return (
+    <div className="self-start flex items-center gap-1 bg-ink-200 border hairline px-4 py-3.5" aria-hidden="true">
+      {[0, 1, 2].map(i => (
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce"
+          style={{ animationDelay: `${i * 120}ms`, animationDuration: '900ms' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 interface Props {
   onClose: () => void
 }
@@ -36,6 +53,32 @@ interface Props {
 export default function ConciergePanel({ onClose }: Props) {
   const reduced = useReducedMotion()
   const panelRef = useRef<HTMLDivElement | null>(null)
+
+  /**
+   * The transcript stages in message-by-message rather than appearing all at
+   * once — proving out the "typing" rhythm the real concierge will have.
+   * Reduced-motion visitors get the full, final transcript immediately: the
+   * content is identical either way, only the reveal timing changes, so
+   * there's nothing to wait through unnecessarily.
+   */
+  const [visibleCount, setVisibleCount] = useState(() => (prefersReducedMotion() ? PREVIEW.length : 0))
+  const [typing, setTyping] = useState(false)
+
+  useEffect(() => {
+    if (visibleCount >= PREVIEW.length) return
+    const next = PREVIEW[visibleCount]
+    const showTyping = next?.from === 'concierge'
+    if (showTyping) setTyping(true)
+
+    const timer = setTimeout(
+      () => {
+        setTyping(false)
+        setVisibleCount(c => c + 1)
+      },
+      showTyping ? TYPING_MS : 260
+    )
+    return () => clearTimeout(timer)
+  }, [visibleCount])
 
   useEffect(() => {
     panelRef.current?.focus()
@@ -61,7 +104,13 @@ export default function ConciergePanel({ onClose }: Props) {
     >
       <header className="flex items-center justify-between gap-3 px-5 py-4 border-b hairline bg-ink-100/60">
         <span className="flex items-center gap-2.5">
-          <Sparkles size={16} className="text-amber" aria-hidden="true" />
+          <span className="relative flex items-center justify-center">
+            <Sparkles size={16} className="text-amber" aria-hidden="true" />
+            <span
+              aria-hidden="true"
+              className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-ink-100 motion-safe:animate-pulse"
+            />
+          </span>
           <span className="font-display text-base text-white">Concierge</span>
         </span>
         <button
@@ -79,7 +128,7 @@ export default function ConciergePanel({ onClose }: Props) {
           Preview of the concierge flow — not a live conversation
         </p>
 
-        {PREVIEW.map((message, i) => (
+        {PREVIEW.slice(0, visibleCount).map((message, i) => (
           <div
             key={i}
             className={`max-w-[85%] px-4 py-3 text-[13px] leading-relaxed ${
@@ -91,22 +140,25 @@ export default function ConciergePanel({ onClose }: Props) {
             {message.text}
           </div>
         ))}
+        {typing && <TypingDots />}
 
-        <div className="mt-2 border hairline bg-ink-100/50 p-4">
-          <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-white/50 mb-3">
-            What it will do
-          </p>
-          <ul className="flex flex-col gap-2">
-            {CAPABILITIES.map(item => (
-              <li key={item} className="flex gap-2 text-[12px] text-white/45 leading-relaxed">
-                <span aria-hidden="true" className="text-amber shrink-0">
-                  →
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {visibleCount >= PREVIEW.length && (
+          <div className="mt-2 border hairline bg-ink-100/50 p-4">
+            <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-white/50 mb-3">
+              What it will do
+            </p>
+            <ul className="flex flex-col gap-2">
+              {CAPABILITIES.map(item => (
+                <li key={item} className="flex gap-2 text-[12px] text-white/45 leading-relaxed">
+                  <span aria-hidden="true" className="text-amber shrink-0">
+                    →
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <footer className="px-5 py-4 border-t hairline bg-ink-100/60">
