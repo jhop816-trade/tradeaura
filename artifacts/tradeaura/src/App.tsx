@@ -331,10 +331,9 @@ function LandingPage({ onAuth }: {onAuth:(u:any)=>void}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (showAuth) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const canvas = canvasRef.current as HTMLCanvasElement;
+    const ctx = canvas?.getContext("2d") as CanvasRenderingContext2D;
+    if (!canvas || !ctx) return;
     let animId: number;
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     resize();
@@ -2942,7 +2941,7 @@ export default function App() {
             </div>
             {subStatus==="active"?(
               <button onClick={()=>{setShowMenu(false);goToPortal();}} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.green}40`,color:C.green,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:10}}>⚙️ Manage Subscription</button>
-            ):(subStatus==="trial"||subStatus==="expired"||subStatus==="canceled")&&(
+            ):subStatus==="trial"&&(
               <button onClick={()=>{setShowMenu(false);goToCheckout();}} style={{width:"100%",padding:"12px",background:C.green,color:"#000",border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:800,marginBottom:10}}>⚡ Upgrade to Pro — $25/mo</button>
             )}
             <button onClick={()=>{localStorage.removeItem("onboarding_complete");setOnboardingStep(0);setShowOnboarding(true);setShowMenu(false);}} style={{width:"100%",padding:"12px",background:"transparent",border:`1px solid ${C.blue}40`,color:C.blue,borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,marginBottom:10}}>🗺️ Take the Tour</button>
