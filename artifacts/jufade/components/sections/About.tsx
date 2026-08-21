@@ -19,7 +19,7 @@ export function About() {
             {site.about.photo ? (
               <Image
                 src={site.about.photo}
-                alt="Ju, the barber behind JuFade"
+                alt="Ju, the barber behind JuFaded"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

@@ -23,7 +23,7 @@ export function Suite() {
               {src ? (
                 <Image
                   src={src}
-                  alt={`JuFade private suite — photo ${i + 1}`}
+                  alt={`JuFaded private suite — photo ${i + 1}`}
                   fill
                   loading="lazy"
                   sizes="(max-width: 768px) 100vw, 50vw"

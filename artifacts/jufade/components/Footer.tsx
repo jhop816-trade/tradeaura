@@ -10,7 +10,7 @@ export function Footer() {
           <BrandLogo className="h-16 w-16" />
           <div>
             <p className="display text-2xl text-frost">
-              JU<span className="text-gold">FADE</span>
+              JU<span className="text-gold">FADED</span>
             </p>
             <p className="mt-1 text-sm text-smoke">{site.tagline}</p>
           </div>
@@ -20,16 +20,16 @@ export function Footer() {
             href={site.contact.instagram}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`JuFade on Instagram ${site.contact.instagramHandle}`}
+            aria-label={`JuFaded on Instagram ${site.contact.instagramHandle}`}
             className="text-smoke transition-colors hover:text-gold"
           >
             <Instagram size={20} />
           </a>
-          <a href={`tel:${site.contact.phone.replace(/\D/g, '')}`} aria-label="Call JuFade" className="text-smoke transition-colors hover:text-gold">
+          <a href={`tel:${site.contact.phone.replace(/\D/g, '')}`} aria-label="Call JuFaded" className="text-smoke transition-colors hover:text-gold">
             <Phone size={20} />
           </a>
           {site.contact.email ? (
-            <a href={`mailto:${site.contact.email}`} aria-label="Email JuFade" className="text-smoke transition-colors hover:text-gold">
+            <a href={`mailto:${site.contact.email}`} aria-label="Email JuFaded" className="text-smoke transition-colors hover:text-gold">
               <Mail size={20} />
             </a>
           ) : null}

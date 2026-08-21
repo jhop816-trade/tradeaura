@@ -71,7 +71,7 @@ function to24h(label: string): string {
 }
 
 /**
- * LocalBusiness structured data. This is what lets Google show JuFade as a
+ * LocalBusiness structured data. This is what lets Google show JuFaded as a
  * local barber with the ★5.0 rating and hours directly in search results.
  */
 function JsonLd() {

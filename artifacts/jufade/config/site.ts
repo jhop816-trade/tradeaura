@@ -9,7 +9,7 @@
  */
 
 export const site = {
-  name: 'JuFade',
+  name: 'JuFaded',
   tagline: 'Premium cuts. Private suite. Clean experience.',
 
   // Booksy booking link. Every "Book" button opens this in a new tab, where the
@@ -46,7 +46,7 @@ export const site = {
   },
 
   location: {
-    suiteName: 'JuFade Private Suite',
+    suiteName: 'JuFaded Private Suite',
     addressLine1: '146 E McNab Road',
     addressLine2: 'Pompano Beach, FL 33060',
     mapQuery: '146 E McNab Road Pompano Beach FL 33060',
@@ -76,7 +76,7 @@ export const site = {
   // REPLACE: your bio, years, and specialties
   about: {
     intro:
-      "I'm Ju — the barber behind JuFade. Every cut happens one-on-one in my private suite: no crowd, no waiting room, no rushing. Just you, the chair, and a cut that's sharp when you leave and still sharp two weeks later.",
+      "I'm Ju — the barber behind JuFaded. Every cut happens one-on-one in my private suite: no crowd, no waiting room, no rushing. Just you, the chair, and a cut that's sharp when you leave and still sharp two weeks later.",
     // Years behind the chair. Shown alongside the verified Booksy rating.
     years: 4.5 as number | null,
     specialties: ['Skin Fades', 'Tapers', 'Beard Sculpting', 'Freestyle Designs', 'Kids’ Cuts'],
@@ -164,7 +164,7 @@ export const site = {
     label: 'Cut + beard sculpt transformation',
   },
 
-  // Real 5-star reviews pulled from Booksy (JuFade: 5.0 · 57 reviews).
+  // Real 5-star reviews pulled from Booksy (JuFaded: 5.0 · 57 reviews).
   // Add/replace anytime; set photo to '/images/reviews/name.jpg' or leave '' for
   // a clean initials avatar.
   reviewStats: { rating: '5.0', count: 57, source: 'Booksy' },
@@ -193,9 +193,9 @@ export const site = {
 
   // SEO — REPLACE the city/region with yours so local search finds you.
   seo: {
-    title: 'JuFade | Premium Private Suite Barber',
+    title: 'JuFaded | Premium Private Suite Barber',
     description:
-      'JuFade is a premium private-suite barber experience. Skin fades, tapers, beard sculpting, and designs — one-on-one appointments, no waiting room. Book your next cut today.',
+      'JuFaded is a premium private-suite barber experience. Skin fades, tapers, beard sculpting, and designs — one-on-one appointments, no waiting room. Book your next cut today.',
     city: 'Pompano Beach', // REPLACE if different
     region: 'FL', // REPLACE with your state (Broward County noted from reviews)
     // The live domain. Canonical URL, sitemap, share card, and JSON-LD all build

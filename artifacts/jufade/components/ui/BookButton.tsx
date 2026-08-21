@@ -18,7 +18,7 @@ export function BookButton({ placement, children = 'Book Your Appointment', vari
       href={site.booking.url}
       variant={variant}
       className={className}
-      ariaLabel="Book an appointment with JuFade"
+      ariaLabel="Book an appointment with JuFaded"
       onClick={() => trackBookClick(placement)}
     >
       {children}

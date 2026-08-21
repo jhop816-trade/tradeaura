@@ -34,7 +34,7 @@ export function Booking() {
             <div className="overflow-hidden rounded-2xl border border-line">
               <iframe
                 src={site.booking.embedUrl}
-                title="Book an appointment with JuFade"
+                title="Book an appointment with JuFaded"
                 className="h-[720px] w-full bg-panel"
                 loading="lazy"
               />

@@ -37,7 +37,7 @@ export function Navbar() {
         <a href="#top" className="flex items-center gap-2 text-frost">
           <BrandLogo className="h-9 w-9" />
           <span className="display text-xl tracking-[0.08em]">
-            JU<span className="text-gold">FADE</span>
+            JU<span className="text-gold">FADED</span>
           </span>
         </a>
         <div className="hidden items-center gap-8 md:flex">
