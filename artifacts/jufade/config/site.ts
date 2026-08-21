@@ -69,7 +69,7 @@ export const site = {
   // fires a `book_click` event, but no Ads *conversion* is counted.
   analytics: {
     googleAdsId: 'AW-18095937011',
-    conversionLabel: '', // NEEDED: the part after the slash in `send_to`
+    conversionLabel: '2ahtCLm-tdccEPOr6LRD',
     ga4Id: '', // OPTIONAL e.g. 'G-XXXXXXXXXX'
   },
 
