@@ -37,6 +37,7 @@ minimumReleaseAgeExclude:
 packages:
   - artifacts/*
   - gid
+  - jubot
   - lib/*
   - lib/integrations/*
   - scripts
