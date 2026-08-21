@@ -21,7 +21,7 @@ function supabaseAdmin() {
 }
 
 function frontendUrl() {
-  return (process.env.FRONTEND_URL || "https://tradeauraapp.com").replace(/\/$/, "");
+  return (process.env.FRONTEND_URL || "https://tradeaura.com").replace(/\/$/, "");
 }
 
 // ── Public router (no auth) — webhook only ──────────────────────────────────
