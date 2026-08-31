@@ -61,7 +61,15 @@ const CS: React.CSSProperties = { background:C.surf, border:`1px solid ${C.bord}
 const inp = (x: React.CSSProperties = {}): React.CSSProperties => ({ width:"100%", background:"#0a0d14", border:`1px solid ${C.bord}`, color:C.txt, padding:"11px 14px", borderRadius:8, fontSize:16, fontFamily:"inherit", boxSizing:"border-box", outline:"none", ...x });
 
 function Tag({color,children}: {color:string,children:React.ReactNode}){ return <span style={{fontSize:10,padding:"3px 9px",borderRadius:20,background:color+"22",color,fontWeight:600}}>{children}</span>; }
-function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 14px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
+function Pill({active,color=C.blue,onClick,children}: {active:boolean,color?:string,onClick:()=>void,children:React.ReactNode}){ return <button onClick={onClick} style={{padding:"8px 16px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",background:active?color+"22":"transparent",color:active?color:C.muted,border:`1px solid ${active?color+"55":C.bord}`}}>{children}</button>; }
+function SummaryText({text,maxChars=120}:{text:string,maxChars?:number}){
+  const [expanded,setExpanded]=useState(false);
+  if(!text)return null;
+  const needs=text.length>maxChars;
+  return(
+    <>{needs&&!expanded?text.slice(0,maxChars)+"…":text}{needs&&<button onClick={()=>setExpanded(e=>!e)} style={{background:"transparent",border:"none",color:C.blue,fontSize:11,fontWeight:600,cursor:"pointer",padding:"0 0 0 5px",fontFamily:"inherit",display:"inline",lineHeight:"inherit"}}>{expanded?"Show less":"Read more"}</button>}</>
+  );
+}
 function HowItWorks({points}: {points: string[]}){
   return (
     <div style={{background:"#1a2235",border:"1px solid #1e3a5f",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
@@ -675,13 +683,13 @@ function WeeklyRecapCard() {
 
   const tiltColor=data.tiltDetected?C.red:C.green;
   return(
-    <div style={{...CS,marginTop:12,border:`1px solid ${C.purp}40`}}>
+    <div style={{...CS,marginTop:12,border:`1px solid ${C.purp}55`,background:"linear-gradient(160deg,#181f32,#161b27)"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-        <div style={{fontSize:9,color:C.purp,letterSpacing:"0.15em",fontWeight:700}}>WEEKLY RECAP — AI</div>
+        <div style={{fontSize:10,color:C.purp,letterSpacing:"0.12em",fontWeight:700}}>WEEKLY RECAP — AI</div>
         {data.cached&&<span style={{fontSize:9,color:C.muted,background:C.bord,borderRadius:4,padding:"2px 6px"}}>cached</span>}
       </div>
       <div style={{fontSize:14,fontWeight:700,color:C.txt,marginBottom:8,lineHeight:1.4}}>{data.focusForNextWeek}</div>
-      <div style={{fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10}}>{data.summary}</div>
+      <div style={{fontSize:12,color:C.dim,lineHeight:1.6,marginBottom:10}}><SummaryText text={data.summary||""}/></div>
       {data.stats&&(
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
           {[
@@ -689,8 +697,8 @@ function WeeklyRecapCard() {
             {l:"WIN RATE",v:`${Math.round((data.stats.winRate||0)*100)/100}%`,c:data.stats.winRate>=50?C.green:C.red},
             {l:"NET P&L",v:`${(data.stats.netPnl||0)>=0?"+":""}$${Math.abs(data.stats.netPnl||0).toFixed(0)}`,c:(data.stats.netPnl||0)>=0?C.green:C.red},
           ].map(s=>(
-            <div key={s.l} style={{background:C.bg,borderRadius:8,padding:"8px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
-              <div style={{fontSize:7,color:C.muted,letterSpacing:"0.08em",marginBottom:3}}>{s.l}</div>
+            <div key={s.l} style={{background:C.bg,borderRadius:8,padding:"10px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
+              <div style={{fontSize:8,color:C.muted,letterSpacing:"0.08em",marginBottom:4}}>{s.l}</div>
               <div style={{fontSize:13,fontWeight:700,color:s.c}}>{s.v}</div>
             </div>
           ))}
@@ -801,14 +809,14 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
       )}
 
       {trades.length>0&&<div style={Object.assign({},CS,{marginBottom:12})}>
-        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:12}}>TODAY</div>
+        <div style={{fontSize:9,color:C.muted,letterSpacing:"0.14em",marginBottom:12}}>TODAY</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div style={{padding:"12px 14px",borderRadius:10,background:dailyPnl>=0?C.green+"18":C.red+"18",border:`1px solid ${dailyPnl>=0?C.green+"30":C.red+"30"}`}}>
-            <div style={{fontSize:9,color:C.muted,marginBottom:4}}>DAILY P&L</div>
+          <div style={{padding:"14px 16px",borderRadius:10,background:dailyPnl>=0?C.green+"18":C.red+"18",border:`1px solid ${dailyPnl>=0?C.green+"35":C.red+"35"}`}}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.08em",marginBottom:5}}>DAILY P&L</div>
             <div style={{fontSize:22,fontWeight:800,color:dpClr}}>{dailyPnl>=0?"+":""}${dailyPnl.toFixed(2)}</div>
           </div>
-          <div style={{padding:"12px 14px",borderRadius:10,background:C.surf2,border:`1px solid ${C.bord}`}}>
-            <div style={{fontSize:9,color:C.muted,marginBottom:4}}>TRADES TODAY</div>
+          <div style={{padding:"14px 16px",borderRadius:10,background:C.surf2,border:`1px solid ${C.bord}`}}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.08em",marginBottom:5}}>TRADES TODAY</div>
             <div style={{fontSize:22,fontWeight:800,color:C.txt}}>{todayTrades.length}<span style={{fontSize:12,color:C.muted}}>/{account?.max_daily_trades||5}</span></div>
           </div>
         </div>
@@ -816,8 +824,8 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
 
       {trades.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
         {[{l:"WIN RATE",v:`${winRate}%`,c:parseFloat(winRate as string)>=50?C.green:C.red},{l:"PROFIT FACTOR",v:pfDisplay,c:pfColor},{l:"STREAK",v:`${streak}${sType?"W":"L"}`,c:sType?C.green:C.red},{l:"TRADES",v:String(trades.length),c:C.txt},{l:"AVG WIN",v:`$${avgWin.toFixed(0)}`,c:C.green},{l:"AVG LOSS",v:`$${avgLoss.toFixed(0)}`,c:C.red},{l:"NET P&L",v:`${totalPnl>=0?"+":""}$${totalPnl.toFixed(0)}`,c:tpClr},{l:"CONSISTENCY",v:`${consistencyScore}`,c:consColor}].map(s=>(
-          <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"11px 8px",textAlign:"center"}}>
-            <div style={{fontSize:8,color:C.muted,letterSpacing:"0.1em",marginBottom:5}}>{s.l}</div>
+          <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"13px 8px",textAlign:"center"}}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:"0.08em",marginBottom:6}}>{s.l}</div>
             <div style={{fontSize:15,fontWeight:700,color:s.c}}>{s.v}</div>
           </div>
         ))}
@@ -865,10 +873,10 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
         return(
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
             {[{l:"THIS WEEK",pnl:weekPnl,count:weekTrades.length},{l:"THIS MONTH",pnl:monthPnl,count:monthTrades.length}].map(s=>(
-              <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"11px 12px"}}>
-                <div style={{fontSize:8,color:C.muted,letterSpacing:"0.1em",marginBottom:5}}>{s.l}</div>
-                <div style={{fontSize:15,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(2)}</div>
-                <div style={{fontSize:10,color:C.muted,marginTop:3}}>{s.count} trades</div>
+              <div key={s.l} style={{background:C.surf,border:`1px solid ${C.bord}`,borderRadius:10,padding:"13px 14px"}}>
+                <div style={{fontSize:9,color:C.muted,letterSpacing:"0.08em",marginBottom:6}}>{s.l}</div>
+                <div style={{fontSize:16,fontWeight:700,color:s.pnl>=0?C.green:C.red}}>{s.pnl>=0?"+":""}${s.pnl.toFixed(2)}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:4}}>{s.count} trades</div>
               </div>
             ))}
           </div>
@@ -893,8 +901,8 @@ function HomeView({trades,account,onEditBalance,onNavigate}: {trades:any[],accou
             <div style={{fontSize:9,color:C.gold,letterSpacing:"0.15em",marginBottom:12}}>🏆 PERSONAL RECORDS</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
               {records.map(r=>(
-                <div key={r.l} style={{background:C.bg,borderRadius:8,padding:"10px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
-                  <div style={{fontSize:7,color:C.muted,letterSpacing:"0.08em",marginBottom:4}}>{r.l}</div>
+                <div key={r.l} style={{background:C.bg,borderRadius:8,padding:"11px 6px",textAlign:"center",border:`1px solid ${C.bord}`}}>
+                  <div style={{fontSize:8,color:C.muted,letterSpacing:"0.08em",marginBottom:5}}>{r.l}</div>
                   <div style={{fontSize:13,fontWeight:700,color:r.c}}>{r.v}</div>
                 </div>
               ))}
@@ -2069,7 +2077,7 @@ function ReviewResult({review:r}: {review:any}){
   const gc=gradeColor(r.overallGrade);
   return(<div>
     <div style={Object.assign({},CS,{marginBottom:12,textAlign:"center"})}><div style={{fontSize:9,color:C.muted,letterSpacing:"0.12em",marginBottom:8}}>OVERALL GRADE</div><div style={{fontSize:52,fontWeight:900,color:gc,lineHeight:1}}>{r.overallGrade}</div><div style={{fontSize:13,color:C.txt,marginTop:8,fontWeight:500}}>{r.verdict}</div><div style={{fontSize:11,color:C.muted,marginTop:4}}>{r.overallScore}/100</div></div>
-    <div style={{background:"#0d1020",border:`1px solid ${C.purp}25`,borderRadius:12,padding:16,marginBottom:10}}><div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>💬 COACH SAYS</div><div style={{fontSize:12,color:C.txt,lineHeight:1.8,fontStyle:"italic"}}>"{r.coachMessage}"</div></div>
+    <div style={{background:"#0d1020",border:`1px solid ${C.purp}25`,borderRadius:12,padding:16,marginBottom:10}}><div style={{fontSize:9,color:C.purp,letterSpacing:"0.12em",marginBottom:8}}>💬 COACH SAYS</div><div style={{fontSize:12,color:C.txt,lineHeight:1.8,fontStyle:"italic"}}><SummaryText text={r.coachMessage||""}/></div></div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
       <div style={Object.assign({},CS,{border:`1px solid ${C.green}25`})}><div style={{fontSize:9,color:C.green,letterSpacing:"0.1em",marginBottom:8}}>✓ STRENGTHS</div>{(r.topStrengths||[]).map((s: string,i: number)=><div key={i} style={{fontSize:11,color:C.txt,marginBottom:5,lineHeight:1.5}}>· {s}</div>)}</div>
       <div style={Object.assign({},CS,{border:`1px solid ${C.red}25`})}><div style={{fontSize:9,color:C.red,letterSpacing:"0.1em",marginBottom:8}}>✗ WEAKNESSES</div>{(r.criticalWeaknesses||[]).map((w: string,i: number)=><div key={i} style={{fontSize:11,color:C.txt,marginBottom:5,lineHeight:1.5}}>· {w}</div>)}</div>
@@ -2284,9 +2292,9 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
             <div>
               <div style={Object.assign({},CS,{marginBottom:10})}>
                 <div style={{fontSize:9,color:C.blue,letterSpacing:"0.12em",marginBottom:8}}>📈 MARKET CONTEXT</div>
-                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{prep.marketContext}</div>
+                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}><SummaryText text={prep.marketContext||""}/></div>
               </div>
-              {prep.sessionFocus&&<div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.blue}30`})}><div style={{fontSize:9,color:C.blue,letterSpacing:"0.12em",marginBottom:6}}>🎯 SESSION FOCUS</div><div style={{fontSize:12,color:C.txt}}>{prep.sessionFocus}</div></div>}
+              {prep.sessionFocus&&<div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.blue}30`})}><div style={{fontSize:9,color:C.blue,letterSpacing:"0.12em",marginBottom:6}}>🎯 SESSION FOCUS</div><div style={{fontSize:12,color:C.txt}}><SummaryText text={prep.sessionFocus||""}/></div></div>}
               {prep.keyLevels?.length>0&&(
                 <div style={Object.assign({},CS,{marginBottom:10})}>
                   <div style={{fontSize:9,color:C.gold,letterSpacing:"0.12em",marginBottom:10}}>📊 KEY LEVELS</div>
@@ -2300,7 +2308,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
               )}
               <div style={Object.assign({},CS,{marginBottom:10,border:`1px solid ${C.green}25`})}>
                 <div style={{fontSize:9,color:C.green,letterSpacing:"0.12em",marginBottom:8}}>✅ TODAY'S PLAN</div>
-                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{prep.tradingPlan}</div>
+                <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}><SummaryText text={prep.tradingPlan||""}/></div>
               </div>
               {prep.newsToWatch?.length>0&&(
                 <div style={Object.assign({},CS,{marginBottom:10})}>
@@ -2406,7 +2414,7 @@ function AIView({trades,apiCall:apiFn}: {trades:any[],apiCall:any}) {
               {weekReview.weekSummary&&(
                 <div style={Object.assign({},CS,{marginBottom:12,border:`1px solid ${C.gold}25`})}>
                   <div style={{fontSize:9,color:C.gold,letterSpacing:"0.12em",marginBottom:8}}>🌍 MARKET OVERVIEW</div>
-                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}>{weekReview.weekSummary}</div>
+                  <div style={{fontSize:12,color:C.txt,lineHeight:1.7}}><SummaryText text={weekReview.weekSummary||""}/></div>
                 </div>
               )}
               {(weekReview.markets||[]).map((m:any,i:number)=>(
