@@ -216,3 +216,25 @@
     pointer-events: none;
   }
 }
+
+/* TradeAura: interactive polish */
+#root button {
+  transition: opacity 0.12s ease, transform 0.1s ease;
+}
+#root button:hover:not(:disabled) {
+  opacity: 0.87;
+}
+#root button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+#root button:disabled {
+  cursor: not-allowed;
+}
+#root input, #root textarea, #root select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#root input:focus, #root textarea:focus, #root select:focus {
+  border-color: #4f8ef7 !important;
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+  outline: none;
+}
